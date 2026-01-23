@@ -1,0 +1,286 @@
+server/
+├── src/                             # TypeScript source files
+│   ├── models/                      # Core game entities (pure logic, no I/O)
+│   │   ├── BasePlayer.ts           # [CRITICAL] Abstract base class for all players
+│   │   │                           # - Manages status effects (Map<string, StatusEffect>)
+│   │   │                           # - Movement processing & intensity calculation
+│   │   │                           # - Damage calculation with modifiers
+│   │   │                           # - Lifecycle hooks (onInit, onTick, onDeath, beforeDeath)
+│   │   │                           # - Points system
+│   │   │                           # - Priority property for execution order
+│   │   │
+│   │   ├── BotPlayer.ts            # Extends BasePlayer for testing
+│   │   │                           # - Autonomous behavior patterns (aggressive, defensive, idle, chaotic)
+│   │   │                           # - Movement simulation
+│   │   │                           # - Testing utilities (forceDeath, triggerAction)
+│   │   │                           # - Auto-play functionality
+│   │   │
+│   │   ├── StatusEffect.ts         # [CRITICAL] Abstract base class for status effects
+│   │   │                           # - Lifecycle hooks (onApply, onTick, onRemove, onRefresh)
+│   │   │                           # - Duration management (startTime, endTime)
+│   │   │                           # - Priority system (static property)
+│   │   │                           # - Target reference (player)
+│   │   │                           # - Optional hooks (onMovement, modifyIncomingDamage, onPreventDeath)
+│   │   │
+│   │   ├── roles/                  # Role implementations (AUTO-DISCOVERED)
+│   │   │   │                       # Just add a new .ts file here - automatically loaded!
+│   │   │   │
+│   │   │   ├── Vampire.ts          # Extends BasePlayer
+│   │   │   │                       # - Bloodlust mechanic (30s cycle)
+│   │   │   │                       # - Must kill within 5s or die
+│   │   │   │                       # - Gains 5 points on bloodlust kill
+│   │   │   │                       # - Event listeners for player deaths
+│   │   │   │                       # - Priority: 20 (MEDIUM)
+│   │   │   │
+│   │   │   ├── Beast.ts            # Extends BasePlayer
+│   │   │   │                       # - Increased toughness (1.5x damage resistance)
+│   │   │   │                       # - Priority: 10 (MEDIUM_LOW)
+│   │   │   │
+│   │   │   ├── BeastHunter.ts      # Extends BasePlayer
+│   │   │   │                       # - Bonus points (3) when Beast dies
+│   │   │   │                       # - Listens to death events
+│   │   │   │                       # - Priority: 5 (LOW)
+│   │   │   │
+│   │   │   ├── Angel.ts            # Extends BasePlayer
+│   │   │   │                       # - One-time death prevention (3s invulnerability)
+│   │   │   │                       # - Overrides beforeDeath()
+│   │   │   │                       # - Dies when invulnerability expires
+│   │   │   │                       # - Priority: 50 (HIGH)
+│   │   │   │
+│   │   │   └── [future roles...]  # Add new files → auto-loaded by RoleFactory
+│   │   │
+│   │   └── statusEffects/          # Status effect implementations (AUTO-DISCOVERED)
+│   │       │                       # Just add a new .ts file here - automatically loaded!
+│   │       │
+│   │       ├── Invulnerability.ts  # Priority: 100 (CRITICAL)
+│   │       │                       # - Blocks all damage (modifyIncomingDamage returns 0)
+│   │       │                       # - Sets target.isInvulnerable flag
+│   │       │
+│   │       ├── Weakened.ts         # Priority: 50 (HIGH)
+│   │       │                       # - Reduces toughness by multiplier
+│   │       │                       # - Stores original toughness for restoration
+│   │       │
+│   │       ├── Excited.ts          # Priority: 10 (MEDIUM_LOW)
+│   │       │                       # - Requires constant movement
+│   │       │                       # - Tracks last movement time
+│   │       │                       # - Kills player if idle > 2s
+│   │       │                       # - onMovement() hook updates activity
+│   │       │
+│   │       └── [future effects...] # Add new files → auto-loaded
+│   │
+│   ├── gameModes/                  # Game mode implementations (AUTO-DISCOVERED)
+│   │   │                           # Just add a new .ts file here - automatically loaded!
+│   │   │
+│   │   ├── GameMode.ts             # [CRITICAL] Abstract base class for game modes
+│   │   │                           # - Template methods for game flow
+│   │   │                           # - Hook methods (onRoundStart, onPlayerDeath, etc.)
+│   │   │                           # - getRolePool() - which roles to use
+│   │   │                           # - checkWinCondition() - when game ends
+│   │   │                           # - calculateFinalScores() - scoring logic
+│   │   │
+│   │   ├── ClassicMode.ts          # Extends GameMode
+│   │   │                           # - No roles, pure survival
+│   │   │                           # - Last man standing wins
+│   │   │                           # - Single round
+│   │   │
+│   │   ├── RoleBasedMode.ts        # Extends GameMode
+│   │   │                           # - Uses role themes (standard, halloween, mafia, etc.)
+│   │   │                           # - Points-based scoring
+│   │   │                           # - Multi-round (default 3)
+│   │   │                           # - Last standing bonus
+│   │   │
+│   │   ├── HalloweenMode.ts        # Extends RoleBasedMode
+│   │   │                           # - Uses halloween role theme
+│   │   │                           # - Special Halloween events (full moon, fog, candy rush)
+│   │   │                           # - Event system with timers
+│   │   │
+│   │   ├── SurvivalMode.ts         # Extends GameMode
+│   │   │                           # - No roles, increasing difficulty
+│   │   │                           # - Damage multiplier increases over time
+│   │   │                           # - Score by survival time
+│   │   │
+│   │   └── [future modes...]      # Add new files → auto-loaded by GameModeFactory
+│   │
+│   ├── managers/                   # Game orchestration & state management
+│   │   ├── GameEngine.ts           # [CRITICAL] Core game loop & orchestration
+│   │   │                           # - Tick-based game loop (100ms default, NO setTimeout)
+│   │   │                           # - Player management (sorted by priority)
+│   │   │                           # - Game state machine (waiting, active, finished)
+│   │   │                           # - Delegates to currentMode for game logic
+│   │   │                           # - Test mode support (bots, fast-forward)
+│   │   │                           # - Round/match management
+│   │   │                           # - Movement data processing router
+│   │   │
+│   │   ├── GameState.ts            # Game state tracking
+│   │   │                           # - Active players list
+│   │   │                           # - Round counter
+│   │   │                           # - Total scores across rounds
+│   │   │                           # - Match history
+│   │   │                           # - Snapshot generation for debugging
+│   │   │
+│   │   ├── ConnectionManager.ts    # Socket connection handling
+│   │   │                           # - Session token management
+│   │   │                           # - Player reconnection logic
+│   │   │                           # - Socket ID mapping to player ID
+│   │   │                           # - Heartbeat/timeout handling
+│   │   │                           # - Player disconnection cleanup
+│   │   │
+│   │   └── StatusEffectManager.ts  # Status effect registry (optional)
+│   │                               # - Auto-discovery of effect files
+│   │                               # - Effect metadata management
+│   │                               # - Similar to RoleFactory but for effects
+│   │
+│   ├── factories/                  # Object creation & distribution patterns
+│   │   ├── RoleFactory.ts          # [CRITICAL] Role instantiation & auto-discovery
+│   │   │                           # - Auto-discovery: scans models/roles/ directory
+│   │   │                           # - Role registry: Map<string, typeof BasePlayer>
+│   │   │                           # - assignRoles(): random distribution logic
+│   │   │                           # - createRolePool(): determines which roles for N players
+│   │   │                           # - Validation: checks role dependencies
+│   │   │                           # - Shuffle algorithm for fair distribution
+│   │   │
+│   │   └── GameModeFactory.ts      # [CRITICAL] Game mode auto-discovery
+│   │                               # - Auto-discovery: scans gameModes/ directory
+│   │                               # - Mode registry: Map<string, typeof GameMode>
+│   │                               # - createMode(): instantiate mode with params
+│   │                               # - getAvailableModes(): list all modes
+│   │
+│   ├── utils/                      # Shared utilities & helpers
+│   │   ├── GameEvents.ts           # EventEmitter singleton for game-wide events
+│   │   │                           # Events emitted:
+│   │   │                           # - game:tick (every 100ms)
+│   │   │                           # - player:death (when player dies)
+│   │   │                           # - player:eliminated (after death processing)
+│   │   │                           # - round:start, round:end, game:end
+│   │   │                           # - vampire:bloodlust:start, vampire:bloodlust:end
+│   │   │                           # - mode:event (for mode-specific events)
+│   │   │
+│   │   ├── Logger.ts               # Comprehensive logging system
+│   │   │                           # - Log levels (debug, info, warn, error)
+│   │   │                           # - Categories (PLAYER, STATUS, GAME, ABILITY, DAMAGE, MOVEMENT)
+│   │   │                           # - Console output with colors
+│   │   │                           # - File output (logs/game.log)
+│   │   │                           # - Filtering & querying by level/category/player/time
+│   │   │                           # - Summary generation
+│   │   │                           # - Export functionality for debugging
+│   │   │
+│   │   └── InputAdapter.ts         # Device input normalization (future-proofing)
+│   │                               # - Converts phone/joycon/etc to standard format
+│   │                               # - Returns normalized MovementData
+│   │                               # - Allows swapping input devices
+│   │
+│   ├── routes/                     # Express HTTP route handlers
+│   │   ├── game.routes.ts          # Main game API endpoints
+│   │   │                           # POST /game/create - Create new game lobby
+│   │   │                           # POST /game/start - Start game with mode & role assignment
+│   │   │                           # POST /game/join - Player joins lobby
+│   │   │                           # GET /game/state - Current game state
+│   │   │                           # GET /game/modes - List available game modes
+│   │   │                           # POST /game/end - End current round
+│   │   │
+│   │   ├── player.routes.ts        # Player-specific actions
+│   │   │                           # POST /player/move - Submit movement data (x, y, z)
+│   │   │                           # GET /player/role - Get assigned role info
+│   │   │                           # POST /player/reconnect - Reconnect with session token
+│   │   │                           # GET /player/stats - Get player statistics
+│   │   │
+│   │   └── debug.routes.ts         # Development/testing endpoints (NODE_ENV=development)
+│   │                               # GET /debug/state - Full game snapshot
+│   │                               # POST /debug/bot/:id/command - Control bot actions
+│   │                               # POST /debug/fastforward - Skip time in test mode
+│   │                               # GET /debug/logs - Query logs with filters
+│   │                               # POST /debug/logs/export - Export logs to file
+│   │
+│   ├── tests/                      # Automated testing infrastructure
+│   │   ├── testRunner.ts           # Test harness and runner
+│   │   │                           # - Test registration system
+│   │   │                           # - Engine setup/teardown per test
+│   │   │                           # - Results reporting (passed/failed)
+│   │   │                           # - Async test support
+│   │   │
+│   │   ├── scenarios/              # Test scenario definitions
+│   │   │   ├── vampire.test.ts     # Vampire-specific tests
+│   │   │   ├── angel.test.ts       # Angel-specific tests
+│   │   │   ├── statusEffects.test.ts # Status effect tests
+│   │   │   ├── gameModes.test.ts   # Game mode tests
+│   │   │   └── integration.test.ts # Full game flow tests
+│   │   │
+│   │   └── mocks/                  # Mock objects for testing
+│   │       └── mockSocket.ts       # Simulated socket.io connection
+│   │
+│   ├── types/                      # TypeScript type definitions
+│   │   ├── player.types.ts         # Player-related types
+│   │   │                           # - PlayerData, PlayerState
+│   │   │                           # - MovementData, MovementHistory
+│   │   │
+│   │   ├── game.types.ts           # Game-related types
+│   │   │                           # - GameState, RoundInfo
+│   │   │                           # - WinCondition, ScoreEntry
+│   │   │
+│   │   ├── mode.types.ts           # Game mode types
+│   │   │                           # - ModeConfig, ModeInfo
+│   │   │                           # - RoleTheme
+│   │   │
+│   │   ├── status.types.ts         # Status effect types
+│   │   │                           # - StatusEffectConfig
+│   │   │
+│   │   ├── events.types.ts         # Event payload types
+│   │   │                           # - GameTickEvent, PlayerDeathEvent
+│   │   │
+│   │   └── index.ts                # Barrel export for all types
+│   │
+│   ├── config/                     # Configuration files
+│   │   ├── gameConfig.ts           # [CRITICAL] Game balance & core settings
+│   │   │                           # - MovementConfig interface
+│   │   │                           # - DamageConfig interface
+│   │   │                           # - TickConfig interface
+│   │   │
+│   │   ├── roleConfig.ts           # Role-specific configurations
+│   │   │                           # - Per-role settings (cooldowns, durations, etc.)
+│   │   │
+│   │   ├── roleThemes.ts           # [CRITICAL] Role theme definitions
+│   │   │                           # - standard: ['vampire', 'beast', 'beastHunter', 'angel']
+│   │   │                           # - halloween: ['witch', 'werewolf', 'ghost', 'zombie']
+│   │   │                           # - mafia: ['godfather', 'detective', 'doctor', 'civilian']
+│   │   │                           # - Easy to add new themes
+│   │   │
+│   │   └── priorities.ts           # Priority constants reference guide
+│   │                               # - PRIORITY enum/constants
+│   │
+│   ├── middleware/                 # Express middleware
+│   │   ├── errorHandler.ts         # Global error handling
+│   │   ├── validation.ts           # Request validation
+│   │   └── auth.ts                 # Player authentication (future)
+│   │
+│   ├── app.ts                      # Express app setup
+│   │                               # - Route registration
+│   │                               # - Middleware configuration
+│   │                               # - Error handling setup
+│   │                               # - Socket.io integration
+│   │
+│   └── server.ts                   # [ENTRY POINT] Server initialization
+│                                   # - HTTP server creation
+│                                   # - Socket.io initialization
+│                                   # - GameEngine initialization
+│                                   # - Environment setup
+│
+├── dist/                           # Compiled JavaScript (gitignored)
+│   └── [compiled .js files]
+│
+├── logs/                           # Runtime logs (gitignored)
+│   ├── game.log                    # Main game log file
+│   └── [exported logs]             # Manual exports from debug API
+│
+├── tsconfig.json                   # TypeScript configuration
+│                                   # - Compiler options
+│                                   # - Path mappings
+│                                   # - Strict mode settings
+│
+├── package.json                    # Dependencies & scripts
+│                                   # - TypeScript, ts-node
+│                                   # - express, socket.io, @types/*
+│                                   # - Scripts: build, dev, start, test
+│
+├── .env.example                    # Environment variable template
+├── .gitignore                      # Git ignore patterns
+└── README.md                       # Project documentation
