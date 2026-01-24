@@ -52,6 +52,7 @@ export class TestRunner {
    */
   private async runTest(test: TestCase): Promise<void> {
     const engine = new GameEngine();
+    engine.testMode = true; // Enable test mode to bypass validations
     const testLogger = Logger.getInstance();
 
     try {

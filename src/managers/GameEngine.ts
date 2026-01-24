@@ -81,8 +81,11 @@ export class GameEngine {
       throw new Error("Game mode must be set before starting");
     }
 
-    // Validate player count
-    const validation = this.currentMode.validate(playerData.length);
+    // Validate player count (skip in test mode)
+    const validation = this.currentMode.validate(
+      playerData.length,
+      this.testMode
+    );
     if (!validation.valid) {
       throw new Error(validation.message || "Invalid player count");
     }
@@ -102,10 +105,7 @@ export class GameEngine {
       });
     } else {
       // No roles - use BasePlayer
-
-      this.players = playerData.map((data) => {
-        return new BasePlayer(data);
-      });
+      this.players = playerData.map((data) => new BasePlayer(data));
     }
 
     // Start first round

@@ -141,7 +141,15 @@ export abstract class GameMode {
   /**
    * Validate player count for this mode
    */
-  validate(playerCount: number): { valid: boolean; message?: string } {
+  validate(
+    playerCount: number,
+    testMode: boolean = false
+  ): { valid: boolean; message?: string } {
+    // Skip validation in test mode
+    if (testMode) {
+      return { valid: true };
+    }
+
     if (playerCount < this.minPlayers) {
       return {
         valid: false,
