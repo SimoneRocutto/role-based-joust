@@ -1,6 +1,5 @@
 import { Router, type Request, type Response } from "express";
 import { asyncHandler } from "@/middleware/errorHandler";
-import { BotPlayer } from "@/models/BotPlayer";
 import { Logger } from "@/utils/Logger";
 import type { BotAction } from "@/types/bot.types";
 
@@ -60,7 +59,7 @@ router.post(
 
     const bot = gameEngine.getPlayerById(botId);
 
-    if (!bot || !(bot instanceof BotPlayer)) {
+    if (!bot || bot.isBot === false) {
       res.status(404).json({
         success: false,
         error: "Bot not found",

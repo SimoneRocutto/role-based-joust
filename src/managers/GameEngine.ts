@@ -1,5 +1,4 @@
 import { BasePlayer } from "@/models/BasePlayer";
-import { BotPlayer } from "@/models/BotPlayer";
 import type { PlayerData, MovementData } from "@/types/player.types";
 import type { GameMode } from "@/gameModes/GameMode";
 import type { GameState, WinCondition } from "@/types/game.types";
@@ -105,9 +104,6 @@ export class GameEngine {
       // No roles - use BasePlayer
 
       this.players = playerData.map((data) => {
-        if (data.isBot) {
-          return new BotPlayer(data, data.behavior as any);
-        }
         return new BasePlayer(data);
       });
     }
@@ -137,7 +133,7 @@ export class GameEngine {
 
     // Enable auto-play for bots
     this.players.forEach((player) => {
-      if (player instanceof BotPlayer) {
+      if (player.isBot === true) {
         player.enableAutoPlay();
       }
     });

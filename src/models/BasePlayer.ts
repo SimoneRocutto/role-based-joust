@@ -1,12 +1,9 @@
-// ============================================================================
-// src/models/BasePlayer.ts - Foundation Player Class
-// ============================================================================
-
 import type {
   PlayerData,
   MovementData,
   MovementConfig,
 } from "@/types/player.types";
+import type { BotBehavior, BotAction } from "@/types/bot.types";
 import type { StatusEffect } from "./StatusEffect";
 import { Logger } from "@/utils/Logger";
 import { GameEvents } from "@/utils/GameEvents";
@@ -24,6 +21,7 @@ const gameEvents = GameEvents.getInstance();
  * - Status effect management (application, removal, priority sorting)
  * - Lifecycle hooks (onInit, onTick, beforeDeath, die, onDeath)
  * - Points tracking
+ * - Bot behavior (when isBot = true)
  */
 export class BasePlayer {
   // ========== IDENTITY ==========
@@ -55,6 +53,11 @@ export class BasePlayer {
   readonly priority: number;
   static priority: number = 0;
 
+  // ========== BOT BEHAVIOR ==========
+  readonly isBot: boolean;
+  readonly behavior: BotBehavior;
+  private autoPlayEnabled: boolean = false;
+
   constructor(data: PlayerData) {
     this.id = data.id;
     this.name = data.name;
@@ -63,6 +66,10 @@ export class BasePlayer {
     this.movementConfig = { ...gameConfig.movement };
     this.deathThreshold = gameConfig.damage.baseThreshold;
     this.priority = (this.constructor as typeof BasePlayer).priority;
+
+    // Bot properties
+    this.isBot = data.isBot || false;
+    this.behavior = (data.behavior as BotBehavior) || "random";
   }
 
   // ========================================================================
@@ -206,6 +213,7 @@ export class BasePlayer {
       toughness: this.toughness,
     });
 
+    // Accumulate damage
     this.accumulatedDamage += actualDamage;
 
     // Check if damage is lethal
@@ -326,6 +334,11 @@ export class BasePlayer {
         this.removeStatusEffect(effect.id, gameTime);
       }
     }
+
+    // Execute bot behavior if this is a bot
+    if (this.isBot && this.autoPlayEnabled && this.isAlive) {
+      this.executeBotBehavior(gameTime);
+    }
   }
 
   /**
@@ -410,5 +423,175 @@ export class BasePlayer {
       total: this.points,
       reason,
     });
+  }
+
+  // ========================================================================
+  // BOT BEHAVIOR (Only active when isBot = true)
+  // ========================================================================
+
+  /**
+   * Enable autonomous bot behavior
+   */
+  enableAutoPlay(): void {
+    if (!this.isBot) {
+      logger.warn("PLAYER", `Cannot enable autoplay for non-bot ${this.name}`);
+      return;
+    }
+    this.autoPlayEnabled = true;
+  }
+
+  /**
+   * Disable autonomous bot behavior
+   */
+  disableAutoPlay(): void {
+    this.autoPlayEnabled = false;
+  }
+
+  /**
+   * Execute bot behavior pattern
+   */
+  private executeBotBehavior(gameTime: number): void {
+    let intensity: number;
+
+    switch (this.behavior) {
+      case "aggressive":
+        intensity = this.aggressiveBehavior();
+        break;
+      case "defensive":
+        intensity = this.defensiveBehavior();
+        break;
+      case "idle":
+        intensity = this.idleBehavior();
+        break;
+      case "chaotic":
+        intensity = this.chaoticBehavior();
+        break;
+      case "random":
+      default:
+        intensity = this.randomBehavior();
+        break;
+    }
+
+    this.simulateMovement(intensity, gameTime);
+  }
+
+  /**
+   * Aggressive behavior: High movement intensity
+   */
+  private aggressiveBehavior(): number {
+    return 0.8 + Math.random() * 0.2; // 0.8-1.0
+  }
+
+  /**
+   * Defensive behavior: Low, careful movement
+   */
+  private defensiveBehavior(): number {
+    return 0.1 + Math.random() * 0.3; // 0.1-0.4
+  }
+
+  /**
+   * Idle behavior: Minimal to no movement
+   */
+  private idleBehavior(): number {
+    return Math.random() * 0.05; // 0-0.05
+  }
+
+  /**
+   * Chaotic behavior: Random bursts of movement
+   */
+  private chaoticBehavior(): number {
+    const shouldMove = Math.random() > 0.5;
+    return shouldMove ? Math.random() : 0;
+  }
+
+  /**
+   * Random behavior: Unpredictable
+   */
+  private randomBehavior(): number {
+    return Math.random(); // 0-1
+  }
+
+  /**
+   * Simulate movement data from intensity
+   */
+  private simulateMovement(intensity: number, gameTime: number): void {
+    // Generate random direction
+    const theta = Math.random() * 2 * Math.PI; // Random angle
+    const phi = Math.random() * Math.PI; // Random angle
+
+    // Convert spherical coordinates to Cartesian
+    // Scale by intensity and max magnitude (17.32)
+    const magnitude = intensity * 17.32;
+
+    const movementData: MovementData = {
+      x: magnitude * Math.sin(phi) * Math.cos(theta),
+      y: magnitude * Math.sin(phi) * Math.sin(theta),
+      z: magnitude * Math.cos(phi),
+      intensity,
+      timestamp: gameTime,
+    };
+
+    this.updateMovement(movementData, gameTime);
+  }
+
+  /**
+   * Force bot to die (for testing)
+   */
+  forceDeath(gameTime: number): void {
+    if (!this.isBot) {
+      logger.warn("PLAYER", `Cannot force death for non-bot ${this.name}`);
+      return;
+    }
+    console.log(`[BOT] Forcing ${this.name} to die`);
+    this.die(gameTime);
+  }
+
+  /**
+   * Manually trigger specific bot actions
+   */
+  triggerAction(action: BotAction, gameTime: number, ...args: any[]): void {
+    if (!this.isBot) {
+      logger.warn("PLAYER", `Cannot trigger action for non-bot ${this.name}`);
+      return;
+    }
+
+    console.log(`[BOT] ${this.name} triggered action: ${action}`);
+
+    switch (action) {
+      case "shake":
+        this.simulateMovement(0.9, gameTime);
+        break;
+      case "still":
+        this.simulateMovement(0, gameTime);
+        break;
+      case "die":
+        this.forceDeath(gameTime);
+        break;
+      case "damage":
+        const damageAmount = (args[0] as number) || 100;
+        this.takeDamage(damageAmount, gameTime);
+        break;
+      default:
+        console.warn(`[BOT] Unknown action: ${action}`);
+    }
+  }
+
+  /**
+   * Get bot state for debugging
+   */
+  getBotState(): {
+    isBot: boolean;
+    behavior: BotBehavior;
+    autoPlayEnabled: boolean;
+    isAlive: boolean;
+    lastIntensity: number;
+  } {
+    return {
+      isBot: this.isBot,
+      behavior: this.behavior,
+      autoPlayEnabled: this.autoPlayEnabled,
+      isAlive: this.isAlive,
+      lastIntensity: this.lastMovementData?.intensity || 0,
+    };
   }
 }
