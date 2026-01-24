@@ -1,69 +1,7 @@
 {
-  "compilerOptions": {
-    // Target and Module
-    "target": "ES2020",
-    "module": "commonjs",
-    "lib": ["ES2020"],
-
-    // Output
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "removeComments": true,
-    "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
-
-    // Module Resolution
-    "moduleResolution": "node",
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true,
-
-    // Strict Type Checking
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictBindCallApply": true,
-    "strictPropertyInitialization": true,
-    "noImplicitThis": true,
-    "alwaysStrict": true,
-
-    // Additional Checks
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": false,
-    "noImplicitOverride": false,
-
-    // Other Options
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-
-    // Path Mapping
-    "baseUrl": "./src",
-    "paths": {
-      "@/models/*": ["models/*"],
-      "@/gameModes/*": ["gameModes/*"],
-      "@/managers/*": ["managers/*"],
-      "@/factories/*": ["factories/*"],
-      "@/utils/*": ["utils/*"],
-      "@/types/*": ["types/*"],
-      "@/config/*": ["config/*"],
-      "@/routes/*": ["routes/*"],
-      "@/middleware/*": ["middleware/*"],
-      "@/tests/*": ["tests/*"]
-    }
-  },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"],
-  "ts-node": {
-    "require": ["tsconfig-paths/register"],
-    "compilerOptions": {
-      "module": "commonjs"
-    }
-  }
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.test.json" }
+  ]
 }

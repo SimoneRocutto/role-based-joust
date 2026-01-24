@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "noEmit": true,
+
+    "baseUrl": "./src",
+    "paths": {
+      "@/models/*": ["models/*"],
+      "@/gameModes/*": ["gameModes/*"],
+      "@/managers/*": ["managers/*"],
+      "@/factories/*": ["factories/*"],
+      "@/utils/*": ["utils/*"],
+      "@/types/*": ["types/*"],
+      "@/config/*": ["config/*"],
+      "@/routes/*": ["routes/*"],
+      "@/middleware/*": ["middleware/*"]
+    }
+  },
+  "references": [{ "path": "./tsconfig.app.json" }],
+  "include": ["src/tests/**/*.ts"]
+}

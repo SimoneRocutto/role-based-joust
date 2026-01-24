@@ -1,6 +1,6 @@
 import { TestRunner, assert, assertEqual } from "../testRunner";
 import { GameModeFactory } from "@/factories/GameModeFactory";
-import type { PlayerData } from "@/types/player.types";
+import type { PlayerData } from "@/types/index";
 
 const runner = new TestRunner();
 
