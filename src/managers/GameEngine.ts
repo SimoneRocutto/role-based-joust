@@ -103,6 +103,7 @@ export class GameEngine {
       });
     } else {
       // No roles - use BasePlayer
+
       this.players = playerData.map((data) => {
         if (data.isBot) {
           return new BotPlayer(data, data.behavior as any);
@@ -414,6 +415,7 @@ export class GameEngine {
         name: p.name,
         role: p.constructor.name,
         isAlive: p.isAlive,
+        accumulatedDamage: p.accumulatedDamage,
         points: p.points,
         totalPoints: p.totalPoints,
       })),

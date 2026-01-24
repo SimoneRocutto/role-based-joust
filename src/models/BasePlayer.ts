@@ -206,8 +206,10 @@ export class BasePlayer {
       toughness: this.toughness,
     });
 
+    this.accumulatedDamage += actualDamage;
+
     // Check if damage is lethal
-    if (actualDamage >= this.deathThreshold && !this.isInvulnerable) {
+    if (this.accumulatedDamage >= this.deathThreshold && !this.isInvulnerable) {
       this.beforeDeath(gameTime);
     }
   }
