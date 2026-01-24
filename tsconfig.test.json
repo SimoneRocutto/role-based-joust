@@ -2,6 +2,10 @@
   "compilerOptions": {
     "composite": true,
     "noEmit": true,
+    // Target and Module
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
 
     "baseUrl": "./src",
     "paths": {
