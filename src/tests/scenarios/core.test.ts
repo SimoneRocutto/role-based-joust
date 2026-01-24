@@ -74,6 +74,8 @@ runner.test("Role-based mode: Multi-round game", (engine) => {
 });
 
 runner.test("Game validates player count", (engine) => {
+  // Setting to false so that player count validation isn't skipped
+  engine.testMode = false;
   const mode = GameModeFactory.getInstance().createMode("classic");
   engine.setGameMode(mode);
 

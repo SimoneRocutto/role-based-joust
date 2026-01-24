@@ -9,7 +9,7 @@ import type { PlayerData } from "@/types/player.types";
 const runner = new TestRunner();
 
 // ============================================================================
-// BOT ROLE TESTS (Critical for fixing the bug)
+// BOT ROLE TESTS
 // ============================================================================
 
 runner.test("Bot Vampire is created correctly", (engine) => {
@@ -48,8 +48,10 @@ runner.test("Bot Vampire is created correctly", (engine) => {
 });
 
 runner.test("Bot role can be commanded", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
   // Create test game with specific roles
-  engine.testMode = true;
   engine.createTestGame(["vampire", "beast", "beasthunter", "angel"]);
 
   const bots = engine.players.filter((p) => p.isBot);
@@ -67,6 +69,9 @@ runner.test("Bot role can be commanded", (engine) => {
 });
 
 runner.test("All bot roles can be commanded", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
   engine.createTestGame(["vampire", "beast", "beasthunter", "angel"]);
 
   // Try commanding each bot
@@ -90,6 +95,9 @@ runner.test("All bot roles can be commanded", (engine) => {
 // ============================================================================
 
 runner.test("Vampire enters bloodlust after 30 seconds", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
   engine.createTestGame(["vampire", "beast"]);
 
   const vampire = engine.players.find((p) => p instanceof Vampire) as Vampire;
@@ -105,6 +113,9 @@ runner.test("Vampire enters bloodlust after 30 seconds", (engine) => {
 });
 
 runner.test("Vampire gains points on bloodlust kill", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
   engine.createTestGame(["vampire", "beast", "beast"]);
 
   const vampire = engine.players.find((p) => p instanceof Vampire) as Vampire;
@@ -133,6 +144,9 @@ runner.test("Vampire gains points on bloodlust kill", (engine) => {
 // ============================================================================
 
 runner.test("Beast has increased toughness", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
   engine.createTestGame(["beast", "vampire"]);
 
   const beast = engine.players.find((p) => p instanceof Beast);
@@ -179,6 +193,9 @@ runner.test("Beast takes less damage than normal player", (engine) => {
 // ============================================================================
 
 runner.test("BeastHunter gains points when Beast dies", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
   engine.createTestGame(["beasthunter", "beast", "vampire"]);
 
   const hunter = engine.players.find((p) => p instanceof BeastHunter);
@@ -202,6 +219,9 @@ runner.test("BeastHunter gains points when Beast dies", (engine) => {
 });
 
 runner.test("BeastHunter doesn't gain points for other deaths", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
   engine.createTestGame(["beasthunter", "vampire", "angel"]);
 
   const hunter = engine.players.find((p) => p instanceof BeastHunter);
@@ -230,6 +250,9 @@ runner.test("BeastHunter doesn't gain points for other deaths", (engine) => {
 // ============================================================================
 
 runner.test("Angel prevents first death", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
   engine.createTestGame(["angel", "vampire"]);
 
   const angel = engine.players.find((p) => p instanceof Angel);
@@ -243,6 +266,9 @@ runner.test("Angel prevents first death", (engine) => {
 });
 
 runner.test("Angel dies when invulnerability expires", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
   engine.createTestGame(["angel", "vampire"]);
 
   const angel = engine.players.find((p) => p instanceof Angel);

@@ -9,7 +9,7 @@ async function runAllTests() {
   console.log("\n");
   console.log("╔═══════════════════════════════════════════════════════════════╗");
   console.log("║                                                               ║");
-  console.log("║          Johann Sebastian Joust - Test Suite                 ║");
+  console.log("║                EXTENDED JOUST - Test Suite                    ║");
   console.log("║                                                               ║");
   console.log("╚═══════════════════════════════════════════════════════════════╝");
   console.log("\n");
