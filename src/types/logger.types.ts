@@ -1,16 +1,27 @@
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
 export type LogCategory =
+  | "APP"
   | "PLAYER"
   | "STATUS"
   | "GAME"
   | "ABILITY"
   | "DAMAGE"
+  | "DEATH"
   | "MOVEMENT"
   | "MODE"
   | "SOCKET"
+  | "INPUT"
+  | "DEBUG"
+  | "ENGINE"
+  | "FACTORY"
+  | "CONNECTION"
+  | "STATE"
+  | "EFFECT_MANAGER"
   | "HTTP"
-  | "SERVER";
+  | "ERROR"
+  | "SERVER"
+  | "ANGEL";
 
 export interface LogEntry {
   timestamp: string;

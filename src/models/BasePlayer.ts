@@ -25,7 +25,7 @@ const gameEvents = GameEvents.getInstance();
  * - Lifecycle hooks (onInit, onTick, beforeDeath, die, onDeath)
  * - Points tracking
  */
-export abstract class BasePlayer {
+export class BasePlayer {
   // ========== IDENTITY ==========
   readonly id: string;
   readonly name: string;

@@ -1,32 +1,40 @@
-import {
-  Router as DebugRouter,
-  type Request as DebugRequest,
-  type Response as DebugResponse,
-} from "express";
-import { asyncHandler as debugAsyncHandler } from "@/middleware/errorHandler";
+import { Router, type Request, type Response } from "express";
+import { asyncHandler } from "@/middleware/errorHandler";
+import { BotPlayer } from "@/models/BotPlayer";
+import { Logger } from "@/utils/Logger";
+import type { BotAction } from "@/types/bot.types";
 
-const debugRouter = DebugRouter();
+const router = Router();
+const logger = Logger.getInstance();
 
 /**
  * GET /api/debug/state
  * Get full game snapshot for debugging
  */
-debugRouter.get(
+router.get(
   "/state",
-  debugAsyncHandler(async (req: DebugRequest, res: DebugResponse) => {
+  asyncHandler(async (req: Request, res: Response) => {
     const { gameEngine } = global;
 
     if (!gameEngine) {
-      res.status(503).json({ error: "Game engine not initialized" });
+      res.status(503).json({
+        success: false,
+        error: "Game engine not initialized",
+      });
       return;
     }
 
+    const snapshot = gameEngine.getGameSnapshot();
+
     res.json({
-      gameTime: gameEngine.gameTime,
-      state: gameEngine.gameState,
-      currentRound: gameEngine.currentRound,
-      playerCount: gameEngine.players.length,
-      message: "Debug state endpoint - partial implementation",
+      success: true,
+      snapshot,
+      debug: {
+        testMode: gameEngine.testMode,
+        tickRate: gameEngine.tickRate,
+        isActive: gameEngine.isActive(),
+        isFinished: gameEngine.isFinished(),
+      },
     });
   })
 );
@@ -35,12 +43,45 @@ debugRouter.get(
  * POST /api/debug/bot/:botId/command
  * Send command to a bot player
  */
-debugRouter.post(
+router.post(
   "/bot/:botId/command",
-  debugAsyncHandler(async (req: DebugRequest, res: DebugResponse) => {
+  asyncHandler(async (req: Request, res: Response) => {
+    const { botId } = req.params;
+    const { action, args } = req.body;
+    const { gameEngine } = global;
+
+    if (!gameEngine) {
+      res.status(503).json({
+        success: false,
+        error: "Game engine not initialized",
+      });
+      return;
+    }
+
+    const bot = gameEngine.getPlayerById(botId);
+
+    if (!bot || !(bot instanceof BotPlayer)) {
+      res.status(404).json({
+        success: false,
+        error: "Bot not found",
+      });
+      return;
+    }
+
+    // Execute bot action
+    bot.triggerAction(
+      action as BotAction,
+      gameEngine.gameTime,
+      ...(args || [])
+    );
+
+    logger.info("DEBUG", `Bot ${botId} executed ${action}`);
+
     res.json({
       success: true,
-      message: "Bot command endpoint - to be implemented",
+      botId,
+      action,
+      state: bot.getBotState(),
     });
   })
 );
@@ -49,26 +90,75 @@ debugRouter.post(
  * POST /api/debug/fastforward
  * Fast-forward game time (test mode only)
  */
-debugRouter.post(
+router.post(
   "/fastforward",
-  debugAsyncHandler(async (req: DebugRequest, res: DebugResponse) => {
+  asyncHandler(async (req: Request, res: Response) => {
+    const { milliseconds } = req.body;
+    const { gameEngine } = global;
+
+    if (!gameEngine) {
+      res.status(503).json({
+        success: false,
+        error: "Game engine not initialized",
+      });
+      return;
+    }
+
+    if (!gameEngine.testMode) {
+      res.status(400).json({
+        success: false,
+        error: "Fast-forward only available in test mode",
+      });
+      return;
+    }
+
+    if (!milliseconds || typeof milliseconds !== "number") {
+      res.status(400).json({
+        success: false,
+        error: "Milliseconds parameter required",
+      });
+      return;
+    }
+
+    gameEngine.fastForward(milliseconds);
+
+    logger.info("DEBUG", `Fast-forwarded ${milliseconds}ms`);
+
     res.json({
       success: true,
-      message: "Fast-forward endpoint - to be implemented",
+      fastForwarded: milliseconds,
+      newGameTime: gameEngine.gameTime,
     });
   })
 );
 
 /**
  * GET /api/debug/logs
- * Query game logs
+ * Query game logs with filters
  */
-debugRouter.get(
+router.get(
   "/logs",
-  debugAsyncHandler(async (req: DebugRequest, res: DebugResponse) => {
+  asyncHandler(async (req: Request, res: Response) => {
+    const { level, category, playerId, since, limit } = req.query;
+    const logger = Logger.getInstance();
+
+    const filter: any = {};
+
+    if (level) filter.level = level;
+    if (category) filter.category = category;
+    if (playerId) filter.playerId = playerId;
+    if (since) filter.since = parseInt(since as string, 10);
+
+    const allLogs = logger.getLogs(filter);
+    const limitNum = limit ? parseInt(limit as string, 10) : 100;
+    const logs = allLogs.slice(-limitNum);
+
     res.json({
-      logs: [],
-      message: "Logs endpoint - to be implemented",
+      success: true,
+      logs,
+      total: allLogs.length,
+      showing: logs.length,
+      filter,
     });
   })
 );
@@ -77,14 +167,96 @@ debugRouter.get(
  * POST /api/debug/logs/export
  * Export logs to file
  */
-debugRouter.post(
+router.post(
   "/logs/export",
-  debugAsyncHandler(async (req: DebugRequest, res: DebugResponse) => {
+  asyncHandler(async (req: Request, res: Response) => {
+    const { filename } = req.body;
+    const logger = Logger.getInstance();
+
+    const exportFilename = filename || `game-logs-${Date.now()}.json`;
+    logger.exportLogs(exportFilename);
+
     res.json({
       success: true,
-      message: "Log export endpoint - to be implemented",
+      filename: exportFilename,
+      message: "Logs exported successfully",
     });
   })
 );
 
-export default debugRouter;
+/**
+ * POST /api/debug/logs/clear
+ * Clear all logs
+ */
+router.post(
+  "/logs/clear",
+  asyncHandler(async (req: Request, res: Response) => {
+    const logger = Logger.getInstance();
+    logger.clear();
+
+    res.json({
+      success: true,
+      message: "Logs cleared",
+    });
+  })
+);
+
+/**
+ * GET /api/debug/logs/summary
+ * Get log summary statistics
+ */
+router.get(
+  "/logs/summary",
+  asyncHandler(async (req: Request, res: Response) => {
+    const logger = Logger.getInstance();
+    const summary = logger.generateSummary();
+
+    res.json({
+      success: true,
+      summary,
+    });
+  })
+);
+
+/**
+ * POST /api/debug/test/create
+ * Create a test game with bots
+ */
+router.post(
+  "/test/create",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { roles } = req.body;
+    const { gameEngine } = global;
+
+    if (!gameEngine) {
+      res.status(503).json({
+        success: false,
+        error: "Game engine not initialized",
+      });
+      return;
+    }
+
+    if (!roles || !Array.isArray(roles)) {
+      res.status(400).json({
+        success: false,
+        error: "Roles array required",
+      });
+      return;
+    }
+
+    gameEngine.createTestGame(roles);
+
+    logger.info("DEBUG", "Test game created", {
+      roles,
+      botCount: roles.length,
+    });
+
+    res.json({
+      success: true,
+      message: "Test game created",
+      snapshot: gameEngine.getGameSnapshot(),
+    });
+  })
+);
+
+export default router;

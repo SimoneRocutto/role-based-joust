@@ -512,8 +512,9 @@ export class RoleBasedMode extends GameMode {
     );
 
     if (alive.length === 1) {
-      alive[0].addPoints(5, "last_standing");
-      logger.info("MODE", `${alive[0].name} is last standing! +5 points`);
+      const [winner] = alive;
+      winner.addPoints(5, "last_standing");
+      logger.info("MODE", `${winner.name} is last standing! +5 points`);
     }
   }
 

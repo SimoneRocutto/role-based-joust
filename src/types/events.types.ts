@@ -1,3 +1,5 @@
+import { ScoreEntry } from ".";
+
 export interface GameTickEvent {
   gameTime: number;
 }

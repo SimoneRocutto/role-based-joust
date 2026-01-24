@@ -1,4 +1,4 @@
-# Johann Sebastian Joust - TypeScript System Explanations
+# Extended Joust - TypeScript System Explanations
 
 ## Project Philosophy
 
