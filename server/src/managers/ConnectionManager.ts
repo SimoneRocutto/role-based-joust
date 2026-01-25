@@ -28,6 +28,9 @@ export class ConnectionManager {
   // Map: socketId -> last activity timestamp
   private lastActivity: Map<string, number> = new Map();
 
+  // Map: playerId -> playerNumber (1-20)
+  private playerNumbers: Map<string, number> = new Map();
+
   // Configuration
   private readonly SESSION_TIMEOUT = 300000; // 5 minutes
   private readonly HEARTBEAT_INTERVAL = 30000; // 30 seconds
@@ -49,12 +52,13 @@ export class ConnectionManager {
 
   /**
    * Register a new player connection
+   * Returns object with token and playerNumber
    */
   registerConnection(
     playerId: string,
     socketId: string,
     generateToken: boolean = true
-  ): string | null {
+  ): { token: string | null; playerNumber: number } {
     logger.info("CONNECTION", `Registering player connection`, {
       playerId,
       socketId,
@@ -65,15 +69,45 @@ export class ConnectionManager {
     this.socketPlayers.set(socketId, playerId);
     this.lastActivity.set(socketId, Date.now());
 
+    // Assign player number if not already assigned
+    let playerNumber = this.playerNumbers.get(playerId);
+    if (playerNumber === undefined) {
+      playerNumber = this.getNextPlayerNumber();
+      this.playerNumbers.set(playerId, playerNumber);
+    }
+
     // Generate session token if requested
     if (generateToken) {
       const token = this.generateSessionToken();
       this.sessionTokens.set(playerId, token);
-      logger.debug("CONNECTION", `Generated session token for ${playerId}`);
-      return token;
+      logger.debug("CONNECTION", `Generated session token for ${playerId}`, {
+        playerNumber,
+      });
+      return { token, playerNumber };
     }
 
-    return null;
+    return { token: null, playerNumber };
+  }
+
+  /**
+   * Get the next available player number (1-20)
+   */
+  private getNextPlayerNumber(): number {
+    const usedNumbers = new Set(this.playerNumbers.values());
+    for (let i = 1; i <= 20; i++) {
+      if (!usedNumbers.has(i)) {
+        return i;
+      }
+    }
+    // If all numbers are used, return the next number beyond 20
+    return this.playerNumbers.size + 1;
+  }
+
+  /**
+   * Get player number for a player ID
+   */
+  getPlayerNumber(playerId: string): number | undefined {
+    return this.playerNumbers.get(playerId);
   }
 
   /**
@@ -278,6 +312,7 @@ export class ConnectionManager {
     this.socketPlayers.clear();
     this.sessionTokens.clear();
     this.lastActivity.clear();
+    this.playerNumbers.clear();
 
     logger.info("CONNECTION", "All connections cleared");
   }

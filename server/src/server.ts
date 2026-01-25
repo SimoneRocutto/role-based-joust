@@ -65,19 +65,20 @@ io.on("connection", (socket) => {
       playerName: data.name,
     });
 
-    // Register connection and get session token
-    const token = connectionManager.registerConnection(
+    // Register connection and get session token + player number
+    const { token, playerNumber } = connectionManager.registerConnection(
       data.playerId,
       socket.id,
       true
     );
 
-    // Acknowledge join with session token
+    // Acknowledge join with session token and player number
     socket.emit("player:joined", {
       success: true,
       playerId: data.playerId,
       socketId: socket.id,
       sessionToken: token,
+      playerNumber,
     });
   });
 
@@ -93,10 +94,12 @@ io.on("connection", (socket) => {
 
     if (result.success) {
       const player = gameEngine.getPlayerById(result.playerId!);
+      const playerNumber = connectionManager.getPlayerNumber(result.playerId!);
 
       socket.emit("player:reconnected", {
         success: true,
         playerId: result.playerId,
+        playerNumber,
         player: player
           ? {
               id: player.id,
