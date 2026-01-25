@@ -100,6 +100,9 @@ runner.test("Vampire enters bloodlust after 30 seconds", (engine) => {
 
   engine.createTestGame(["vampire", "beast"]);
 
+  // Disable auto-play to prevent random deaths during fast-forward
+  engine.players.forEach((p) => p.disableAutoPlay());
+
   const vampire = engine.players.find((p) => p instanceof Vampire) as Vampire;
   assert(vampire !== undefined, "Should have vampire");
 
@@ -117,6 +120,9 @@ runner.test("Vampire gains points on bloodlust kill", (engine) => {
   engine.setGameMode(mode);
 
   engine.createTestGame(["vampire", "beast", "beast"]);
+
+  // Disable auto-play to prevent random deaths during fast-forward
+  engine.players.forEach((p) => p.disableAutoPlay());
 
   const vampire = engine.players.find((p) => p instanceof Vampire) as Vampire;
   const beast = engine.players.find((p) => p instanceof Beast);

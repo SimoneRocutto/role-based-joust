@@ -75,8 +75,10 @@ export class GameEngine {
   /**
    * Start the game with player data
    * Creates players, assigns roles, starts first round
+   * @param playerData - Array of player data
+   * @param overrideRolePool - Optional role pool to override mode's default (used by createTestGame)
    */
-  startGame(playerData: PlayerData[]): void {
+  startGame(playerData: PlayerData[], overrideRolePool?: string[]): void {
     if (!this.currentMode) {
       throw new Error("Game mode must be set before starting");
     }
@@ -95,8 +97,8 @@ export class GameEngine {
       playerCount: playerData.length,
     });
 
-    // Get role pool from mode
-    const rolePool = this.currentMode.getRolePool(playerData.length);
+    // Get role pool from override or mode
+    const rolePool = overrideRolePool ?? this.currentMode.getRolePool(playerData.length);
 
     // Create players with roles (or BasePlayer if no roles)
     if (rolePool.length > 0) {
@@ -354,6 +356,7 @@ export class GameEngine {
 
   /**
    * Create a test game with bots
+   * @param roleNames - Specific roles to assign to each bot
    */
   createTestGame(roleNames: string[]): void {
     this.testMode = true;
@@ -371,7 +374,8 @@ export class GameEngine {
       roles: roleNames,
     });
 
-    this.startGame(botData);
+    // Pass roleNames as the role pool override to ensure exact role assignment
+    this.startGame(botData, roleNames);
   }
 
   /**
