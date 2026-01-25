@@ -12,7 +12,7 @@ function JoinView() {
   const [error, setError] = useState<string | null>(null)
   const [joining, setJoining] = useState(false)
 
-  const { isConnected, setMyPlayer } = useGameState()
+  const { isConnected, setMyPlayer, updatePlayer } = useGameState()
 
   // Listen for join response
   useEffect(() => {
@@ -22,9 +22,24 @@ function JoinView() {
         localStorage.setItem('sessionToken', data.sessionToken)
         localStorage.setItem('playerId', data.playerId)
         localStorage.setItem('playerNumber', data.playerNumber.toString())
+        localStorage.setItem('playerName', data.name || name)
 
-        // Update store
+        // Update store with player IDs
         setMyPlayer(data.playerId, data.playerNumber)
+
+        // Set initial player state (alive, waiting for game)
+        updatePlayer({
+          id: data.playerId,
+          name: data.name || name,
+          number: data.playerNumber,
+          role: '',
+          isAlive: true,
+          points: 0,
+          totalPoints: 0,
+          toughness: 1.0,
+          accumulatedDamage: 0,
+          statusEffects: [],
+        })
 
         // Navigate to player view
         navigate('/player')

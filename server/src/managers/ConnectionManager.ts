@@ -31,6 +31,9 @@ export class ConnectionManager {
   // Map: playerId -> playerNumber (1-20)
   private playerNumbers: Map<string, number> = new Map();
 
+  // Map: playerId -> player name (for lobby display)
+  private playerNames: Map<string, string> = new Map();
+
   // Configuration
   private readonly SESSION_TIMEOUT = 300000; // 5 minutes
   private readonly HEARTBEAT_INTERVAL = 30000; // 30 seconds
@@ -57,17 +60,20 @@ export class ConnectionManager {
   registerConnection(
     playerId: string,
     socketId: string,
+    playerName: string,
     generateToken: boolean = true
   ): { token: string | null; playerNumber: number } {
     logger.info("CONNECTION", `Registering player connection`, {
       playerId,
       socketId,
+      playerName,
     });
 
     // Update mappings
     this.playerSockets.set(playerId, socketId);
     this.socketPlayers.set(socketId, playerId);
     this.lastActivity.set(socketId, Date.now());
+    this.playerNames.set(playerId, playerName);
 
     // Assign player number if not already assigned
     let playerNumber = this.playerNumbers.get(playerId);
@@ -82,6 +88,7 @@ export class ConnectionManager {
       this.sessionTokens.set(playerId, token);
       logger.debug("CONNECTION", `Generated session token for ${playerId}`, {
         playerNumber,
+        playerName,
       });
       return { token, playerNumber };
     }
@@ -108,6 +115,46 @@ export class ConnectionManager {
    */
   getPlayerNumber(playerId: string): number | undefined {
     return this.playerNumbers.get(playerId);
+  }
+
+  /**
+   * Get player name for a player ID
+   */
+  getPlayerName(playerId: string): string | undefined {
+    return this.playerNames.get(playerId);
+  }
+
+  /**
+   * Get all lobby players (connected players waiting for game)
+   */
+  getLobbyPlayers(): Array<{
+    id: string;
+    name: string;
+    number: number;
+    isAlive: boolean;
+  }> {
+    const lobbyPlayers: Array<{
+      id: string;
+      name: string;
+      number: number;
+      isAlive: boolean;
+    }> = [];
+
+    for (const [playerId, socketId] of this.playerSockets.entries()) {
+      const name = this.playerNames.get(playerId);
+      const number = this.playerNumbers.get(playerId);
+
+      if (name && number !== undefined) {
+        lobbyPlayers.push({
+          id: playerId,
+          name,
+          number,
+          isAlive: true, // All lobby players are "alive" (waiting)
+        });
+      }
+    }
+
+    return lobbyPlayers.sort((a, b) => a.number - b.number);
   }
 
   /**
@@ -313,6 +360,7 @@ export class ConnectionManager {
     this.sessionTokens.clear();
     this.lastActivity.clear();
     this.playerNumbers.clear();
+    this.playerNames.clear();
 
     logger.info("CONNECTION", "All connections cleared");
   }

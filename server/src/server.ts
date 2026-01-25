@@ -69,6 +69,7 @@ io.on("connection", (socket) => {
     const { token, playerNumber } = connectionManager.registerConnection(
       data.playerId,
       socket.id,
+      data.name,
       true
     );
 
@@ -79,6 +80,12 @@ io.on("connection", (socket) => {
       socketId: socket.id,
       sessionToken: token,
       playerNumber,
+      name: data.name,
+    });
+
+    // Broadcast updated lobby list to all clients
+    io.emit("lobby:update", {
+      players: connectionManager.getLobbyPlayers(),
     });
   });
 
@@ -177,6 +184,11 @@ io.on("connection", (socket) => {
     });
 
     connectionManager.handleDisconnect(socket.id);
+
+    // Broadcast updated lobby list to all clients
+    io.emit("lobby:update", {
+      players: connectionManager.getLobbyPlayers(),
+    });
   });
 
   /**

@@ -107,6 +107,24 @@ export function useSocket() {
       }, 500);
     });
 
+    // Lobby update (players joining/leaving before game starts)
+    socketService.onLobbyUpdate(({ players }) => {
+      // Convert lobby players to PlayerState format
+      const playerStates = players.map((p) => ({
+        id: p.id,
+        name: p.name,
+        number: p.number,
+        role: '',
+        isAlive: p.isAlive,
+        points: 0,
+        totalPoints: 0,
+        toughness: 1.0,
+        accumulatedDamage: 0,
+        statusEffects: [],
+      }));
+      updatePlayers(playerStates);
+    });
+
     // Error handling
     socketService.onError(({ message, code }) => {
       console.error("Socket error:", code, message);
@@ -125,6 +143,7 @@ export function useSocket() {
       socketService.off("game:end");
       socketService.off("vampire:bloodlust");
       socketService.off("role:assigned");
+      socketService.off("lobby:update");
       socketService.off("error");
     };
   }, [myPlayerId, myPlayerNumber]);

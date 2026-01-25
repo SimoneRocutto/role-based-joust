@@ -132,8 +132,16 @@ class SocketService {
     this.on("error", callback);
   }
 
+  onLobbyUpdate(
+    callback: (data: {
+      players: Array<{ id: string; name: string; number: number; isAlive: boolean }>;
+    }) => void
+  ) {
+    this.on("lobby:update", callback);
+  }
+
   // Generic event listener management
-  private on(event: string, callback: Function) {
+  on(event: string, callback: Function) {
     if (!this.socket) return;
 
     this.socket.on(event, callback as any);

@@ -28,6 +28,7 @@ export interface PlayerJoinedPayload {
   playerNumber: number;
   socketId: string;
   sessionToken: string;
+  name: string;
 }
 
 export interface PlayerReconnectedPayload {
