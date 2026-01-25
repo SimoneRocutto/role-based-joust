@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { asyncHandler } from "@/middleware/errorHandler";
 import { Logger } from "@/utils/Logger";
+import { ConnectionManager } from "@/managers/ConnectionManager";
 import type { BotAction } from "@/types/bot.types";
 
 const router = Router();
@@ -254,6 +255,34 @@ router.post(
       success: true,
       message: "Test game created",
       snapshot: gameEngine.getGameSnapshot(),
+    });
+  })
+);
+
+/**
+ * POST /api/debug/reset
+ * Reset server state for E2E testing
+ * Clears all connections and stops any running game
+ */
+router.post(
+  "/reset",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { gameEngine } = global;
+    const connectionManager = ConnectionManager.getInstance();
+
+    // Stop any running game
+    if (gameEngine && gameEngine.isActive()) {
+      gameEngine.stopGame();
+      logger.info("DEBUG", "Stopped active game for reset");
+    }
+
+    // Clear all connections
+    connectionManager.clearAll();
+    logger.info("DEBUG", "Cleared all connections for reset");
+
+    res.json({
+      success: true,
+      message: "Server state reset",
     });
   })
 );
