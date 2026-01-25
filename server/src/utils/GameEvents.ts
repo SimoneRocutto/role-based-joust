@@ -82,6 +82,10 @@ export class GameEvents extends EventEmitter {
     this.emit("game:countdown", payload);
   }
 
+  emitGameStopped(): void {
+    this.emit("game:stopped", {});
+  }
+
   // ========== TYPED EVENT LISTENERS ==========
 
   onGameTick(listener: (payload: GameTickEvent) => void): void {
@@ -126,6 +130,10 @@ export class GameEvents extends EventEmitter {
 
   onCountdown(listener: (payload: CountdownEvent) => void): void {
     this.on("game:countdown", listener);
+  }
+
+  onGameStopped(listener: () => void): void {
+    this.on("game:stopped", listener);
   }
 
   // ========== UTILITY METHODS ==========

@@ -239,10 +239,10 @@ test.describe('Disconnect Handling', () => {
       // Wait for page to load and socket to reconnect
       await dashboard.waitForTimeout(2000);
 
-      // Should show game is active (timer visible) or players visible
+      // Should show game is active (timer visible)
       // The dashboard fetches state on mount, so it should show the game
       await expect(
-        dashboard.locator('text=/remaining|RefreshGame1/i')
+        dashboard.locator('text=remaining')
       ).toBeVisible({ timeout: 10000 });
     });
   });

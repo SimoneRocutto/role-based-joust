@@ -149,6 +149,12 @@ export function useSocket() {
       }
     });
 
+    // Game stopped (emergency stop)
+    socketService.onGameStopped(() => {
+      setGameState("waiting");
+      setLatestEvent("Game stopped");
+    });
+
     // Error handling
     socketService.onError(({ message, code }) => {
       console.error("Socket error:", code, message);
@@ -169,6 +175,7 @@ export function useSocket() {
       socketService.off("role:assigned");
       socketService.off("lobby:update");
       socketService.off("game:countdown");
+      socketService.off("game:stopped");
       socketService.off("error");
     };
   }, [myPlayerId, myPlayerNumber]);

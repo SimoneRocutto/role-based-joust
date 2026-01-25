@@ -19,20 +19,23 @@ function PlayerCard({ player }: PlayerCardProps) {
   const getStatusIcon = () => {
     if (!player.isAlive) return null
 
+    // Guard against undefined statusEffects
+    const effects = player.statusEffects ?? []
+
     // Check for specific status effects
-    const hasInvulnerability = player.statusEffects.some(
+    const hasInvulnerability = effects.some(
       (e) => e.type === 'Invulnerability'
     )
     if (hasInvulnerability) return STATUS_ICONS.INVULNERABLE
 
     // Check for bloodlust (Vampire)
-    const hasBloodlust = player.statusEffects.some(
+    const hasBloodlust = effects.some(
       (e) => e.type === 'Bloodlust'
     )
     if (hasBloodlust) return STATUS_ICONS.BLOODLUST
 
     // Check for other effects
-    const hasStunned = player.statusEffects.some((e) => e.type === 'Stunned')
+    const hasStunned = effects.some((e) => e.type === 'Stunned')
     if (hasStunned) return STATUS_ICONS.STUNNED
 
     return null

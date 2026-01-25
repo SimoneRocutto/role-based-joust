@@ -286,6 +286,11 @@ gameEvents.onCountdown((payload) => {
   io.emit("game:countdown", payload);
 });
 
+// Broadcast game stopped events
+gameEvents.onGameStopped(() => {
+  io.emit("game:stopped", {});
+});
+
 // Send role assignment to individual players
 gameEvents.on(
   "role:assigned",

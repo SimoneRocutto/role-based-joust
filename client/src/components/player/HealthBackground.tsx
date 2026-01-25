@@ -9,11 +9,14 @@ interface HealthBackgroundProps {
 function HealthBackground({ player }: HealthBackgroundProps) {
   const healthPercent = getHealthPercentage(player.accumulatedDamage)
 
+  // Guard against undefined statusEffects
+  const effects = player.statusEffects ?? []
+
   // Check for special states
-  const hasInvulnerability = player.statusEffects.some(
+  const hasInvulnerability = effects.some(
     (e) => e.type === 'Invulnerability'
   )
-  const hasBloodlust = player.statusEffects.some(
+  const hasBloodlust = effects.some(
     (e) => e.type === 'Bloodlust' || e.type === 'VampireBloodlust'
   )
 

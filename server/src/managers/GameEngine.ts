@@ -413,6 +413,9 @@ export class GameEngine {
     this.players = [];
     this.currentRound = 0;
     this.gameTime = 0;
+
+    // Notify clients that game was stopped
+    gameEvents.emitGameStopped();
   }
 
   // ========================================================================

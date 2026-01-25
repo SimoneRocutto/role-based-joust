@@ -116,6 +116,10 @@ class SocketService {
     this.on("game:end", callback);
   }
 
+  onGameStopped(callback: () => void) {
+    this.on("game:stopped", callback);
+  }
+
   onVampireBloodlust(callback: (data: VampireBloodlustPayload) => void) {
     this.on("vampire:bloodlust", callback);
   }

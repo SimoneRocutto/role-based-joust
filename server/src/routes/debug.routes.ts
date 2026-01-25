@@ -271,9 +271,14 @@ router.post(
     const connectionManager = ConnectionManager.getInstance();
 
     // Stop any running game
-    if (gameEngine && gameEngine.isActive()) {
-      gameEngine.stopGame();
-      logger.info("DEBUG", "Stopped active game for reset");
+    if (gameEngine) {
+      if (gameEngine.isActive()) {
+        gameEngine.stopGame();
+        logger.info("DEBUG", "Stopped active game for reset");
+      }
+
+      // Reset countdown duration to default (10 seconds)
+      gameEngine.setCountdownDuration(10);
     }
 
     // Clear all connections

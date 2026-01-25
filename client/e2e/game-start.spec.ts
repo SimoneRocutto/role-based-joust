@@ -204,10 +204,11 @@ test.describe('Game Start Flow', () => {
     // Use 3 second countdown to see the emphasized numbers
     await launchGameFast(3);
 
-    // Check that countdown appears
+    // Check that countdown overlay appears (fixed overlay with animate-bounce class)
+    // The emphasized countdown numbers have the animate-bounce class
     await expect(
-      dashboard.locator('text=/Get ready|\\d/i')
-    ).toBeVisible({ timeout: 3000 });
+      dashboard.locator('.animate-bounce').first()
+    ).toBeVisible({ timeout: 5000 });
 
     // Wait for countdown to complete - game becomes active
     await waitForGameActive(dashboard);

@@ -136,10 +136,8 @@ test.describe('Socket Events', () => {
       // Wait for socket connection and state fetch
       await dashboard.waitForTimeout(2000);
 
-      // Dashboard should show active game (timer or player names visible)
-      await expect(
-        dashboard.locator('text=/remaining|LateDash1/i')
-      ).toBeVisible({ timeout: 10000 });
+      // Dashboard should show active game (timer visible)
+      await expect(dashboard.locator('text=remaining')).toBeVisible({ timeout: 10000 });
     });
   });
 
