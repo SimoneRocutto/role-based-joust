@@ -325,28 +325,34 @@ process.on(
 // START SERVER
 // ============================================================================
 
-httpServer.listen(PORT, () => {
-  logger.info("SERVER", `🚀 Server started successfully`, {
+httpServer.listen(
+  {
     port: PORT,
-    environment: NODE_ENV,
-    nodeVersion: process.version,
-  });
+    host: "0.0.0.0",
+  },
+  () => {
+    logger.info("SERVER", `🚀 Server started successfully`, {
+      port: PORT,
+      environment: NODE_ENV,
+      nodeVersion: process.version,
+    });
 
-  logger.info("SERVER", "📋 Configuration:", {
-    logLevel: process.env.LOG_LEVEL || "info",
-    logToFile: process.env.LOG_TO_FILE === "true",
-    tickRate: gameEngine.tickRate,
-    allowedOrigins: process.env.ALLOWED_ORIGINS?.split(",") || [
-      "http://localhost:3001",
-    ],
-  });
+    logger.info("SERVER", "📋 Configuration:", {
+      logLevel: process.env.LOG_LEVEL || "info",
+      logToFile: process.env.LOG_TO_FILE === "true",
+      tickRate: gameEngine.tickRate,
+      allowedOrigins: process.env.ALLOWED_ORIGINS?.split(",") || [
+        "http://localhost:3001",
+      ],
+    });
 
-  if (NODE_ENV === "development") {
-    logger.info(
-      "SERVER",
-      "🔧 Development mode enabled - Debug routes available at /api/debug"
-    );
+    if (NODE_ENV === "development") {
+      logger.info(
+        "SERVER",
+        "🔧 Development mode enabled - Debug routes available at /api/debug"
+      );
+    }
   }
-});
+);
 
 export { io, gameEngine };
