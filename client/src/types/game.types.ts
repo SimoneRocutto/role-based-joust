@@ -1,6 +1,6 @@
 import type { PlayerState } from "./player.types";
 
-export type GameStateType = "waiting" | "active" | "round-ended" | "finished";
+export type GameStateType = "waiting" | "countdown" | "active" | "round-ended" | "finished";
 
 export interface GameState {
   gameTime: number;

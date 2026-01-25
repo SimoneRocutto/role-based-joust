@@ -8,6 +8,7 @@ import type {
   GameEndEvent,
   VampireBloodlustEvent,
   ModeEvent,
+  CountdownEvent,
 } from "@/types/events.types";
 
 /**
@@ -77,6 +78,10 @@ export class GameEvents extends EventEmitter {
     this.emit("mode:event", payload);
   }
 
+  emitCountdown(payload: CountdownEvent): void {
+    this.emit("game:countdown", payload);
+  }
+
   // ========== TYPED EVENT LISTENERS ==========
 
   onGameTick(listener: (payload: GameTickEvent) => void): void {
@@ -117,6 +122,10 @@ export class GameEvents extends EventEmitter {
 
   onModeEvent(listener: (payload: ModeEvent) => void): void {
     this.on("mode:event", listener);
+  }
+
+  onCountdown(listener: (payload: CountdownEvent) => void): void {
+    this.on("game:countdown", listener);
   }
 
   // ========== UTILITY METHODS ==========

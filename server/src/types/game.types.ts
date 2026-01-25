@@ -1,6 +1,6 @@
 import { PlayerState } from ".";
 
-export type GameState = "waiting" | "active" | "round-ended" | "finished";
+export type GameState = "waiting" | "countdown" | "active" | "round-ended" | "finished";
 
 export interface GameSnapshot {
   gameTime: number;

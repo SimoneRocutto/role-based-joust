@@ -53,6 +53,28 @@ class ApiService {
     return this.request<{ success: boolean; modes: GameMode[] }>("/game/modes");
   }
 
+  // GET /api/game/lobby
+  async getLobbyPlayers(): Promise<{
+    success: boolean;
+    players: Array<{ id: string; name: string; number: number; isAlive: boolean }>;
+  }> {
+    return this.request("/game/lobby");
+  }
+
+  // POST /api/game/launch (combined create + start)
+  async launchGame(payload: { mode: string; theme?: string }): Promise<{
+    success: boolean;
+    gameId: string;
+    mode: GameMode;
+    playerCount: number;
+    state: string;
+  }> {
+    return this.request("/game/launch", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
   // POST /api/game/create
   async createGame(payload: { mode: string; theme?: string }): Promise<{
     success: boolean;

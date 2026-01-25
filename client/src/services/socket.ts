@@ -140,6 +140,16 @@ class SocketService {
     this.on("lobby:update", callback);
   }
 
+  onCountdown(
+    callback: (data: {
+      secondsRemaining: number;
+      totalSeconds: number;
+      phase: "countdown" | "go";
+    }) => void
+  ) {
+    this.on("game:countdown", callback);
+  }
+
   // Generic event listener management
   on(event: string, callback: Function) {
     if (!this.socket) return;

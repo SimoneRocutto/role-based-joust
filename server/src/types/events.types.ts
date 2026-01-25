@@ -45,3 +45,9 @@ export interface ModeEvent {
   eventType: string;
   data: Record<string, any>;
 }
+
+export interface CountdownEvent {
+  secondsRemaining: number;
+  totalSeconds: number;
+  phase: "countdown" | "go";
+}

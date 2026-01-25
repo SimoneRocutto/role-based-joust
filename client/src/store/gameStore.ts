@@ -22,6 +22,10 @@ interface GameStore {
   totalRounds: number;
   mode: string | null;
 
+  // Countdown state
+  countdownSeconds: number;
+  countdownPhase: "countdown" | "go" | null;
+
   // All players (for dashboard)
   players: PlayerState[];
 
@@ -43,6 +47,7 @@ interface GameStore {
   setMode: (mode: string) => void;
   setLatestEvent: (event: string) => void;
   setScores: (scores: ScoreEntry[]) => void;
+  setCountdown: (seconds: number, phase: "countdown" | "go" | null) => void;
   reset: () => void;
 }
 
@@ -63,6 +68,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   currentRound: 0,
   totalRounds: 0,
   mode: null,
+
+  countdownSeconds: 0,
+  countdownPhase: null,
 
   players: [],
 
@@ -120,6 +128,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setScores: (scores) => set({ scores }),
 
+  setCountdown: (seconds, phase) =>
+    set({ countdownSeconds: seconds, countdownPhase: phase }),
+
   reset: () =>
     set({
       myPlayerId: null,
@@ -132,6 +143,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       currentRound: 0,
       totalRounds: 0,
       mode: null,
+      countdownSeconds: 0,
+      countdownPhase: null,
       players: [],
       latestEvent: null,
       scores: [],

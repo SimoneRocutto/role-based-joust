@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameState } from '@/hooks/useGameState'
+import { useGameStore } from '@/store/gameStore'
 import { useAccelerometer } from '@/hooks/useAccelerometer'
 import { useWakeLock } from '@/hooks/useWakeLock'
 import { useFullscreen } from '@/hooks/useFullscreen'
@@ -24,9 +25,13 @@ function PlayerView() {
     myPlayerNumber,
     myPlayer,
     myTarget,
+    myRole,
     isWaiting,
+    isCountdown,
     isMyPlayerDead
   } = useGameState()
+
+  const { countdownSeconds, countdownPhase } = useGameStore()
 
   const { play } = useAudio()
   const { start: startAccelerometer, lastData } = useAccelerometer()
@@ -124,7 +129,7 @@ function PlayerView() {
       {showPortraitLock && <PortraitLock />}
 
       {/* Waiting State */}
-      {isWaiting && (
+      {isWaiting && !isCountdown && (
         <div className="fullscreen bg-gray-800 flex flex-col items-center justify-center gap-8 p-8">
           <ConnectionStatus />
           <div className="text-center">
@@ -137,6 +142,54 @@ function PlayerView() {
             <div className="text-2xl text-gray-500">
               WAITING FOR GAME START
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Countdown State - Role Reveal */}
+      {isCountdown && (
+        <div className="fullscreen bg-gray-900 flex flex-col items-center justify-center gap-6 p-8">
+          <ConnectionStatus />
+
+          {/* Show role info if assigned */}
+          {myRole ? (
+            <div className="text-center">
+              <div className="text-xl text-gray-400 mb-2">You are the</div>
+              <div className="text-5xl font-bold text-yellow-400 mb-4">
+                {myRole.displayName}
+              </div>
+              <div className="text-lg text-gray-300 mb-8 max-w-md">
+                {myRole.description}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center">
+              <div className="text-3xl text-gray-300 mb-2">
+                {myPlayer?.name || 'Player'}
+              </div>
+              <div className="text-xl text-gray-500">
+                Preparing game...
+              </div>
+            </div>
+          )}
+
+          {/* Countdown display */}
+          <div className="text-center">
+            {countdownPhase === 'countdown' && countdownSeconds > 3 && (
+              <div className="text-6xl font-bold text-white">
+                {countdownSeconds}
+              </div>
+            )}
+            {countdownPhase === 'countdown' && countdownSeconds <= 3 && countdownSeconds > 0 && (
+              <div className="text-9xl font-black text-yellow-400 animate-bounce">
+                {countdownSeconds}
+              </div>
+            )}
+            {countdownPhase === 'go' && (
+              <div className="text-9xl font-black text-green-400 animate-pulse">
+                GO!
+              </div>
+            )}
           </div>
         </div>
       )}

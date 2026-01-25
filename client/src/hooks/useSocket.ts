@@ -13,6 +13,7 @@ export function useSocket() {
     setRound,
     setLatestEvent,
     setScores,
+    setCountdown,
     myPlayerId,
     myPlayerNumber,
   } = useGameStore();
@@ -92,6 +93,16 @@ export function useSocket() {
 
     // Role assigned
     socketService.onRoleAssigned((roleData) => {
+      // Store role in state
+      useGameStore.getState().setMyRole({
+        name: roleData.name,
+        displayName: roleData.displayName,
+        description: roleData.description,
+        difficulty: roleData.difficulty,
+        targetNumber: roleData.targetNumber,
+        targetName: roleData.targetName,
+      });
+
       // Play intro sound
       audioManager.play("role-reveal", { volume: 0.7 });
 
@@ -125,6 +136,19 @@ export function useSocket() {
       updatePlayers(playerStates);
     });
 
+    // Countdown events
+    socketService.onCountdown(({ secondsRemaining, phase }) => {
+      setCountdown(secondsRemaining, phase);
+      setGameState("countdown");
+
+      // Play countdown sounds
+      if (phase === "countdown" && secondsRemaining <= 3 && secondsRemaining > 0) {
+        audioManager.play("countdown-beep", { volume: 0.5 });
+      } else if (phase === "go") {
+        audioManager.play("countdown-go", { volume: 0.7 });
+      }
+    });
+
     // Error handling
     socketService.onError(({ message, code }) => {
       console.error("Socket error:", code, message);
@@ -144,6 +168,7 @@ export function useSocket() {
       socketService.off("vampire:bloodlust");
       socketService.off("role:assigned");
       socketService.off("lobby:update");
+      socketService.off("game:countdown");
       socketService.off("error");
     };
   }, [myPlayerId, myPlayerNumber]);

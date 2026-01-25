@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useGameState } from '@/hooks/useGameState'
 import { apiService } from '@/services/api'
-import { socketService } from '@/services/socket'
 import type { GameMode } from '@/types/game.types'
 
 function AdminControls() {
@@ -27,31 +26,7 @@ function AdminControls() {
       })
   }, [])
 
-  const handleCreateGame = async () => {
-    setLoading(true)
-    setError(null)
-
-    try {
-      // Create game with selected mode
-      const result = await apiService.createGame({
-        mode: selectedMode,
-        theme: selectedMode === 'role-based' ? selectedTheme : undefined
-      })
-
-      if (!result.success) {
-        throw new Error('Failed to create game')
-      }
-
-      console.log('Game created:', result)
-    } catch (err) {
-      console.error('Failed to create game:', err)
-      setError((err as Error).message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleStartGame = async () => {
+  const handleLaunchGame = async () => {
     if (players.length < 2) {
       setError('Need at least 2 players to start')
       return
@@ -61,22 +36,19 @@ function AdminControls() {
     setError(null)
 
     try {
-      // Start game with connected players
-      const result = await apiService.startGame({
-        players: players.map((p) => ({
-          id: p.id,
-          name: p.name,
-          socketId: '' // Server will use current socket ID
-        }))
+      // Launch game (create + start with countdown)
+      const result = await apiService.launchGame({
+        mode: selectedMode,
+        theme: selectedMode === 'role-based' ? selectedTheme : undefined
       })
 
       if (!result.success) {
-        throw new Error('Failed to start game')
+        throw new Error('Failed to launch game')
       }
 
-      console.log('Game started:', result)
+      console.log('Game launched:', result)
     } catch (err) {
-      console.error('Failed to start game:', err)
+      console.error('Failed to launch game:', err)
       setError((err as Error).message)
     } finally {
       setLoading(false)
@@ -152,22 +124,14 @@ function AdminControls() {
         </div>
       )}
 
-      {/* Action Buttons */}
+      {/* Action Button */}
       <div className="flex gap-4">
         <button
-          onClick={handleCreateGame}
-          disabled={loading}
-          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 rounded-lg font-semibold transition-colors"
-        >
-          {loading ? 'Creating...' : 'Create Game'}
-        </button>
-
-        <button
-          onClick={handleStartGame}
+          onClick={handleLaunchGame}
           disabled={loading || players.length < 2}
-          className="px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg font-semibold transition-colors"
+          className="px-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg font-bold text-xl transition-colors"
         >
-          {loading ? 'Starting...' : `Start Game (${players.length} players)`}
+          {loading ? 'Starting...' : `🎮 Start Game (${players.length} players)`}
         </button>
       </div>
     </div>

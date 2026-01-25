@@ -281,6 +281,41 @@ gameEvents.onVampireBloodlustEnd((payload) => {
   });
 });
 
+// Broadcast countdown events
+gameEvents.onCountdown((payload) => {
+  io.emit("game:countdown", payload);
+});
+
+// Send role assignment to individual players
+gameEvents.on(
+  "role:assigned",
+  (payload: {
+    playerId: string;
+    socketId: string;
+    name: string;
+    displayName: string;
+    description: string;
+    difficulty: string;
+  }) => {
+    // Find the socket for this player and emit directly to them
+    const socket = io.sockets.sockets.get(payload.socketId);
+    if (socket) {
+      socket.emit("role:assigned", {
+        playerId: payload.playerId,
+        name: payload.name,
+        displayName: payload.displayName,
+        description: payload.description,
+        difficulty: payload.difficulty,
+      });
+      logger.debug("SOCKET", `Role assigned to ${payload.playerId}`, {
+        role: payload.displayName,
+      });
+    } else {
+      logger.warn("SOCKET", `Could not find socket for player ${payload.playerId}`);
+    }
+  }
+);
+
 // ============================================================================
 // GRACEFUL SHUTDOWN
 // ============================================================================

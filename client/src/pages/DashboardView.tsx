@@ -1,23 +1,69 @@
 import { useEffect } from 'react'
 import { useGameState } from '@/hooks/useGameState'
 import { useAudio } from '@/hooks/useAudio'
+import { useGameStore } from '@/store/gameStore'
+import { apiService } from '@/services/api'
 import PlayerGrid from '@/components/dashboard/PlayerGrid'
 import GameState from '@/components/dashboard/GameState'
 import EventFeed from '@/components/dashboard/EventFeed'
 import AdminControls from '@/components/dashboard/AdminControls'
 import Scoreboard from '@/components/dashboard/Scoreboard'
+import CountdownDisplay from '@/components/dashboard/CountdownDisplay'
 
 function DashboardView() {
   const {
     isWaiting,
+    isCountdown,
     isActive,
     isRoundEnded,
     isFinished,
     aliveCount,
-    players
   } = useGameState()
 
-  const { playMusic, speak } = useAudio()
+  const { updatePlayers, setGameState } = useGameStore()
+  const { playMusic } = useAudio()
+
+  // Fetch current state on mount (for page refresh)
+  useEffect(() => {
+    const fetchInitialState = async () => {
+      try {
+        // Fetch lobby players
+        const lobbyResult = await apiService.getLobbyPlayers()
+        if (lobbyResult.success && lobbyResult.players.length > 0) {
+          const playerStates = lobbyResult.players.map((p) => ({
+            id: p.id,
+            name: p.name,
+            number: p.number,
+            role: '',
+            isAlive: p.isAlive,
+            points: 0,
+            totalPoints: 0,
+            toughness: 1.0,
+            accumulatedDamage: 0,
+            statusEffects: [],
+          }))
+          updatePlayers(playerStates)
+        }
+
+        // Fetch game state if game is running
+        const gameResult = await apiService.getGameState()
+        if (gameResult.success && gameResult.state) {
+          const state = gameResult.state
+          if (state.state !== 'waiting') {
+            setGameState(state.state)
+            // Update players from game state
+            if (state.players && state.players.length > 0) {
+              updatePlayers(state.players)
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch initial state:', err)
+      }
+    }
+
+    fetchInitialState()
+  }, [])
 
   // Background music management
   useEffect(() => {
@@ -39,9 +85,12 @@ function DashboardView() {
       {/* Header */}
       <GameState />
 
+      {/* Countdown Overlay */}
+      {isCountdown && <CountdownDisplay />}
+
       {/* Main Content */}
       <div className="p-6">
-        {(isWaiting || isActive) && (
+        {(isWaiting || isCountdown || isActive) && (
           <>
             {/* Admin Controls (only show in waiting) */}
             {isWaiting && (

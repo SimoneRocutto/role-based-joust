@@ -2,10 +2,12 @@ import { Router, type Request, type Response } from "express";
 import { asyncHandler } from "@/middleware/errorHandler";
 import { validate } from "@/middleware/validation";
 import { GameModeFactory } from "@/factories/GameModeFactory";
+import { ConnectionManager } from "@/managers/ConnectionManager";
 import { Logger } from "@/utils/Logger";
 
 const router = Router();
 const logger = Logger.getInstance();
+const connectionManager = ConnectionManager.getInstance();
 
 /**
  * GET /api/game/modes
@@ -24,6 +26,26 @@ router.get(
     res.json({
       success: true,
       modes,
+    });
+  })
+);
+
+/**
+ * GET /api/game/lobby
+ * Get list of players in lobby (connected and waiting)
+ */
+router.get(
+  "/lobby",
+  asyncHandler(async (req: Request, res: Response) => {
+    const lobbyPlayers = connectionManager.getLobbyPlayers();
+
+    logger.debug("GAME", "Fetched lobby players", {
+      count: lobbyPlayers.length,
+    });
+
+    res.json({
+      success: true,
+      players: lobbyPlayers,
     });
   })
 );
@@ -129,6 +151,68 @@ router.get(
     res.json({
       success: true,
       state: snapshot,
+    });
+  })
+);
+
+/**
+ * POST /api/game/launch
+ * Combined create + start: Creates game mode and immediately starts with lobby players
+ */
+router.post(
+  "/launch",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { mode, theme } = req.body;
+    const { gameEngine } = global;
+
+    if (!gameEngine) {
+      res.status(503).json({
+        success: false,
+        error: "Game engine not initialized",
+      });
+      return;
+    }
+
+    // Get lobby players
+    const lobbyPlayers = connectionManager.getLobbyPlayers();
+
+    if (lobbyPlayers.length < 2) {
+      res.status(400).json({
+        success: false,
+        error: "Need at least 2 players to start",
+      });
+      return;
+    }
+
+    // Create mode instance
+    const factory = GameModeFactory.getInstance();
+    const gameMode = factory.createMode(mode || "role-based", theme);
+
+    // Set mode on engine
+    gameEngine.setGameMode(gameMode);
+
+    // Convert lobby players to PlayerData format
+    const playerData = lobbyPlayers.map((p) => ({
+      id: p.id,
+      name: p.name,
+      socketId: connectionManager.getSocketId(p.id) || "",
+    }));
+
+    // Start game (will enter countdown then active)
+    gameEngine.startGame(playerData);
+
+    logger.info("GAME", "Game launched", {
+      mode: gameMode.name,
+      theme,
+      playerCount: playerData.length,
+    });
+
+    res.json({
+      success: true,
+      gameId: "game-1",
+      mode: gameMode.getInfo(),
+      playerCount: playerData.length,
+      state: gameEngine.gameState,
     });
   })
 );

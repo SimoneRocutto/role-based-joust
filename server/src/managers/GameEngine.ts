@@ -39,6 +39,11 @@ export class GameEngine {
   private gameLoop: NodeJS.Timeout | null = null;
   private lastTickTime: number = 0;
 
+  // ========== COUNTDOWN ==========
+  private countdownTimer: NodeJS.Timeout | null = null;
+  private countdownSeconds: number = 0;
+  readonly countdownDuration: number = 10; // 10 seconds countdown
+
   // ========== TEST MODE ==========
   testMode: boolean = false;
 
@@ -110,9 +115,94 @@ export class GameEngine {
       this.players = playerData.map((data) => new BasePlayer(data));
     }
 
-    // Start first round
+    // Set first round
     this.currentRound = 1;
-    this.startRound();
+
+    // In test mode, skip countdown and start immediately
+    if (this.testMode) {
+      this.startRound();
+    } else {
+      this.startCountdown();
+    }
+  }
+
+  /**
+   * Start the pre-game countdown
+   * Emits role info to players and counts down before starting
+   */
+  private startCountdown(): void {
+    logger.info("ENGINE", "Starting countdown", {
+      duration: this.countdownDuration,
+    });
+
+    this.gameState = "countdown";
+    this.countdownSeconds = this.countdownDuration;
+
+    // Emit role assignments to each player
+    this.emitRoleAssignments();
+
+    // Emit initial countdown event
+    gameEvents.emitCountdown({
+      secondsRemaining: this.countdownSeconds,
+      totalSeconds: this.countdownDuration,
+      phase: "countdown",
+    });
+
+    // Start countdown timer
+    this.countdownTimer = setInterval(() => {
+      this.countdownSeconds--;
+
+      if (this.countdownSeconds > 0) {
+        // Emit countdown tick
+        gameEvents.emitCountdown({
+          secondsRemaining: this.countdownSeconds,
+          totalSeconds: this.countdownDuration,
+          phase: "countdown",
+        });
+
+        logger.debug("ENGINE", `Countdown: ${this.countdownSeconds}`);
+      } else {
+        // Countdown finished - emit GO and start round
+        gameEvents.emitCountdown({
+          secondsRemaining: 0,
+          totalSeconds: this.countdownDuration,
+          phase: "go",
+        });
+
+        logger.info("ENGINE", "Countdown complete - GO!");
+
+        // Clear timer and start round
+        if (this.countdownTimer) {
+          clearInterval(this.countdownTimer);
+          this.countdownTimer = null;
+        }
+
+        this.startRound();
+      }
+    }, 1000); // Tick every second
+  }
+
+  /**
+   * Emit role assignment info to each player via their socket
+   */
+  private emitRoleAssignments(): void {
+    for (const player of this.players) {
+      const roleInfo = {
+        playerId: player.id,
+        name: player.constructor.name.toLowerCase(),
+        displayName: (player.constructor as any).displayName || player.constructor.name,
+        description: (player.constructor as any).description || "",
+        difficulty: (player.constructor as any).difficulty || "normal",
+      };
+
+      logger.debug("ENGINE", `Emitting role assignment to ${player.name}`, roleInfo);
+
+      // Emit role:assigned event (will be broadcast via server.ts)
+      gameEvents.emit("role:assigned", {
+        ...roleInfo,
+        socketId: player.socketId,
+      });
+    }
   }
 
   /**
@@ -293,7 +383,15 @@ export class GameEngine {
       this.gameLoop = null;
     }
 
-    this.gameState = "finished";
+    if (this.countdownTimer) {
+      clearInterval(this.countdownTimer);
+      this.countdownTimer = null;
+    }
+
+    this.gameState = "waiting";
+    this.players = [];
+    this.currentRound = 0;
+    this.gameTime = 0;
   }
 
   // ========================================================================
