@@ -1,0 +1,142 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: fixed;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+/* Prevent iOS bounce scroll */
+body {
+  overscroll-behavior: none;
+}
+
+/* Disable text selection on mobile */
+* {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Allow text selection for inputs */
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Custom utility classes */
+@layer utilities {
+  .gradient-healthy {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+  }
+
+  .gradient-damaged {
+    background: linear-gradient(135deg, #92400e 0%, #d97706 100%);
+  }
+
+  .gradient-critical {
+    background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%);
+  }
+
+  .gradient-invulnerable {
+    background: linear-gradient(135deg, #e5e5e5 0%, #ffffff 100%);
+  }
+
+  .gradient-bloodlust {
+    background: linear-gradient(135deg, #450a0a 0%, #dc2626 100%);
+  }
+
+  /* Fullscreen helper */
+  .fullscreen {
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
+
+  /* Portrait lock overlay */
+  .portrait-lock {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+
+  /* Hide scrollbars but keep functionality */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Portrait orientation lock */
+@media (orientation: landscape) and (max-width: 1024px) {
+  .player-view {
+    display: none;
+  }
+  .portrait-lock {
+    display: flex !important;
+  }
+}
+
+@media (orientation: portrait) {
+  .portrait-lock {
+    display: none !important;
+  }
+}
+
+/* Animation for dead state */
+@keyframes fadeToGray {
+  from {
+    opacity: 1;
+    filter: grayscale(0);
+  }
+  to {
+    opacity: 0.6;
+    filter: grayscale(1);
+  }
+}
+
+.dead-screen {
+  animation: fadeToGray 1s ease-out forwards;
+}
+
+/* Pulsing glow effect */
+.pulse-glow {
+  animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Heartbeat effect */
+.heartbeat {
+  animation: heartbeat 0.8s ease-in-out infinite;
+}
