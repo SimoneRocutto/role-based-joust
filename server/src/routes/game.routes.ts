@@ -158,11 +158,16 @@ router.get(
 /**
  * POST /api/game/launch
  * Combined create + start: Creates game mode and immediately starts with lobby players
+ *
+ * Body params:
+ * - mode: Game mode ('classic', 'role-based')
+ * - theme: Optional theme name
+ * - countdownDuration: Optional countdown duration in seconds (default 10, use 0 to skip)
  */
 router.post(
   "/launch",
   asyncHandler(async (req: Request, res: Response) => {
-    const { mode, theme } = req.body;
+    const { mode, theme, countdownDuration } = req.body;
     const { gameEngine } = global;
 
     if (!gameEngine) {
@@ -191,6 +196,11 @@ router.post(
     // Set mode on engine
     gameEngine.setGameMode(gameMode);
 
+    // Set countdown duration if provided
+    if (typeof countdownDuration === "number") {
+      gameEngine.setCountdownDuration(countdownDuration);
+    }
+
     // Convert lobby players to PlayerData format
     const playerData = lobbyPlayers.map((p) => ({
       id: p.id,
@@ -204,6 +214,7 @@ router.post(
     logger.info("GAME", "Game launched", {
       mode: gameMode.name,
       theme,
+      countdownDuration: countdownDuration ?? 10,
       playerCount: playerData.length,
     });
 

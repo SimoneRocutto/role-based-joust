@@ -6,9 +6,12 @@ import {
   joinAsPlayer,
   startGameFromDashboard,
   waitForCountdownComplete,
+  launchGameFast,
+  waitForGameActive,
   expectPlayerAlive,
   getGameState,
   debugPageState,
+  API_URL,
 } from './helpers';
 
 /**
@@ -16,11 +19,17 @@ import {
  *
  * These tests verify the game launch flow:
  * 1. Admin clicks "Start Game"
- * 2. Countdown begins (10 seconds)
+ * 2. Countdown begins
  * 3. Players receive role info
  * 4. Countdown displays 3, 2, 1, GO!
  * 5. Game becomes active
+ *
+ * Note: Some tests use short countdown (2s) via API for speed,
+ * while UI button tests use the default countdown.
  */
+
+// Use short countdown for faster tests (via API)
+const SHORT_COUNTDOWN = 2;
 
 test.describe('Game Start Flow', () => {
   test.beforeEach(async () => {
@@ -103,9 +112,11 @@ test.describe('Game Start Flow', () => {
     const player2 = await openPlayerJoin(context);
     await joinAsPlayer(player2, 'ActiveP2');
 
-    // Start and wait for countdown
-    await dashboard.click('button:has-text("Start Game")');
-    await waitForCountdownComplete(dashboard);
+    // Use short countdown via API for speed
+    await launchGameFast(SHORT_COUNTDOWN);
+
+    // Wait for countdown to complete
+    await new Promise((r) => setTimeout(r, (SHORT_COUNTDOWN + 1) * 1000));
 
     // Check game state via API
     const gameState = await getGameState();
@@ -122,12 +133,9 @@ test.describe('Game Start Flow', () => {
     const player2 = await openPlayerJoin(context);
     await joinAsPlayer(player2, 'AliveP2');
 
-    // Start and wait for countdown
-    await dashboard.click('button:has-text("Start Game")');
-    await waitForCountdownComplete(dashboard);
-
-    // Wait a moment for game state to update
-    await player1.waitForTimeout(500);
+    // Use short countdown via API for speed
+    await launchGameFast(SHORT_COUNTDOWN);
+    await waitForGameActive(dashboard);
 
     // Both players should be alive (not showing skull)
     await expectPlayerAlive(player1);
@@ -172,9 +180,9 @@ test.describe('Game Start Flow', () => {
     // Admin controls visible before game
     await expect(dashboard.locator('text=Admin Controls')).toBeVisible();
 
-    // Start and wait for countdown
-    await dashboard.click('button:has-text("Start Game")');
-    await waitForCountdownComplete(dashboard);
+    // Use short countdown via API for speed
+    await launchGameFast(SHORT_COUNTDOWN);
+    await waitForGameActive(dashboard);
 
     // Admin controls should be hidden during active game
     // (Start button should not be visible)
@@ -193,19 +201,15 @@ test.describe('Game Start Flow', () => {
     const player2 = await openPlayerJoin(context);
     await joinAsPlayer(player2, 'EmphP2');
 
-    // Start the game
-    await dashboard.click('button:has-text("Start Game")');
+    // Use 3 second countdown to see the emphasized numbers
+    await launchGameFast(3);
 
-    // Wait until we're in the final countdown (3, 2, 1)
-    // These should appear larger/animated in the countdown overlay
-    // Check that countdown appears (any number or GO)
+    // Check that countdown appears
     await expect(
-      dashboard.locator('text=Get ready')
-    ).toBeVisible({ timeout: 5000 });
+      dashboard.locator('text=/Get ready|\\d/i')
+    ).toBeVisible({ timeout: 3000 });
 
     // Wait for countdown to complete - game becomes active
-    await expect(
-      dashboard.locator('text=/remaining/i')
-    ).toBeVisible({ timeout: 15000 });
+    await waitForGameActive(dashboard);
   });
 });

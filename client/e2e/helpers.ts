@@ -93,7 +93,7 @@ export async function openPlayerJoin(context: BrowserContext): Promise<Page> {
 }
 
 /**
- * Start game from dashboard
+ * Start game from dashboard (full countdown)
  * Assumes players are already connected
  */
 export async function startGameFromDashboard(dashboardPage: Page): Promise<void> {
@@ -108,7 +108,31 @@ export async function startGameFromDashboard(dashboardPage: Page): Promise<void>
 }
 
 /**
- * Wait for countdown to complete
+ * Start game via API with configurable countdown (for fast tests)
+ * @param countdownDuration Countdown in seconds (0 to skip)
+ * @param mode Game mode ('classic' or 'role-based')
+ */
+export async function launchGameFast(
+  countdownDuration: number = 0,
+  mode: string = 'classic'
+): Promise<void> {
+  const response = await fetch(`${API_URL}/api/game/launch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode, countdownDuration }),
+  });
+
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(`Failed to launch game: ${data.error}`);
+  }
+
+  // Small delay to allow game state to propagate
+  await new Promise((r) => setTimeout(r, 500));
+}
+
+/**
+ * Wait for countdown to complete (full countdown)
  */
 export async function waitForCountdownComplete(page: Page): Promise<void> {
   // Wait for either "GO!" or the game to become active (showing "remaining" timer)
@@ -119,6 +143,16 @@ export async function waitForCountdownComplete(page: Page): Promise<void> {
 
   // Wait a bit for the game to be fully active
   await page.waitForTimeout(500);
+}
+
+/**
+ * Wait for game to become active (for fast tests without countdown)
+ */
+export async function waitForGameActive(page: Page): Promise<void> {
+  // Wait for the game to become active (showing "remaining" timer or Round info)
+  await expect(
+    page.locator('text=/remaining|Round \\d+/i')
+  ).toBeVisible({ timeout: 5000 });
 }
 
 /**

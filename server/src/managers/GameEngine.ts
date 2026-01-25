@@ -42,7 +42,7 @@ export class GameEngine {
   // ========== COUNTDOWN ==========
   private countdownTimer: NodeJS.Timeout | null = null;
   private countdownSeconds: number = 0;
-  readonly countdownDuration: number = 10; // 10 seconds countdown
+  private countdownDuration: number = 10; // Default 10 seconds countdown
 
   // ========== TEST MODE ==========
   testMode: boolean = false;
@@ -57,6 +57,15 @@ export class GameEngine {
   // ========================================================================
   // MODE MANAGEMENT
   // ========================================================================
+
+  /**
+   * Set the countdown duration (in seconds)
+   * Use 0 or negative to skip countdown entirely
+   */
+  setCountdownDuration(seconds: number): void {
+    this.countdownDuration = Math.max(0, seconds);
+    logger.info("ENGINE", `Countdown duration set to ${this.countdownDuration}s`);
+  }
 
   /**
    * Set the game mode
@@ -135,11 +144,23 @@ export class GameEngine {
       duration: this.countdownDuration,
     });
 
-    this.gameState = "countdown";
-    this.countdownSeconds = this.countdownDuration;
-
     // Emit role assignments to each player
     this.emitRoleAssignments();
+
+    // If countdown is 0, skip directly to game start
+    if (this.countdownDuration <= 0) {
+      logger.info("ENGINE", "Countdown skipped (duration=0)");
+      gameEvents.emitCountdown({
+        secondsRemaining: 0,
+        totalSeconds: 0,
+        phase: "go",
+      });
+      this.startRound();
+      return;
+    }
+
+    this.gameState = "countdown";
+    this.countdownSeconds = this.countdownDuration;
 
     // Emit initial countdown event
     gameEvents.emitCountdown({
