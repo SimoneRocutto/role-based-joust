@@ -1,5 +1,8 @@
 import "dotenv/config";
-import { createServer } from "http";
+import { createServer as createHttpServer } from "http";
+import { createServer as createHttpsServer } from "https";
+import { readFileSync, existsSync } from "fs";
+import { join } from "path";
 import { Server as SocketIOServer } from "socket.io";
 import app from "./app";
 import { GameEngine } from "@/managers/GameEngine";
@@ -12,19 +15,43 @@ const logger = Logger.getInstance();
 // Configuration
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || "development";
+const USE_HTTPS = process.env.USE_HTTPS === "true";
 
-// Create HTTP server
-const httpServer = createServer(app);
+// SSL certificate paths
+const CERT_PATH = join(__dirname, "../../certs/server.crt");
+const KEY_PATH = join(__dirname, "../../certs/server.key");
+
+// Create HTTP or HTTPS server based on configuration
+let httpServer;
+if (USE_HTTPS && existsSync(CERT_PATH) && existsSync(KEY_PATH)) {
+  const sslOptions = {
+    key: readFileSync(KEY_PATH),
+    cert: readFileSync(CERT_PATH),
+  };
+  httpServer = createHttpsServer(sslOptions, app);
+  logger.info("SERVER", "HTTPS enabled with self-signed certificate");
+} else {
+  httpServer = createHttpServer(app);
+  if (USE_HTTPS) {
+    logger.warn(
+      "SERVER",
+      "HTTPS requested but certificates not found, falling back to HTTP"
+    );
+  }
+}
 
 // Initialize Socket.IO
 const io = new SocketIOServer(httpServer, {
   cors: {
     origin: process.env.ALLOWED_ORIGINS?.split(",") || [
-      "http://localhost:3001",
+      "http://localhost:5173",
+      "https://localhost:5173",
     ],
     methods: ["GET", "POST"],
     credentials: true,
   },
+  // Allow connections through proxy
+  allowEIO3: true,
   pingTimeout: 60000,
   pingInterval: 25000,
 });
@@ -399,7 +426,10 @@ gameEvents.on(
         role: payload.displayName,
       });
     } else {
-      logger.warn("SOCKET", `Could not find socket for player ${payload.playerId}`);
+      logger.warn(
+        "SOCKET",
+        `Could not find socket for player ${payload.playerId}`
+      );
     }
   }
 );

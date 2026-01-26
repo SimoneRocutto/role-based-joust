@@ -1,6 +1,24 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import fs from 'fs'
+
+// Check if HTTPS is enabled and certificates exist
+const certPath = path.resolve(__dirname, '../certs/server.crt')
+const keyPath = path.resolve(__dirname, '../certs/server.key')
+const certsExist = fs.existsSync(certPath) && fs.existsSync(keyPath)
+const useHttps = process.env.USE_HTTPS === 'true' && certsExist
+
+// Backend always runs HTTP - Vite proxy bridges HTTPS client to HTTP backend
+// Port 4000 matches server/.env configuration
+const backendTarget = 'http://localhost:4000'
+
+if (useHttps) {
+    console.log('🔒 HTTPS enabled for client - using self-signed certificates')
+    console.log('   Backend runs HTTP, Vite proxy handles the bridge')
+} else if (process.env.USE_HTTPS === 'true' && !certsExist) {
+    console.warn('⚠️  USE_HTTPS=true but certificates not found in ../certs/')
+}
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -13,17 +31,22 @@ export default defineConfig({
     server: {
         port: 5173,
         host: true, // Listen on all addresses for mobile access
+        // Enable HTTPS if certificates exist
+        https: useHttps ? {
+            key: fs.readFileSync(keyPath),
+            cert: fs.readFileSync(certPath),
+        } : undefined,
         proxy: {
-            // Proxy API requests to backend
+            // Proxy API requests to backend (HTTP)
             '/api': {
-                target: 'http://localhost:3000',
-                changeOrigin: true
-            },
-            // Proxy Socket.IO
-            '/socket.io': {
-                target: 'http://localhost:3000',
+                target: backendTarget,
                 changeOrigin: true,
-                ws: true
+            },
+            // Proxy Socket.IO (HTTP)
+            '/socket.io': {
+                target: backendTarget,
+                changeOrigin: true,
+                ws: true,
             }
         }
     },

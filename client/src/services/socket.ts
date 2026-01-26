@@ -17,8 +17,9 @@ import type {
   ReadyCountPayload,
 } from "@/types/socket.types";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+// In development, use empty string to connect via Vite proxy (same origin)
+// In production, use the API base URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
 class SocketService {
   private socket: Socket | null = null;
@@ -32,7 +33,8 @@ class SocketService {
   connect() {
     if (this.socket?.connected) return;
 
-    this.socket = io(API_BASE_URL, {
+    // When API_BASE_URL is empty, socket.io connects to same origin (works with Vite proxy)
+    this.socket = io(API_BASE_URL || undefined, {
       transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionDelay: 1000,

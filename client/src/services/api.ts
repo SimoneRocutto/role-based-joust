@@ -1,13 +1,15 @@
 import type { GameMode, GameState } from "@/types/game.types";
 import type { PlayerState, RoleInfo } from "@/types/player.types";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+// In development, use empty string to connect via Vite proxy (same origin)
+// In production, use the API base URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
 class ApiService {
   private baseUrl: string;
 
   constructor() {
+    // When API_BASE_URL is empty, this becomes "/api" which uses Vite proxy
     this.baseUrl = `${API_BASE_URL}/api`;
   }
 

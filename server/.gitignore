@@ -150,3 +150,6 @@ Thumbs.db
 # Game specific
 logs/game.log
 logs/*.json
+
+# SSL certificates (self-signed for development)
+certs/
