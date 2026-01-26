@@ -274,6 +274,101 @@ runner.test("Non-bot players cannot execute bot actions", (engine) => {
 });
 
 // ============================================================================
+// GAME TICK EVENT TESTS
+// ============================================================================
+
+runner.test("Game tick event includes player states with damage", (engine) => {
+  const { GameEvents } = require("@/utils/GameEvents");
+  const gameEvents = GameEvents.getInstance();
+
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+
+  // Track tick events
+  let lastTickPayload: any = null;
+  const listener = (payload: any) => {
+    lastTickPayload = payload;
+  };
+  gameEvents.onGameTick(listener);
+
+  // Deal some damage to player 1
+  const player1 = engine.getPlayerById("p1")!;
+  player1.takeDamage(25, engine.gameTime);
+
+  // Fast-forward to trigger a tick
+  engine.fastForward(100);
+
+  // Verify tick payload contains player states
+  assert(lastTickPayload !== null, "Should have received a tick event");
+  assert(lastTickPayload.gameTime > 0, "Tick should have gameTime");
+  assert(Array.isArray(lastTickPayload.players), "Tick should have players array");
+  assertEqual(lastTickPayload.players.length, 2, "Should have 2 players in tick");
+
+  // Find player 1 in tick data
+  const p1InTick = lastTickPayload.players.find((p: any) => p.id === "p1");
+  assert(p1InTick !== undefined, "Player 1 should be in tick data");
+  assertEqual(p1InTick.accumulatedDamage, 25, "Player 1 should have 25 damage in tick");
+  assertEqual(p1InTick.isAlive, true, "Player 1 should be alive");
+
+  // Verify player 2 has no damage
+  const p2InTick = lastTickPayload.players.find((p: any) => p.id === "p2");
+  assert(p2InTick !== undefined, "Player 2 should be in tick data");
+  assertEqual(p2InTick.accumulatedDamage, 0, "Player 2 should have 0 damage");
+
+  // Clean up listener
+  gameEvents.removeListener("game:tick", listener);
+});
+
+runner.test("Game tick broadcasts updated damage after movement", (engine) => {
+  const { GameEvents } = require("@/utils/GameEvents");
+  const gameEvents = GameEvents.getInstance();
+
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+
+  let lastTickPayload: any = null;
+  const listener = (payload: any) => {
+    lastTickPayload = payload;
+  };
+  gameEvents.onGameTick(listener);
+
+  const player = engine.getPlayerById("p1")!;
+
+  // Simulate high intensity movement (should cause damage)
+  player.updateMovement(
+    { x: 10, y: 10, z: 10, timestamp: Date.now() },
+    engine.gameTime
+  );
+
+  // Fast-forward to trigger tick
+  engine.fastForward(100);
+
+  // Verify damage is reflected in tick
+  assert(lastTickPayload !== null, "Should have received tick");
+  const playerInTick = lastTickPayload.players[0];
+  assert(
+    playerInTick.accumulatedDamage > 0,
+    "Player should have damage from movement"
+  );
+
+  // Clean up
+  gameEvents.removeListener("game:tick", listener);
+});
+
+// ============================================================================
 // RUN TESTS
 // ============================================================================
 

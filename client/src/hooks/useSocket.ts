@@ -41,9 +41,32 @@ export function useSocket() {
       }
     });
 
-    // Game tick
-    socketService.onGameTick(({ gameTime }) => {
+    // Game tick - includes player states with damage/health info
+    socketService.onGameTick(({ gameTime, players: tickPlayers }) => {
       setGameTime(gameTime);
+
+      // Merge tick player data with existing state to preserve fields like number, role, etc.
+      if (tickPlayers && tickPlayers.length > 0) {
+        const existingPlayers = useGameStore.getState().players;
+        const mergedPlayers = tickPlayers.map((tp) => {
+          const existing = existingPlayers.find((ep) => ep.id === tp.id);
+          return {
+            ...existing,
+            id: tp.id,
+            name: tp.name,
+            isAlive: tp.isAlive,
+            accumulatedDamage: tp.accumulatedDamage,
+            points: tp.points,
+            totalPoints: tp.totalPoints,
+            toughness: tp.toughness,
+            // Preserve existing fields if not in tick
+            number: existing?.number ?? 0,
+            role: existing?.role ?? '',
+            statusEffects: existing?.statusEffects ?? [],
+          };
+        });
+        updatePlayers(mergedPlayers);
+      }
     });
 
     // Player death

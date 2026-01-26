@@ -1,7 +1,18 @@
 import { ScoreEntry } from ".";
 
+export interface GameTickPlayerState {
+  id: string;
+  name: string;
+  isAlive: boolean;
+  accumulatedDamage: number;
+  points: number;
+  totalPoints: number;
+  toughness: number;
+}
+
 export interface GameTickEvent {
   gameTime: number;
+  players: GameTickPlayerState[];
 }
 
 export interface PlayerDeathEvent {

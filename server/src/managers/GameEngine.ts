@@ -308,8 +308,19 @@ export class GameEngine {
       }
     }
 
-    // Emit tick event
-    gameEvents.emitGameTick({ gameTime: this.gameTime });
+    // Emit tick event with player states
+    gameEvents.emitGameTick({
+      gameTime: this.gameTime,
+      players: this.players.map((p) => ({
+        id: p.id,
+        name: p.name,
+        isAlive: p.isAlive,
+        accumulatedDamage: p.accumulatedDamage,
+        points: p.points,
+        totalPoints: p.totalPoints,
+        toughness: p.toughness,
+      })),
+    });
 
     // Check win condition
     if (this.currentMode) {

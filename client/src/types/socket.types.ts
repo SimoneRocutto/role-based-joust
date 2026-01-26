@@ -37,8 +37,19 @@ export interface PlayerReconnectedPayload {
   player: PlayerState;
 }
 
+export interface GameTickPlayerState {
+  id: string;
+  name: string;
+  isAlive: boolean;
+  accumulatedDamage: number;
+  points: number;
+  totalPoints: number;
+  toughness: number;
+}
+
 export interface GameTickPayload {
   gameTime: number;
+  players: GameTickPlayerState[];
 }
 
 export interface PlayerDeathPayload {
