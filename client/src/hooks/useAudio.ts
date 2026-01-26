@@ -7,6 +7,7 @@ export function useAudio() {
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPlayingMusic, setIsPlayingMusic] = useState(false);
+  const [isAudioUnlocked, setIsAudioUnlocked] = useState(audioManager.isUnlocked);
 
   useEffect(() => {
     // Preload all sounds
@@ -14,6 +15,11 @@ export function useAudio() {
     audioManager.preload(soundFiles).then(() => {
       setIsPreloaded(true);
       console.log("All sounds preloaded");
+    });
+
+    // Listen for audio unlock
+    audioManager.onUnlock(() => {
+      setIsAudioUnlocked(true);
     });
 
     // Update status periodically
@@ -83,6 +89,7 @@ export function useAudio() {
     isMuted,
     isSpeaking,
     isPlayingMusic,
+    isAudioUnlocked,
     play,
     loop,
     stop,

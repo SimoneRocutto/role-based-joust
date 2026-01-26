@@ -21,7 +21,7 @@ function DashboardView() {
   } = useGameState()
 
   const { updatePlayers, setGameState } = useGameStore()
-  const { playMusic } = useAudio()
+  const { playMusic, isAudioUnlocked } = useAudio()
 
   // Fetch current state on mount (for page refresh)
   useEffect(() => {
@@ -67,6 +67,9 @@ function DashboardView() {
 
   // Background music management
   useEffect(() => {
+    // Only play music after user interaction (browser autoplay policy)
+    if (!isAudioUnlocked) return;
+
     if (isWaiting) {
       playMusic('music/lobby-music', { loop: true, volume: 0.4 })
     } else if (isCountdown) {
@@ -85,7 +88,7 @@ function DashboardView() {
       // Don't loop at game end - it's a final fanfare
       playMusic('music/victory', { loop: false, volume: 0.6 })
     }
-  }, [isWaiting, isCountdown, isActive, isRoundEnded, isFinished, aliveCount])
+  }, [isWaiting, isCountdown, isActive, isRoundEnded, isFinished, aliveCount, isAudioUnlocked])
 
   return (
     <div className="min-h-screen bg-gray-900 text-white overflow-hidden">

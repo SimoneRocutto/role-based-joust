@@ -4,9 +4,11 @@ import { AUDIO_VOLUMES, SOUND_FILES } from "@/utils/constants";
 class AudioManager {
   private sounds: Map<string, Howl> = new Map();
   private currentMusic: Howl | null = null;
-  private originalMusicVolume = AUDIO_VOLUMES.MUSIC;
+  private originalMusicVolume: number = AUDIO_VOLUMES.MUSIC;
   private isMuted = false;
   private isSpeaking = false;
+  private _isUnlocked = false;
+  private unlockCallbacks: Array<() => void> = [];
 
   async preload(soundFiles: string[]): Promise<void> {
     const promises = soundFiles.map(
@@ -193,6 +195,8 @@ class AudioManager {
 
   // Utility
   unlockAudio() {
+    if (this._isUnlocked) return;
+
     // Play silent sound to unlock audio context on mobile
     const unlock = new Howl({
       src: [
@@ -201,7 +205,25 @@ class AudioManager {
       volume: 0,
     });
     unlock.play();
+
+    this._isUnlocked = true;
     console.log("Audio context unlocked");
+
+    // Notify all listeners
+    this.unlockCallbacks.forEach((cb) => cb());
+  }
+
+  onUnlock(callback: () => void) {
+    if (this._isUnlocked) {
+      // Already unlocked, call immediately
+      callback();
+    } else {
+      this.unlockCallbacks.push(callback);
+    }
+  }
+
+  get isUnlocked() {
+    return this._isUnlocked;
   }
 
   getStatus() {
@@ -209,6 +231,7 @@ class AudioManager {
       isMuted: this.isMuted,
       isSpeaking: this.isSpeaking,
       isPlayingMusic: this.currentMusic?.playing() || false,
+      isUnlocked: this._isUnlocked,
     };
   }
 }
