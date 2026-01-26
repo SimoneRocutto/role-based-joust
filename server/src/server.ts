@@ -233,6 +233,7 @@ gameEvents.onPlayerDeath((payload) => {
   io.emit("player:death", {
     victimId: payload.victim.id,
     victimName: payload.victim.name,
+    victimNumber: connectionManager.getPlayerNumber(payload.victim.id) ?? 0,
     gameTime: payload.gameTime,
   });
 });
