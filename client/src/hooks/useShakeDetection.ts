@@ -14,6 +14,7 @@ interface UseShakeDetectionReturn {
   isShaking: boolean; // Currently above threshold
   shakeProgress: number; // 0-1 progress toward completion
   isOnCooldown: boolean; // Whether on cooldown after a shake
+  lastIntensity: number; // Last received intensity value (for debugging)
 }
 
 const DEFAULT_THRESHOLD = 0.5;
@@ -34,26 +35,39 @@ export function useShakeDetection(
   const [isShaking, setIsShaking] = useState(false);
   const [shakeProgress, setShakeProgress] = useState(0);
   const [isOnCooldown, setIsOnCooldown] = useState(false);
+  const [lastIntensity, setLastIntensity] = useState(0);
 
-  // Refs for tracking shake duration
+  // Refs for tracking shake duration and avoiding stale closures
   const shakeStartTime = useRef<number | null>(null);
-  const cooldownTimeout = useRef<NodeJS.Timeout | null>(null);
+  const cooldownTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onShakeRef = useRef(onShake);
+  const enabledRef = useRef(enabled);
+  const isOnCooldownRef = useRef(isOnCooldown);
 
-  // Keep onShake ref updated
+  // Keep refs updated to avoid stale closures
   useEffect(() => {
     onShakeRef.current = onShake;
   }, [onShake]);
 
+  useEffect(() => {
+    enabledRef.current = enabled;
+  }, [enabled]);
+
+  useEffect(() => {
+    isOnCooldownRef.current = isOnCooldown;
+  }, [isOnCooldown]);
+
   const handleMovementData = useCallback(
     (data: MovementData) => {
-      if (!enabled || isOnCooldown) {
+      // Use refs to get current values (avoids stale closure)
+      if (!enabledRef.current || isOnCooldownRef.current) {
         setIsShaking(false);
         setShakeProgress(0);
         return;
       }
 
       const intensity = data.intensity ?? 0;
+      setLastIntensity(intensity);
       const now = Date.now();
 
       if (intensity >= threshold) {
@@ -77,6 +91,7 @@ export function useShakeDetection(
 
           // Enter cooldown
           setIsOnCooldown(true);
+          isOnCooldownRef.current = true;
           setIsShaking(false);
           setShakeProgress(0);
           shakeStartTime.current = null;
@@ -87,6 +102,7 @@ export function useShakeDetection(
           }
           cooldownTimeout.current = setTimeout(() => {
             setIsOnCooldown(false);
+            isOnCooldownRef.current = false;
           }, cooldown);
         }
       } else {
@@ -96,17 +112,11 @@ export function useShakeDetection(
         shakeStartTime.current = null;
       }
     },
-    [enabled, isOnCooldown, threshold, requiredDuration, cooldown]
+    [threshold, requiredDuration, cooldown]
   );
 
   useEffect(() => {
-    if (!enabled) {
-      setIsShaking(false);
-      setShakeProgress(0);
-      return;
-    }
-
-    // Subscribe to accelerometer data
+    // Always subscribe - the callback checks enabledRef internally
     const unsubscribe = accelerometerService.subscribe(handleMovementData);
 
     return () => {
@@ -115,11 +125,12 @@ export function useShakeDetection(
         clearTimeout(cooldownTimeout.current);
       }
     };
-  }, [enabled, handleMovementData]);
+  }, [handleMovementData]);
 
   return {
     isShaking,
     shakeProgress,
     isOnCooldown,
+    lastIntensity,
   };
 }

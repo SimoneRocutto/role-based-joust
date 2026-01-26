@@ -2,7 +2,6 @@
 
 Here are all the things this game is missing to be complete, in priority order from top (highest priority) to bottom (lowest). Feel free to remove them once one of them is done:
 
-- finish feature "shake to ready" and implement tests to avoid regression. Make sure main game can still be run in development without the need for the browser tab to actually provide sensor data (easier development process)
 - write tests that specifically target frontend components. Pick the library you think fits best for the need. The main goal is to make Claude as independant as possible by providing all the useful information
 - add new settings: there must be a way to pick the level of sensibility of movements when in the main dashboard screen
 - add a settings screen (accessible from the UI) where all the more complex settings (like sensibility of movement detection) can be accessed. In the future, other settings will be accessed through this screen

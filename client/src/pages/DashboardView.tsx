@@ -139,7 +139,7 @@ function DashboardView() {
 
       {/* Main Content */}
       <div className="p-6">
-        {(isWaiting || isCountdown || isActive) && (
+        {(isWaiting || isCountdown || isActive || isRoundEnded) && (
           <>
             {/* Admin Controls (only show in waiting) */}
             {isWaiting && (
@@ -153,8 +153,8 @@ function DashboardView() {
           </>
         )}
 
-        {/* Scoreboard (between rounds or finished) */}
-        {(isRoundEnded || isFinished) && <Scoreboard />}
+        {/* Scoreboard (only at game end) */}
+        {isFinished && <Scoreboard />}
       </div>
 
       {/* Event Feed */}

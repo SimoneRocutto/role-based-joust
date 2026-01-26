@@ -92,10 +92,33 @@ export function useSocket() {
     socketService.onRoundEnd(({ scores }) => {
       setScores(scores);
       setGameState("round-ended");
+
+      // Update player points from scores (since game:tick stops during round-ended)
+      const existingPlayers = useGameStore.getState().players;
+      const updatedPlayers = existingPlayers.map((player) => {
+        const scoreEntry = scores.find((s) => s.playerId === player.id);
+        if (scoreEntry) {
+          return { ...player, points: scoreEntry.score, totalPoints: scoreEntry.score };
+        }
+        return player;
+      });
+      updatePlayers(updatedPlayers);
     });
 
     // Game end
     socketService.onGameEnd(({ scores, winner }) => {
+      // Update player points FIRST from final scores (before state change triggers re-render)
+      const existingPlayers = useGameStore.getState().players;
+      const updatedPlayers = existingPlayers.map((player) => {
+        const scoreEntry = scores.find((s) => s.playerId === player.id);
+        if (scoreEntry) {
+          return { ...player, points: scoreEntry.score, totalPoints: scoreEntry.score };
+        }
+        return player;
+      });
+      updatePlayers(updatedPlayers);
+
+      // Now set scores and game state
       setScores(scores);
       setGameState("finished");
       audioManager.playMusic("victory", { loop: false, volume: 0.6 });
@@ -146,13 +169,21 @@ export function useSocket() {
 
     // Lobby update (players joining/leaving before game starts)
     socketService.onLobbyUpdate(({ players }) => {
-      // Convert lobby players to PlayerState format
+      // Only process lobby updates in waiting state - ignore during active gameplay
+      // Otherwise, disconnect events would reset points/totalPoints to 0
+      const currentState = useGameStore.getState().gameState;
+      if (currentState !== "waiting") {
+        return;
+      }
+
+      // Convert lobby players to PlayerState format, preserving isReady from backend
       const playerStates = players.map((p) => ({
         id: p.id,
         name: p.name,
         number: p.number,
         role: '',
         isAlive: p.isAlive,
+        isReady: p.isReady ?? false,
         points: 0,
         totalPoints: 0,
         toughness: 1.0,
@@ -166,6 +197,14 @@ export function useSocket() {
     socketService.onCountdown(({ secondsRemaining, phase }) => {
       setCountdown(secondsRemaining, phase);
       setGameState("countdown");
+
+      // Reset ready state for all players when countdown starts
+      // This clears the checkmarks from the previous round
+      if (phase === "countdown") {
+        const existingPlayers = useGameStore.getState().players;
+        const resetPlayers = existingPlayers.map((p) => ({ ...p, isReady: false }));
+        updatePlayers(resetPlayers);
+      }
 
       // Play countdown sounds
       if (phase === "countdown" && secondsRemaining <= 3 && secondsRemaining > 0) {

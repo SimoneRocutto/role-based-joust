@@ -9,12 +9,24 @@ import LoadingSpinner from '@/components/shared/LoadingSpinner'
 
 type PermissionState = 'pending' | 'testing' | 'granted' | 'denied';
 
+// In development mode, skip motion validation for browser testing
+// Use ?mode=production URL param to test production behavior in dev
+const getEffectiveDevMode = () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const modeOverride = urlParams.get('mode');
+  if (modeOverride === 'production') return false;
+  return import.meta.env.DEV;
+};
+
+const isDevMode = getEffectiveDevMode();
+
 function JoinView() {
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [joining, setJoining] = useState(false)
-  const [permissionState, setPermissionState] = useState<PermissionState>('pending')
+  // Auto-grant permission in dev mode to allow browser testing
+  const [permissionState, setPermissionState] = useState<PermissionState>(isDevMode ? 'granted' : 'pending')
 
   const { isConnected, setMyPlayer, updatePlayer } = useGameState()
 
@@ -191,10 +203,17 @@ function JoinView() {
         {/* Join Form - Only shown after motion permission granted */}
         {permissionState === 'granted' && (
           <div className="space-y-4">
-            <div className="flex items-center justify-center gap-2 text-green-400 mb-4">
-              <span className="text-xl">✓</span>
-              <span>Motion enabled</span>
-            </div>
+            {isDevMode ? (
+              <div className="flex items-center justify-center gap-2 text-yellow-400 mb-4">
+                <span className="text-sm font-mono">[DEV MODE]</span>
+                <span className="text-gray-400 text-sm">Motion check bypassed</span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-2 text-green-400 mb-4">
+                <span className="text-xl">✓</span>
+                <span>Motion enabled</span>
+              </div>
+            )}
 
             <div>
               <label htmlFor="name" className="block text-sm text-gray-400 mb-2">

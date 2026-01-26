@@ -28,6 +28,9 @@ function PlayerCard({ player }: PlayerCardProps) {
   const healthPercent = getHealthPercentage(player.accumulatedDamage)
   const isDead = !player.isAlive
 
+  // Check if this player is the round winner (alive when round ended)
+  const isRoundWinner = isRoundEnded && player.isAlive
+
   // Get status icon (priority: invulnerable > bloodlust > other)
   const getStatusIcon = () => {
     if (!player.isAlive) return null
@@ -61,10 +64,11 @@ function PlayerCard({ player }: PlayerCardProps) {
     <div
       className={`
         relative rounded-lg p-4 border-4 transition-all duration-300
-        ${getHealthBorderClass(healthPercent, player.isAlive)}
-        ${getHealthGlowClass(healthPercent, player.isAlive)}
-        ${getHealthTintClass(healthPercent, player.isAlive)}
-        ${isDead ? 'opacity-60' : ''}
+        ${isRoundWinner
+          ? 'border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.5)] bg-yellow-500/20'
+          : `${getHealthBorderClass(healthPercent, player.isAlive)} ${getHealthGlowClass(healthPercent, player.isAlive)} ${getHealthTintClass(healthPercent, player.isAlive)}`
+        }
+        ${isDead && !isRoundEnded ? 'opacity-60' : ''}
         ${justBecameReady ? 'animate-card-jump' : ''}
       `}
     >
@@ -91,8 +95,10 @@ function PlayerCard({ player }: PlayerCardProps) {
         </span>
       </div>
 
-      {/* Status Icon or Dead Skull */}
-      {isDead ? (
+      {/* Status Icon: Trophy for winner, Skull for dead, or status effect */}
+      {isRoundWinner ? (
+        <div className="text-6xl">🏆</div>
+      ) : isDead ? (
         <div className="text-6xl">💀</div>
       ) : statusIcon ? (
         <div className="text-4xl">{statusIcon}</div>
@@ -100,10 +106,10 @@ function PlayerCard({ player }: PlayerCardProps) {
         <div className="h-12" /> // Spacer for consistent card height
       )}
 
-      {/* Points (bottom right, small) */}
-      {!isDead && (
+      {/* Points (bottom right, small) - show totalPoints for cumulative score */}
+      {(!isDead || isRoundEnded) && (
         <div className="absolute bottom-2 right-2 text-sm text-gray-400">
-          {player.points} pts
+          {player.totalPoints ?? player.points ?? 0} pts
         </div>
       )}
     </div>

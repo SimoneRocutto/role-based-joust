@@ -1,5 +1,5 @@
 import { Howl, Howler } from "howler";
-import { AUDIO_VOLUMES, SOUND_FILES } from "@/utils/constants";
+import { AUDIO_VOLUMES } from "@/utils/constants";
 
 class AudioManager {
   private sounds: Map<string, Howl> = new Map();
@@ -22,7 +22,7 @@ class AudioManager {
               this.sounds.set(file, sound);
               resolve();
             },
-            onloaderror: (id, error) => {
+            onloaderror: (_id, error) => {
               console.error(`Failed to load sound: ${file}`, error);
               reject(error);
             },

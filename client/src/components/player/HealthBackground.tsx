@@ -1,6 +1,5 @@
 import type { PlayerState } from '@/types/player.types'
 import { getHealthPercentage } from '@/utils/formatters'
-import { getHealthBackgroundClass } from '@/hooks/useGameState'
 
 interface HealthBackgroundProps {
   player: PlayerState

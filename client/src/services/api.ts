@@ -4,12 +4,6 @@ import type { PlayerState, RoleInfo } from "@/types/player.types";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
-interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
-
 class ApiService {
   private baseUrl: string;
 

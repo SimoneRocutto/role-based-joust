@@ -16,6 +16,17 @@ import TargetDisplay from '@/components/player/TargetDisplay'
 import ConnectionStatus from '@/components/player/ConnectionStatus'
 import PortraitLock from '@/components/player/PortraitLock'
 
+// In development mode, allow button click instead of shake
+// Use ?mode=production URL param to test production behavior in dev
+const getEffectiveDevMode = () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const modeOverride = urlParams.get('mode');
+  if (modeOverride === 'production') return false;
+  return import.meta.env.DEV;
+};
+
+const isDevMode = getEffectiveDevMode();
+
 function PlayerView() {
   const navigate = useNavigate()
   const [permissionsGranted, setPermissionsGranted] = useState(false)
@@ -26,10 +37,10 @@ function PlayerView() {
     myPlayerNumber,
     myPlayer,
     myTarget,
-    myRole,
     isWaiting,
     isCountdown,
     isRoundEnded,
+    isFinished,
     isMyPlayerDead
   } = useGameState()
 
@@ -41,7 +52,7 @@ function PlayerView() {
   const { enter: enterFullscreen } = useFullscreen()
 
   // Shake detection for ready state
-  const shouldDetectShake = (isWaiting || isRoundEnded) && !myIsReady && permissionsGranted
+  const shouldDetectShake = (isWaiting || isRoundEnded || isFinished) && !myIsReady && permissionsGranted
 
   const handleShakeDetected = useCallback(() => {
     if (!myPlayerId || myIsReady) return
@@ -57,8 +68,8 @@ function PlayerView() {
   }, [myPlayerId, myIsReady, setMyReady, play])
 
   const { isShaking, shakeProgress } = useShakeDetection({
-    threshold: 0.5,
-    requiredDuration: 500,
+    threshold: 0.25,  // Lowered from 0.5 - more sensitive
+    requiredDuration: 300,  // Lowered from 500ms - faster detection
     cooldown: 1000,
     onShake: handleShakeDetected,
     enabled: shouldDetectShake,
@@ -78,11 +89,23 @@ function PlayerView() {
   // Request permissions on mount
   useEffect(() => {
     const requestPermissions = async () => {
-      // Request motion permission
-      const motionGranted = await requestMotionPermission()
-      if (!motionGranted) {
-        alert('Motion permission denied. Game cannot function without accelerometer access.')
-        return
+      // On iOS, requesting permission outside a user gesture throws an error.
+      // Since we validated motion access in JoinView (with user gesture),
+      // we trust that permission is already granted and just start the accelerometer.
+      // In dev mode, we skip motion validation entirely.
+
+      try {
+        // Try to request permission (will succeed on Android, may fail on iOS outside user gesture)
+        const motionGranted = await requestMotionPermission()
+        if (!motionGranted && !isDevMode) {
+          // Only show alert in production mode if permission explicitly denied
+          alert('Motion permission denied. Game cannot function without accelerometer access.')
+          return
+        }
+      } catch (error) {
+        // iOS throws when requestPermission is called outside user gesture
+        // This is expected - permission was already granted in JoinView
+        console.log('Motion permission request skipped (likely already granted)')
       }
 
       // Enable wake lock
@@ -176,21 +199,36 @@ function PlayerView() {
             {/* Shake to Ready UI */}
             {!myIsReady ? (
               <div className="mt-8 space-y-4">
-                <div className={`text-2xl font-bold ${isShaking ? 'text-yellow-400' : 'text-gray-400'}`}>
-                  {isShaking ? 'SHAKING...' : 'SHAKE TO READY'}
-                </div>
+                {isDevMode ? (
+                  <>
+                    <button
+                      onClick={handleShakeDetected}
+                      className="px-8 py-4 bg-yellow-500 hover:bg-yellow-400 text-black text-2xl font-bold rounded-lg transition-colors"
+                    >
+                      CLICK TO READY
+                    </button>
+                    <div className="text-sm text-yellow-600 font-mono">[DEV MODE]</div>
+                  </>
+                ) : (
+                  <>
+                    <div className={`text-2xl font-bold ${isShaking ? 'text-yellow-400' : 'text-gray-400'}`}>
+                      {isShaking ? 'SHAKING...' : 'SHAKE TO READY'}
+                    </div>
 
-                {/* Progress bar */}
-                <div className="w-48 h-3 bg-gray-700 rounded-full overflow-hidden mx-auto">
-                  <div
-                    className="h-full bg-yellow-400 transition-all duration-100"
-                    style={{ width: `${shakeProgress * 100}%` }}
-                  />
-                </div>
+                    {/* Progress bar */}
+                    <div className="w-48 h-3 bg-gray-700 rounded-full overflow-hidden mx-auto">
+                      <div
+                        className="h-full bg-yellow-400 transition-all duration-100"
+                        style={{ width: `${shakeProgress * 100}%` }}
+                      />
+                    </div>
 
-                <div className="text-sm text-gray-500">
-                  Shake your device to ready up
-                </div>
+                    <div className="text-sm text-gray-500">
+                      Shake your device to ready up
+                    </div>
+
+                  </>
+                )}
               </div>
             ) : (
               <div className="mt-8 space-y-2">
@@ -261,21 +299,36 @@ function PlayerView() {
             {/* Shake to Ready UI */}
             {!myIsReady ? (
               <div className="mt-8 space-y-4">
-                <div className={`text-2xl font-bold ${isShaking ? 'text-yellow-400' : 'text-gray-400'}`}>
-                  {isShaking ? 'SHAKING...' : 'SHAKE FOR NEXT ROUND'}
-                </div>
+                {isDevMode ? (
+                  <>
+                    <button
+                      onClick={handleShakeDetected}
+                      className="px-8 py-4 bg-yellow-500 hover:bg-yellow-400 text-black text-2xl font-bold rounded-lg transition-colors"
+                    >
+                      CLICK FOR NEXT ROUND
+                    </button>
+                    <div className="text-sm text-yellow-600 font-mono">[DEV MODE]</div>
+                  </>
+                ) : (
+                  <>
+                    <div className={`text-2xl font-bold ${isShaking ? 'text-yellow-400' : 'text-gray-400'}`}>
+                      {isShaking ? 'SHAKING...' : 'SHAKE FOR NEXT ROUND'}
+                    </div>
 
-                {/* Progress bar */}
-                <div className="w-48 h-3 bg-gray-700 rounded-full overflow-hidden mx-auto">
-                  <div
-                    className="h-full bg-yellow-400 transition-all duration-100"
-                    style={{ width: `${shakeProgress * 100}%` }}
-                  />
-                </div>
+                    {/* Progress bar */}
+                    <div className="w-48 h-3 bg-gray-700 rounded-full overflow-hidden mx-auto">
+                      <div
+                        className="h-full bg-yellow-400 transition-all duration-100"
+                        style={{ width: `${shakeProgress * 100}%` }}
+                      />
+                    </div>
 
-                <div className="text-sm text-gray-500">
-                  Shake your device to ready up
-                </div>
+                    <div className="text-sm text-gray-500">
+                      Shake your device to ready up
+                    </div>
+
+                  </>
+                )}
               </div>
             ) : (
               <div className="mt-8 space-y-2">
@@ -316,13 +369,70 @@ function PlayerView() {
         </div>
       )}
 
-      {/* Dead State - only show when not in countdown (countdown takes precedence for new round) */}
-      {isMyPlayerDead && !isCountdown && (
+      {/* Dead State - only show during active round */}
+      {isMyPlayerDead && !isCountdown && !isRoundEnded && !isWaiting && !isFinished && (
         <div className="fullscreen bg-health-dead flex flex-col items-center justify-center gap-8 dead-screen">
           <div className="text-9xl">💀</div>
           <div className="text-5xl font-bold text-gray-500">ELIMINATED</div>
           <div className="text-xl text-gray-600">
             Final Score: {myPlayer?.points || 0} pts
+          </div>
+        </div>
+      )}
+
+      {/* Game Finished State */}
+      {isFinished && (
+        <div className="fullscreen bg-gray-900 flex flex-col items-center justify-center gap-8 p-8">
+          <ConnectionStatus />
+          <div className="text-center">
+            <div className="text-4xl text-yellow-400 mb-4">GAME OVER</div>
+            <div className="text-8xl font-bold text-white mb-4">
+              #{myPlayerNumber}
+            </div>
+            <div className="text-3xl text-gray-300 mb-2">
+              {myPlayer?.name || 'Player'}
+            </div>
+            <div className="text-2xl text-gray-400 mb-4">
+              Final Score: {myPlayer?.totalPoints || myPlayer?.points || 0} pts
+            </div>
+
+            {/* Ready indicator for new game */}
+            {myIsReady ? (
+              <div className="mt-8 space-y-2">
+                <div className="text-6xl">✓</div>
+                <div className="text-2xl text-green-400 font-bold">READY!</div>
+                <div className="text-gray-500">Waiting for new game...</div>
+              </div>
+            ) : (
+              <div className="mt-8 space-y-4">
+                {isDevMode ? (
+                  <>
+                    <button
+                      onClick={handleShakeDetected}
+                      className="px-8 py-4 bg-yellow-500 hover:bg-yellow-400 text-black text-2xl font-bold rounded-lg transition-colors"
+                    >
+                      CLICK WHEN READY
+                    </button>
+                    <div className="text-sm text-yellow-600 font-mono">[DEV MODE]</div>
+                  </>
+                ) : (
+                  <>
+                    <div className={`text-2xl font-bold ${isShaking ? 'text-yellow-400' : 'text-gray-400'}`}>
+                      {isShaking ? 'SHAKING...' : 'SHAKE WHEN READY'}
+                    </div>
+                    <div className="w-48 h-3 bg-gray-700 rounded-full overflow-hidden mx-auto">
+                      <div
+                        className="h-full bg-yellow-400 transition-all duration-100"
+                        style={{ width: `${shakeProgress * 100}%` }}
+                      />
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      Shake to ready for new game
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -352,14 +352,18 @@ export class BasePlayer {
    */
   isDisconnectedBeyondGrace(currentGameTime: number): boolean {
     if (this.disconnectedAt === null) return false;
-    return (currentGameTime - this.disconnectedAt) >= BasePlayer.DISCONNECTION_GRACE_PERIOD;
+    return (
+      currentGameTime - this.disconnectedAt >=
+      BasePlayer.DISCONNECTION_GRACE_PERIOD
+    );
   }
 
   /**
    * Get time remaining in grace period (or 0 if grace period expired)
    */
   getGraceTimeRemaining(currentGameTime: number): number {
-    if (this.disconnectedAt === null) return BasePlayer.DISCONNECTION_GRACE_PERIOD;
+    if (this.disconnectedAt === null)
+      return BasePlayer.DISCONNECTION_GRACE_PERIOD;
     const elapsed = currentGameTime - this.disconnectedAt;
     return Math.max(0, BasePlayer.DISCONNECTION_GRACE_PERIOD - elapsed);
   }

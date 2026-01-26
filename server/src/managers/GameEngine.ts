@@ -711,9 +711,6 @@ export class GameEngine {
    * Called when a player becomes ready
    */
   private checkAutoStart(): void {
-    // Only auto-start in production mode
-    if (this.isDevMode) return;
-
     // Only auto-start between rounds
     if (this.gameState !== "round-ended") return;
 
