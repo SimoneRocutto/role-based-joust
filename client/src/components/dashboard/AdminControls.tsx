@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react'
 import { useGameState } from '@/hooks/useGameState'
+import { useGameStore } from '@/store/gameStore'
 import { apiService } from '@/services/api'
 import type { GameMode } from '@/types/game.types'
 
 function AdminControls() {
   const { players } = useGameState()
+  const { isDevMode, readyCount } = useGameStore()
   const [modes, setModes] = useState<GameMode[]>([])
   const [selectedMode, setSelectedMode] = useState('role-based')
   const [selectedTheme, setSelectedTheme] = useState('standard')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Check if all players are ready (for production mode)
+  const allPlayersReady = readyCount.total > 0 && readyCount.ready === readyCount.total
 
   // Fetch available game modes
   useEffect(() => {
@@ -57,7 +62,14 @@ function AdminControls() {
 
   return (
     <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-      <h2 className="text-2xl font-bold mb-4">Admin Controls</h2>
+      <div className="flex items-center gap-4 mb-4">
+        <h2 className="text-2xl font-bold">Admin Controls</h2>
+        {isDevMode && (
+          <span className="px-3 py-1 bg-yellow-600 text-yellow-100 text-sm font-semibold rounded">
+            [DEV MODE]
+          </span>
+        )}
+      </div>
 
       {/* Mode Selection */}
       <div className="grid grid-cols-2 gap-4 mb-4">
@@ -125,14 +137,36 @@ function AdminControls() {
       )}
 
       {/* Action Button */}
-      <div className="flex gap-4">
-        <button
-          onClick={handleLaunchGame}
-          disabled={loading || players.length < 2}
-          className="px-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg font-bold text-xl transition-colors"
-        >
-          {loading ? 'Starting...' : `🎮 Start Game (${players.length} players)`}
-        </button>
+      <div className="flex gap-4 items-center">
+        {/* In dev mode: always show start button */}
+        {isDevMode && (
+          <button
+            onClick={handleLaunchGame}
+            disabled={loading || players.length < 2}
+            className="px-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg font-bold text-xl transition-colors"
+          >
+            {loading ? 'Starting...' : `🎮 Start Game (${players.length} players)`}
+          </button>
+        )}
+
+        {/* In production mode: show status or start button when all ready */}
+        {!isDevMode && (
+          <>
+            {allPlayersReady ? (
+              <button
+                onClick={handleLaunchGame}
+                disabled={loading || players.length < 2}
+                className="px-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg font-bold text-xl transition-colors animate-pulse"
+              >
+                {loading ? 'Starting...' : `🎮 All Ready! Start Game`}
+              </button>
+            ) : (
+              <div className="px-8 py-4 bg-gray-700 rounded-lg text-gray-400 text-xl">
+                Waiting for all players to shake ready... ({readyCount.ready}/{readyCount.total})
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   )

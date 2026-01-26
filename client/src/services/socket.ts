@@ -13,6 +13,8 @@ import type {
   VampireBloodlustPayload,
   RoleAssignedPayload,
   SocketErrorPayload,
+  PlayerReadyPayload,
+  ReadyCountPayload,
 } from "@/types/socket.types";
 
 const API_BASE_URL =
@@ -87,6 +89,10 @@ class SocketService {
     this.socket?.emit("ping");
   }
 
+  sendReady(playerId: string) {
+    this.socket?.emit("player:ready", { playerId });
+  }
+
   // Server → Client event listeners
   onPlayerJoined(callback: (data: PlayerJoinedPayload) => void) {
     this.on("player:joined", callback);
@@ -138,7 +144,7 @@ class SocketService {
 
   onLobbyUpdate(
     callback: (data: {
-      players: Array<{ id: string; name: string; number: number; isAlive: boolean }>;
+      players: Array<{ id: string; name: string; number: number; isAlive: boolean; isReady: boolean }>;
     }) => void
   ) {
     this.on("lobby:update", callback);
@@ -152,6 +158,14 @@ class SocketService {
     }) => void
   ) {
     this.on("game:countdown", callback);
+  }
+
+  onPlayerReady(callback: (data: PlayerReadyPayload) => void) {
+    this.on("player:ready", callback);
+  }
+
+  onReadyCountUpdate(callback: (data: ReadyCountPayload) => void) {
+    this.on("ready:update", callback);
   }
 
   // Generic event listener management

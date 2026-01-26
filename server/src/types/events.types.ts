@@ -65,3 +65,15 @@ export interface CountdownEvent {
   totalSeconds: number;
   phase: "countdown" | "go";
 }
+
+export interface PlayerReadyEvent {
+  playerId: string;
+  playerName: string;
+  playerNumber: number;
+  isReady: boolean;
+}
+
+export interface ReadyCountEvent {
+  ready: number;
+  total: number;
+}

@@ -26,6 +26,12 @@ interface GameStore {
   countdownSeconds: number;
   countdownPhase: "countdown" | "go" | null;
 
+  // Ready state
+  readyPlayers: Set<string>;
+  readyCount: { ready: number; total: number };
+  isDevMode: boolean;
+  myIsReady: boolean;
+
   // All players (for dashboard)
   players: PlayerState[];
 
@@ -48,6 +54,11 @@ interface GameStore {
   setLatestEvent: (event: string) => void;
   setScores: (scores: ScoreEntry[]) => void;
   setCountdown: (seconds: number, phase: "countdown" | "go" | null) => void;
+  setPlayerReady: (playerId: string, isReady: boolean) => void;
+  setReadyCount: (count: { ready: number; total: number }) => void;
+  setDevMode: (isDevMode: boolean) => void;
+  setMyReady: (isReady: boolean) => void;
+  resetReadyState: () => void;
   reset: () => void;
 }
 
@@ -71,6 +82,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   countdownSeconds: 0,
   countdownPhase: null,
+
+  readyPlayers: new Set(),
+  readyCount: { ready: 0, total: 0 },
+  isDevMode: false,
+  myIsReady: false,
 
   players: [],
 
@@ -131,6 +147,44 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setCountdown: (seconds, phase) =>
     set({ countdownSeconds: seconds, countdownPhase: phase }),
 
+  setPlayerReady: (playerId, isReady) => {
+    set((state) => {
+      const newReadyPlayers = new Set(state.readyPlayers);
+      if (isReady) {
+        newReadyPlayers.add(playerId);
+      } else {
+        newReadyPlayers.delete(playerId);
+      }
+
+      // Update players list with ready state
+      const updatedPlayers = state.players.map((p) =>
+        p.id === playerId ? { ...p, isReady } : p
+      );
+
+      // Update myIsReady if it's my player
+      const myIsReady = state.myPlayerId === playerId ? isReady : state.myIsReady;
+
+      return {
+        readyPlayers: newReadyPlayers,
+        players: updatedPlayers,
+        myIsReady,
+      };
+    });
+  },
+
+  setReadyCount: (count) => set({ readyCount: count }),
+
+  setDevMode: (isDevMode) => set({ isDevMode }),
+
+  setMyReady: (isReady) => set({ myIsReady: isReady }),
+
+  resetReadyState: () =>
+    set({
+      readyPlayers: new Set(),
+      readyCount: { ready: 0, total: 0 },
+      myIsReady: false,
+    }),
+
   reset: () =>
     set({
       myPlayerId: null,
@@ -145,6 +199,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       mode: null,
       countdownSeconds: 0,
       countdownPhase: null,
+      readyPlayers: new Set(),
+      readyCount: { ready: 0, total: 0 },
+      myIsReady: false,
       players: [],
       latestEvent: null,
       scores: [],

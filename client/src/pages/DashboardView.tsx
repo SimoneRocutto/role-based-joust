@@ -1,8 +1,9 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useGameState } from '@/hooks/useGameState'
 import { useAudio } from '@/hooks/useAudio'
 import { useGameStore } from '@/store/gameStore'
 import { apiService } from '@/services/api'
+import { socketService } from '@/services/socket'
 import PlayerGrid from '@/components/dashboard/PlayerGrid'
 import GameState from '@/components/dashboard/GameState'
 import EventFeed from '@/components/dashboard/EventFeed'
@@ -20,22 +21,34 @@ function DashboardView() {
     aliveCount,
   } = useGameState()
 
-  const { updatePlayers, setGameState } = useGameStore()
-  const { playMusic, isAudioUnlocked } = useAudio()
+  const { updatePlayers, setGameState, setDevMode, setPlayerReady, setReadyCount } = useGameStore()
+  const { playMusic, play, isAudioUnlocked } = useAudio()
+  const lastReadyPlayerRef = useRef<string | null>(null)
 
   // Fetch current state on mount (for page refresh)
   useEffect(() => {
     const fetchInitialState = async () => {
       try {
+        // Fetch dev mode config
+        const configResult = await apiService.getGameConfig()
+        if (configResult.success) {
+          // Check for ?mode=production URL override
+          const urlParams = new URLSearchParams(window.location.search)
+          const modeOverride = urlParams.get('mode')
+          const effectiveDevMode = modeOverride === 'production' ? false : configResult.devMode
+          setDevMode(effectiveDevMode)
+        }
+
         // Fetch lobby players
         const lobbyResult = await apiService.getLobbyPlayers()
         if (lobbyResult.success && lobbyResult.players.length > 0) {
-          const playerStates = lobbyResult.players.map((p) => ({
+          const playerStates = lobbyResult.players.map((p: any) => ({
             id: p.id,
             name: p.name,
             number: p.number,
             role: '',
             isAlive: p.isAlive,
+            isReady: p.isReady ?? false,
             points: 0,
             totalPoints: 0,
             toughness: 1.0,
@@ -43,6 +56,10 @@ function DashboardView() {
             statusEffects: [],
           }))
           updatePlayers(playerStates)
+
+          // Calculate initial ready count
+          const readyCount = playerStates.filter((p: any) => p.isReady).length
+          setReadyCount({ ready: readyCount, total: playerStates.length })
         }
 
         // Fetch game state if game is running
@@ -64,6 +81,28 @@ function DashboardView() {
 
     fetchInitialState()
   }, [])
+
+  // Listen for ready events
+  useEffect(() => {
+    socketService.onPlayerReady((data) => {
+      setPlayerReady(data.playerId, data.isReady)
+
+      // Play ready sound (only when becoming ready, not when dashboard first loads)
+      if (data.isReady && lastReadyPlayerRef.current !== data.playerId) {
+        lastReadyPlayerRef.current = data.playerId
+        play('effects/ready', { volume: 0.5 })
+      }
+    })
+
+    socketService.onReadyCountUpdate((data) => {
+      setReadyCount(data)
+    })
+
+    return () => {
+      socketService.off('player:ready')
+      socketService.off('ready:update')
+    }
+  }, [setPlayerReady, setReadyCount, play])
 
   // Background music management
   useEffect(() => {

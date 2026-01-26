@@ -97,3 +97,15 @@ export interface SocketErrorPayload {
   message: string;
   code: string;
 }
+
+export interface PlayerReadyPayload {
+  playerId: string;
+  playerName: string;
+  playerNumber: number;
+  isReady: boolean;
+}
+
+export interface ReadyCountPayload {
+  ready: number;
+  total: number;
+}

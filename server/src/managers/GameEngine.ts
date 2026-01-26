@@ -48,6 +48,10 @@ export class GameEngine {
   // ========== TEST MODE ==========
   testMode: boolean = false;
 
+  // ========== READY STATE ==========
+  private playerReadyState: Map<string, boolean> = new Map();
+  readonly isDevMode: boolean = process.env.NODE_ENV === "development";
+
   constructor() {
     this.tickRate = gameConfig.tick.rate;
     logger.info("ENGINE", "Game engine initialized", {
@@ -180,6 +184,9 @@ export class GameEngine {
     logger.info("ENGINE", "Starting countdown", {
       duration: this.countdownDuration,
     });
+
+    // Reset ready state for the new round
+    this.resetReadyState();
 
     // Reset all players for the new round (before countdown so dashboard shows alive players)
     this.players.forEach((player) => {
@@ -528,6 +535,7 @@ export class GameEngine {
     this.playerDataCache = [];
     this.currentRound = 0;
     this.gameTime = 0;
+    this.resetReadyState();
 
     // Notify clients that game was stopped
     gameEvents.emitGameStopped();
@@ -641,6 +649,86 @@ export class GameEngine {
     return this.players.filter(
       (p) => p.isAlive && !p.isDisconnectedBeyondGrace(this.gameTime)
     );
+  }
+
+  // ========================================================================
+  // READY STATE MANAGEMENT (for between rounds)
+  // ========================================================================
+
+  /**
+   * Set player ready state (for between rounds)
+   */
+  setPlayerReady(playerId: string, isReady: boolean): void {
+    const player = this.getPlayerById(playerId);
+    if (!player) {
+      logger.warn("ENGINE", `Cannot set ready state for unknown player: ${playerId}`);
+      return;
+    }
+    this.playerReadyState.set(playerId, isReady);
+    logger.debug("ENGINE", `Player ${player.name} ready state: ${isReady}`);
+
+    // Check if all players ready for auto-start (production mode only)
+    this.checkAutoStart();
+  }
+
+  /**
+   * Get ready count for current game players
+   */
+  getReadyCount(): { ready: number; total: number } {
+    const total = this.players.length;
+    let ready = 0;
+    for (const player of this.players) {
+      if (this.playerReadyState.get(player.id)) {
+        ready++;
+      }
+    }
+    return { ready, total };
+  }
+
+  /**
+   * Check if all players are ready
+   */
+  areAllPlayersReady(): boolean {
+    if (this.players.length === 0) return false;
+    for (const player of this.players) {
+      if (!this.playerReadyState.get(player.id)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Reset ready state for all players
+   */
+  resetReadyState(): void {
+    this.playerReadyState.clear();
+    logger.debug("ENGINE", "Ready state reset for all players");
+  }
+
+  /**
+   * Check if game should auto-start (production mode: all players ready)
+   * Called when a player becomes ready
+   */
+  private checkAutoStart(): void {
+    // Only auto-start in production mode
+    if (this.isDevMode) return;
+
+    // Only auto-start between rounds
+    if (this.gameState !== "round-ended") return;
+
+    // Check if all players are ready
+    if (this.areAllPlayersReady()) {
+      logger.info("ENGINE", "All players ready - auto-starting next round");
+      this.startNextRound();
+    }
+  }
+
+  /**
+   * Get player ready state
+   */
+  getPlayerReady(playerId: string): boolean {
+    return this.playerReadyState.get(playerId) ?? false;
   }
 
   // ========================================================================

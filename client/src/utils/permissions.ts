@@ -68,3 +68,65 @@ export async function exitFullscreen(): Promise<boolean> {
 export function isFullscreen(): boolean {
   return !!document.fullscreenElement;
 }
+
+export type MotionValidationResult = {
+  success: boolean;
+  error?: string;
+};
+
+/**
+ * Validates that motion access is working.
+ * Requests permission and tests that motion data flows for up to 2 seconds.
+ */
+export async function validateMotionAccess(): Promise<MotionValidationResult> {
+  // First, check if DeviceMotionEvent is supported
+  if (typeof DeviceMotionEvent === "undefined") {
+    return {
+      success: false,
+      error: "Motion sensors not supported on this device",
+    };
+  }
+
+  // Request permission (iOS 13+)
+  const permissionGranted = await requestMotionPermission();
+  if (!permissionGranted) {
+    return {
+      success: false,
+      error: "Motion permission denied. Please allow motion access.",
+    };
+  }
+
+  // Test that motion data actually flows (for 2 seconds max)
+  return new Promise((resolve) => {
+    let dataReceived = false;
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const handleMotion = (event: DeviceMotionEvent) => {
+      // Check if we got actual data
+      const acc = event.accelerationIncludingGravity;
+      if (acc && (acc.x !== null || acc.y !== null || acc.z !== null)) {
+        dataReceived = true;
+        cleanup();
+        resolve({ success: true });
+      }
+    };
+
+    const cleanup = () => {
+      window.removeEventListener("devicemotion", handleMotion);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+
+    window.addEventListener("devicemotion", handleMotion);
+
+    // Timeout after 2 seconds
+    timeoutId = setTimeout(() => {
+      cleanup();
+      if (!dataReceived) {
+        resolve({
+          success: false,
+          error: "No motion data received. Try moving your device.",
+        });
+      }
+    }, 2000);
+  });
+}

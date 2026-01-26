@@ -26,6 +26,7 @@ export interface PlayerState {
   statusEffects: StatusEffectInfo[];
   isDisconnected?: boolean;
   graceTimeRemaining?: number;
+  isReady?: boolean;
 }
 
 export interface StatusEffectInfo {

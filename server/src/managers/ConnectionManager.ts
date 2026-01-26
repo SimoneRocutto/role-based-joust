@@ -34,6 +34,9 @@ export class ConnectionManager {
   // Map: playerId -> player name (for lobby display)
   private playerNames: Map<string, string> = new Map();
 
+  // Map: playerId -> ready state (for lobby ready tracking)
+  private playerReadyState: Map<string, boolean> = new Map();
+
   // Configuration
   private readonly SESSION_TIMEOUT = 300000; // 5 minutes
   private readonly HEARTBEAT_INTERVAL = 30000; // 30 seconds
@@ -132,12 +135,14 @@ export class ConnectionManager {
     name: string;
     number: number;
     isAlive: boolean;
+    isReady: boolean;
   }> {
     const lobbyPlayers: Array<{
       id: string;
       name: string;
       number: number;
       isAlive: boolean;
+      isReady: boolean;
     }> = [];
 
     for (const [playerId, socketId] of this.playerSockets.entries()) {
@@ -150,11 +155,55 @@ export class ConnectionManager {
           name,
           number,
           isAlive: true, // All lobby players are "alive" (waiting)
+          isReady: this.playerReadyState.get(playerId) ?? false,
         });
       }
     }
 
     return lobbyPlayers.sort((a, b) => a.number - b.number);
+  }
+
+  // ========================================================================
+  // READY STATE MANAGEMENT
+  // ========================================================================
+
+  /**
+   * Set player ready state
+   */
+  setPlayerReady(playerId: string, isReady: boolean): void {
+    if (!this.playerSockets.has(playerId)) {
+      logger.warn("CONNECTION", `Cannot set ready state for unknown player: ${playerId}`);
+      return;
+    }
+    this.playerReadyState.set(playerId, isReady);
+    logger.debug("CONNECTION", `Player ${playerId} ready state: ${isReady}`);
+  }
+
+  /**
+   * Get player ready state
+   */
+  getPlayerReady(playerId: string): boolean {
+    return this.playerReadyState.get(playerId) ?? false;
+  }
+
+  /**
+   * Get count of ready players
+   */
+  getReadyCount(): { ready: number; total: number } {
+    const total = this.playerSockets.size;
+    let ready = 0;
+    for (const isReady of this.playerReadyState.values()) {
+      if (isReady) ready++;
+    }
+    return { ready, total };
+  }
+
+  /**
+   * Reset all player ready states
+   */
+  resetAllReadyState(): void {
+    this.playerReadyState.clear();
+    logger.debug("CONNECTION", "All ready states reset");
   }
 
   /**
@@ -193,8 +242,11 @@ export class ConnectionManager {
       this.lastActivity.delete(oldSocketId);
     }
 
-    // Register new connection
-    this.registerConnection(playerId, newSocketId, false);
+    // Get existing player name
+    const playerName = this.playerNames.get(playerId) || "Unknown";
+
+    // Register new connection (don't generate new token, keep existing)
+    this.registerConnection(playerId, newSocketId, playerName, false);
 
     return {
       success: true,
@@ -361,6 +413,7 @@ export class ConnectionManager {
     this.lastActivity.clear();
     this.playerNumbers.clear();
     this.playerNames.clear();
+    this.playerReadyState.clear();
 
     logger.info("CONNECTION", "All connections cleared");
   }

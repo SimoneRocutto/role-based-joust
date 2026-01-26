@@ -10,6 +10,24 @@ const logger = Logger.getInstance();
 const connectionManager = ConnectionManager.getInstance();
 
 /**
+ * GET /api/game/config
+ * Get game configuration (including dev mode status)
+ */
+router.get(
+  "/config",
+  asyncHandler(async (req: Request, res: Response) => {
+    const isDevMode = process.env.NODE_ENV === "development";
+
+    logger.debug("GAME", "Fetched game config", { devMode: isDevMode });
+
+    res.json({
+      success: true,
+      devMode: isDevMode,
+    });
+  })
+);
+
+/**
  * GET /api/game/modes
  * List all available game modes
  */

@@ -7,6 +7,7 @@ class AccelerometerService {
   private isActive = false;
   private lastSendTime = 0;
   private callback: AccelerometerCallback | null = null;
+  private subscribers: Set<AccelerometerCallback> = new Set();
 
   async requestPermission(): Promise<boolean> {
     // iOS 13+ requires explicit permission
@@ -51,7 +52,8 @@ class AccelerometerService {
   }
 
   private handleMotion = (event: DeviceMotionEvent) => {
-    if (!this.callback || !this.isActive) return;
+    // Skip if no listeners at all
+    if (!this.callback && !this.isActive && this.subscribers.size === 0) return;
 
     // Throttle to 10Hz (100ms interval)
     const now = Date.now();
@@ -67,26 +69,44 @@ class AccelerometerService {
     }
 
     // Normalize to -10 to +10 range and clamp
+    const x = this.clamp(
+      acc.x,
+      ACCELEROMETER_CONFIG.MIN_VALUE,
+      ACCELEROMETER_CONFIG.MAX_VALUE
+    );
+    const y = this.clamp(
+      acc.y,
+      ACCELEROMETER_CONFIG.MIN_VALUE,
+      ACCELEROMETER_CONFIG.MAX_VALUE
+    );
+    const z = this.clamp(
+      acc.z,
+      ACCELEROMETER_CONFIG.MIN_VALUE,
+      ACCELEROMETER_CONFIG.MAX_VALUE
+    );
+
+    // Calculate intensity as normalized magnitude (0-1 range roughly)
+    // Subtract gravity (approximately 9.8) and normalize
+    const magnitude = Math.sqrt(x * x + y * y + z * z);
+    const intensity = Math.max(0, (magnitude - 9.8) / 10);
+
     const data: MovementData = {
-      x: this.clamp(
-        acc.x,
-        ACCELEROMETER_CONFIG.MIN_VALUE,
-        ACCELEROMETER_CONFIG.MAX_VALUE
-      ),
-      y: this.clamp(
-        acc.y,
-        ACCELEROMETER_CONFIG.MIN_VALUE,
-        ACCELEROMETER_CONFIG.MAX_VALUE
-      ),
-      z: this.clamp(
-        acc.z,
-        ACCELEROMETER_CONFIG.MIN_VALUE,
-        ACCELEROMETER_CONFIG.MAX_VALUE
-      ),
+      x,
+      y,
+      z,
+      intensity,
       timestamp: now,
     };
 
-    this.callback(data);
+    // Call main callback if active
+    if (this.callback && this.isActive) {
+      this.callback(data);
+    }
+
+    // Notify all subscribers
+    for (const subscriber of this.subscribers) {
+      subscriber(data);
+    }
   };
 
   private clamp(value: number, min: number, max: number): number {
@@ -104,6 +124,29 @@ class AccelerometerService {
     return {
       isActive: this.isActive,
       isSupported: this.isSupported(),
+    };
+  }
+
+  /**
+   * Subscribe to accelerometer data. Returns an unsubscribe function.
+   * Subscribers receive data even when the main callback is not set.
+   */
+  subscribe(callback: AccelerometerCallback): () => void {
+    this.subscribers.add(callback);
+
+    // Auto-start listening if not already active and this is the first subscriber
+    if (!this.isActive && this.subscribers.size === 1 && !this.callback) {
+      window.addEventListener("devicemotion", this.handleMotion);
+    }
+
+    // Return unsubscribe function
+    return () => {
+      this.subscribers.delete(callback);
+
+      // Auto-stop if no more subscribers and no main callback
+      if (this.subscribers.size === 0 && !this.callback && !this.isActive) {
+        window.removeEventListener("devicemotion", this.handleMotion);
+      }
     };
   }
 }

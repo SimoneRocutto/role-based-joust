@@ -9,6 +9,8 @@ import type {
   VampireBloodlustEvent,
   ModeEvent,
   CountdownEvent,
+  PlayerReadyEvent,
+  ReadyCountEvent,
 } from "@/types/events.types";
 
 /**
@@ -86,6 +88,14 @@ export class GameEvents extends EventEmitter {
     this.emit("game:stopped", {});
   }
 
+  emitPlayerReady(payload: PlayerReadyEvent): void {
+    this.emit("player:ready", payload);
+  }
+
+  emitReadyCountUpdate(payload: ReadyCountEvent): void {
+    this.emit("ready:update", payload);
+  }
+
   // ========== TYPED EVENT LISTENERS ==========
 
   onGameTick(listener: (payload: GameTickEvent) => void): void {
@@ -134,6 +144,14 @@ export class GameEvents extends EventEmitter {
 
   onGameStopped(listener: () => void): void {
     this.on("game:stopped", listener);
+  }
+
+  onPlayerReady(listener: (payload: PlayerReadyEvent) => void): void {
+    this.on("player:ready", listener);
+  }
+
+  onReadyCountUpdate(listener: (payload: ReadyCountEvent) => void): void {
+    this.on("ready:update", listener);
   }
 
   // ========== UTILITY METHODS ==========

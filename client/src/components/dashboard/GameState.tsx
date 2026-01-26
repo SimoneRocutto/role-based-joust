@@ -2,6 +2,7 @@ import { useGameState } from '@/hooks/useGameState'
 import { formatTime } from '@/utils/formatters'
 import { useAudio } from '@/hooks/useAudio'
 import { Music2 } from 'lucide-react'
+import ReadyCounter from './ReadyCounter'
 
 function GameState() {
   const {
@@ -32,6 +33,7 @@ function GameState() {
               Round {currentRound}/{totalRounds}
             </div>
           )}
+          {isWaiting && <ReadyCounter />}
         </div>
 
         {/* Center: Timer (only during active game) */}

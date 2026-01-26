@@ -3,14 +3,18 @@ import { useNavigate } from 'react-router-dom'
 import { socketService } from '@/services/socket'
 import { useGameState } from '@/hooks/useGameState'
 import { generateUUID } from '@/utils/formatters'
+import { validateMotionAccess, requestWakeLock } from '@/utils/permissions'
 import Logo from '@/components/shared/Logo'
 import LoadingSpinner from '@/components/shared/LoadingSpinner'
+
+type PermissionState = 'pending' | 'testing' | 'granted' | 'denied';
 
 function JoinView() {
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [joining, setJoining] = useState(false)
+  const [permissionState, setPermissionState] = useState<PermissionState>('pending')
 
   const { isConnected, setMyPlayer, updatePlayer } = useGameState()
 
@@ -93,6 +97,28 @@ function JoinView() {
     }
   }
 
+  const handleEnableMotion = async () => {
+    setError(null)
+    setPermissionState('testing')
+
+    // Validate motion access (requests permission + tests data flow)
+    const result = await validateMotionAccess()
+
+    if (result.success) {
+      setPermissionState('granted')
+      // Also request wake lock for mobile
+      requestWakeLock()
+    } else {
+      setPermissionState('denied')
+      setError(result.error || 'Motion access failed')
+    }
+  }
+
+  const handleRetryPermission = () => {
+    setPermissionState('pending')
+    setError(null)
+  }
+
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
       <div className="max-w-md w-full space-y-8">
@@ -119,52 +145,102 @@ function JoinView() {
           )}
         </div>
 
-        {/* Join Form */}
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="name" className="block text-sm text-gray-400 mb-2">
-              Enter your name
-            </label>
-            <input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Your name..."
-              maxLength={20}
-              disabled={joining || !isConnected}
-              className="w-full px-4 py-3 text-xl rounded-lg bg-gray-800 text-white border-2 border-gray-700 focus:border-blue-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-              autoFocus
-            />
-            <div className="mt-1 text-sm text-gray-500 text-right">
-              {name.length}/20
-            </div>
-          </div>
-
-          {/* Error Message */}
-          {error && (
-            <div className="p-3 bg-red-900/50 border border-red-700 rounded-lg text-red-200">
-              {error}
-            </div>
-          )}
-
-          {/* Join Button */}
-          <button
-            onClick={handleJoin}
-            disabled={joining || !isConnected || name.trim().length === 0}
-            className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-xl font-bold rounded-lg transition-colors"
-          >
-            {joining ? (
-              <div className="flex items-center justify-center gap-3">
-                <LoadingSpinner size="sm" />
-                <span>JOINING...</span>
-              </div>
-            ) : (
-              'JOIN GAME'
+        {/* Motion Permission Gate */}
+        {permissionState !== 'granted' && (
+          <div className="space-y-4">
+            {permissionState === 'pending' && (
+              <button
+                onClick={handleEnableMotion}
+                className="w-full py-6 bg-purple-600 hover:bg-purple-700 text-white text-xl font-bold rounded-lg transition-colors flex flex-col items-center gap-2"
+              >
+                <span className="text-3xl">📱</span>
+                <span>TAP TO ENABLE MOTION</span>
+                <span className="text-sm font-normal text-purple-200">
+                  Required for gameplay
+                </span>
+              </button>
             )}
-          </button>
-        </div>
+
+            {permissionState === 'testing' && (
+              <div className="p-6 bg-gray-800 rounded-lg text-center">
+                <LoadingSpinner size="lg" />
+                <p className="mt-4 text-gray-300">Testing motion sensors...</p>
+                <p className="text-sm text-gray-500">Try moving your device</p>
+              </div>
+            )}
+
+            {permissionState === 'denied' && (
+              <div className="space-y-4">
+                <div className="p-4 bg-red-900/50 border border-red-700 rounded-lg">
+                  <p className="text-red-200 font-semibold">Motion Access Required</p>
+                  <p className="text-red-300 text-sm mt-2">
+                    {error || 'Motion sensors are required to play.'}
+                  </p>
+                </div>
+                <button
+                  onClick={handleRetryPermission}
+                  className="w-full py-4 bg-gray-700 hover:bg-gray-600 text-white text-lg font-semibold rounded-lg transition-colors"
+                >
+                  TRY AGAIN
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Join Form - Only shown after motion permission granted */}
+        {permissionState === 'granted' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-center gap-2 text-green-400 mb-4">
+              <span className="text-xl">✓</span>
+              <span>Motion enabled</span>
+            </div>
+
+            <div>
+              <label htmlFor="name" className="block text-sm text-gray-400 mb-2">
+                Enter your name
+              </label>
+              <input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Your name..."
+                maxLength={20}
+                disabled={joining || !isConnected}
+                className="w-full px-4 py-3 text-xl rounded-lg bg-gray-800 text-white border-2 border-gray-700 focus:border-blue-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                autoFocus
+              />
+              <div className="mt-1 text-sm text-gray-500 text-right">
+                {name.length}/20
+              </div>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="p-3 bg-red-900/50 border border-red-700 rounded-lg text-red-200">
+                {error}
+              </div>
+            )}
+
+            {/* Join Button */}
+            <button
+              onClick={handleJoin}
+              disabled={joining || !isConnected || name.trim().length === 0}
+              className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-xl font-bold rounded-lg transition-colors"
+            >
+              {joining ? (
+                <div className="flex items-center justify-center gap-3">
+                  <LoadingSpinner size="sm" />
+                  <span>JOINING...</span>
+                </div>
+              ) : (
+                'JOIN GAME'
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Instructions */}
         <div className="text-center text-sm text-gray-500 space-y-2">

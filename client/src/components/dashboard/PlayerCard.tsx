@@ -1,9 +1,11 @@
+import { useState, useEffect } from 'react'
 import type { PlayerState } from '@/types/player.types'
 import { getHealthPercentage } from '@/utils/formatters'
 import {
   getHealthBorderClass,
   getHealthGlowClass,
-  getHealthTintClass
+  getHealthTintClass,
+  useGameState
 } from '@/hooks/useGameState'
 import { STATUS_ICONS } from '@/utils/constants'
 
@@ -12,6 +14,17 @@ interface PlayerCardProps {
 }
 
 function PlayerCard({ player }: PlayerCardProps) {
+  const { isWaiting, isRoundEnded } = useGameState()
+  const [justBecameReady, setJustBecameReady] = useState(false)
+
+  // Track when player becomes ready for animation
+  useEffect(() => {
+    if (player.isReady) {
+      setJustBecameReady(true)
+      const timer = setTimeout(() => setJustBecameReady(false), 300)
+      return () => clearTimeout(timer)
+    }
+  }, [player.isReady])
   const healthPercent = getHealthPercentage(player.accumulatedDamage)
   const isDead = !player.isAlive
 
@@ -42,6 +55,7 @@ function PlayerCard({ player }: PlayerCardProps) {
   }
 
   const statusIcon = getStatusIcon()
+  const showReadyBadge = (isWaiting || isRoundEnded) && player.isReady
 
   return (
     <div
@@ -51,8 +65,22 @@ function PlayerCard({ player }: PlayerCardProps) {
         ${getHealthGlowClass(healthPercent, player.isAlive)}
         ${getHealthTintClass(healthPercent, player.isAlive)}
         ${isDead ? 'opacity-60' : ''}
+        ${justBecameReady ? 'animate-card-jump' : ''}
       `}
     >
+      {/* Ready Badge (top-right corner) */}
+      {showReadyBadge && (
+        <div
+          className={`
+            absolute -top-2 -right-2 w-10 h-10 bg-green-500 rounded-full
+            flex items-center justify-center text-white text-2xl font-bold
+            shadow-lg border-2 border-white
+            ${justBecameReady ? 'animate-bounce-once' : ''}
+          `}
+        >
+          ✓
+        </div>
+      )}
       {/* Number + Name */}
       <div className="flex items-baseline gap-2 mb-3">
         <span className="text-5xl font-bold text-white">

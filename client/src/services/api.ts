@@ -48,6 +48,11 @@ class ApiService {
     }
   }
 
+  // GET /api/game/config
+  async getGameConfig(): Promise<{ success: boolean; devMode: boolean }> {
+    return this.request<{ success: boolean; devMode: boolean }>("/game/config");
+  }
+
   // GET /api/game/modes
   async getGameModes(): Promise<{ success: boolean; modes: GameMode[] }> {
     return this.request<{ success: boolean; modes: GameMode[] }>("/game/modes");
@@ -56,7 +61,7 @@ class ApiService {
   // GET /api/game/lobby
   async getLobbyPlayers(): Promise<{
     success: boolean;
-    players: Array<{ id: string; name: string; number: number; isAlive: boolean }>;
+    players: Array<{ id: string; name: string; number: number; isAlive: boolean; isReady: boolean }>;
   }> {
     return this.request("/game/lobby");
   }

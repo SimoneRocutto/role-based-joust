@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameState } from '@/hooks/useGameState'
 import { useGameStore } from '@/store/gameStore'
@@ -6,6 +6,7 @@ import { useAccelerometer } from '@/hooks/useAccelerometer'
 import { useWakeLock } from '@/hooks/useWakeLock'
 import { useFullscreen } from '@/hooks/useFullscreen'
 import { useAudio } from '@/hooks/useAudio'
+import { useShakeDetection } from '@/hooks/useShakeDetection'
 import { socketService } from '@/services/socket'
 import { requestMotionPermission } from '@/utils/permissions'
 import PlayerNumber from '@/components/player/PlayerNumber'
@@ -28,15 +29,40 @@ function PlayerView() {
     myRole,
     isWaiting,
     isCountdown,
+    isRoundEnded,
     isMyPlayerDead
   } = useGameState()
 
-  const { countdownSeconds, countdownPhase } = useGameStore()
+  const { countdownSeconds, countdownPhase, myIsReady, setMyReady } = useGameStore()
 
   const { play } = useAudio()
   const { start: startAccelerometer, lastData } = useAccelerometer()
   const { enable: enableWakeLock } = useWakeLock(true)
   const { enter: enterFullscreen } = useFullscreen()
+
+  // Shake detection for ready state
+  const shouldDetectShake = (isWaiting || isRoundEnded) && !myIsReady && permissionsGranted
+
+  const handleShakeDetected = useCallback(() => {
+    if (!myPlayerId || myIsReady) return
+
+    // Mark as ready locally
+    setMyReady(true)
+
+    // Send ready event to server
+    socketService.sendReady(myPlayerId)
+
+    // Play a feedback sound (optional)
+    play('effects/ready', { volume: 0.5 })
+  }, [myPlayerId, myIsReady, setMyReady, play])
+
+  const { isShaking, shakeProgress } = useShakeDetection({
+    threshold: 0.5,
+    requiredDuration: 500,
+    cooldown: 1000,
+    onShake: handleShakeDetected,
+    enabled: shouldDetectShake,
+  })
 
   // Check if player has joined
   useEffect(() => {
@@ -115,6 +141,13 @@ function PlayerView() {
     }
   }, [myPlayer?.accumulatedDamage])
 
+  // Reset ready state when countdown starts (new round)
+  useEffect(() => {
+    if (isCountdown) {
+      setMyReady(false)
+    }
+  }, [isCountdown, setMyReady])
+
   if (!myPlayerNumber || !myPlayerId) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -139,9 +172,33 @@ function PlayerView() {
             <div className="text-3xl text-gray-300 mb-2">
               {myPlayer?.name || 'Player'}
             </div>
-            <div className="text-2xl text-gray-500">
-              WAITING FOR GAME START
-            </div>
+
+            {/* Shake to Ready UI */}
+            {!myIsReady ? (
+              <div className="mt-8 space-y-4">
+                <div className={`text-2xl font-bold ${isShaking ? 'text-yellow-400' : 'text-gray-400'}`}>
+                  {isShaking ? 'SHAKING...' : 'SHAKE TO READY'}
+                </div>
+
+                {/* Progress bar */}
+                <div className="w-48 h-3 bg-gray-700 rounded-full overflow-hidden mx-auto">
+                  <div
+                    className="h-full bg-yellow-400 transition-all duration-100"
+                    style={{ width: `${shakeProgress * 100}%` }}
+                  />
+                </div>
+
+                <div className="text-sm text-gray-500">
+                  Shake your device to ready up
+                </div>
+              </div>
+            ) : (
+              <div className="mt-8 space-y-2">
+                <div className="text-6xl">✓</div>
+                <div className="text-2xl text-green-400 font-bold">READY!</div>
+                <div className="text-gray-500">Waiting for other players...</div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -185,8 +242,54 @@ function PlayerView() {
         </div>
       )}
 
+      {/* Round Ended State - Shake to ready for next round */}
+      {isRoundEnded && !isCountdown && (
+        <div className="fullscreen bg-gray-800 flex flex-col items-center justify-center gap-8 p-8">
+          <ConnectionStatus />
+          <div className="text-center">
+            <div className="text-4xl text-gray-400 mb-4">ROUND OVER</div>
+            <div className="text-8xl font-bold text-white mb-4">
+              #{myPlayerNumber}
+            </div>
+            <div className="text-3xl text-gray-300 mb-2">
+              {myPlayer?.name || 'Player'}
+            </div>
+            <div className="text-xl text-gray-400 mb-4">
+              Score: {myPlayer?.points || 0} pts
+            </div>
+
+            {/* Shake to Ready UI */}
+            {!myIsReady ? (
+              <div className="mt-8 space-y-4">
+                <div className={`text-2xl font-bold ${isShaking ? 'text-yellow-400' : 'text-gray-400'}`}>
+                  {isShaking ? 'SHAKING...' : 'SHAKE FOR NEXT ROUND'}
+                </div>
+
+                {/* Progress bar */}
+                <div className="w-48 h-3 bg-gray-700 rounded-full overflow-hidden mx-auto">
+                  <div
+                    className="h-full bg-yellow-400 transition-all duration-100"
+                    style={{ width: `${shakeProgress * 100}%` }}
+                  />
+                </div>
+
+                <div className="text-sm text-gray-500">
+                  Shake your device to ready up
+                </div>
+              </div>
+            ) : (
+              <div className="mt-8 space-y-2">
+                <div className="text-6xl">✓</div>
+                <div className="text-2xl text-green-400 font-bold">READY!</div>
+                <div className="text-gray-500">Waiting for other players...</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Active Game State */}
-      {!isWaiting && !isMyPlayerDead && myPlayer && (
+      {!isWaiting && !isRoundEnded && !isMyPlayerDead && myPlayer && (
         <div className="fullscreen flex flex-col">
           {/* Status Bar (5%) */}
           <div className="h-[5%] flex items-center justify-between px-4 bg-black/50">

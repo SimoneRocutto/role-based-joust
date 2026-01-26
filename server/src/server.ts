@@ -172,6 +172,62 @@ io.on("connection", (socket) => {
   );
 
   /**
+   * Player ready event
+   */
+  socket.on("player:ready", (data: { playerId: string }) => {
+    logger.info("SOCKET", "Player ready", {
+      socketId: socket.id,
+      playerId: data.playerId,
+    });
+
+    connectionManager.updateActivity(socket.id);
+
+    const playerName = connectionManager.getPlayerName(data.playerId);
+    const playerNumber = connectionManager.getPlayerNumber(data.playerId);
+
+    if (!playerName || playerNumber === undefined) {
+      logger.warn("SOCKET", "Ready event from unknown player", {
+        playerId: data.playerId,
+      });
+      return;
+    }
+
+    // Determine which state to update based on game state
+    if (gameEngine.gameState === "waiting") {
+      // Lobby phase - use ConnectionManager
+      connectionManager.setPlayerReady(data.playerId, true);
+      const readyCount = connectionManager.getReadyCount();
+
+      // Emit ready events
+      gameEvents.emitPlayerReady({
+        playerId: data.playerId,
+        playerName,
+        playerNumber,
+        isReady: true,
+      });
+      gameEvents.emitReadyCountUpdate(readyCount);
+
+      // Broadcast updated lobby list
+      io.emit("lobby:update", {
+        players: connectionManager.getLobbyPlayers(),
+      });
+    } else if (gameEngine.gameState === "round-ended") {
+      // Between rounds - use GameEngine
+      gameEngine.setPlayerReady(data.playerId, true);
+      const readyCount = gameEngine.getReadyCount();
+
+      // Emit ready events
+      gameEvents.emitPlayerReady({
+        playerId: data.playerId,
+        playerName,
+        playerNumber,
+        isReady: true,
+      });
+      gameEvents.emitReadyCountUpdate(readyCount);
+    }
+  });
+
+  /**
    * Heartbeat/ping event
    */
   socket.on("ping", () => {
@@ -306,6 +362,16 @@ gameEvents.onCountdown((payload) => {
 // Broadcast game stopped events
 gameEvents.onGameStopped(() => {
   io.emit("game:stopped", {});
+});
+
+// Broadcast player ready events
+gameEvents.onPlayerReady((payload) => {
+  io.emit("player:ready", payload);
+});
+
+// Broadcast ready count updates
+gameEvents.onReadyCountUpdate((payload) => {
+  io.emit("ready:update", payload);
 });
 
 // Send role assignment to individual players
