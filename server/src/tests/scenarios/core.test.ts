@@ -73,6 +73,49 @@ runner.test("Role-based mode: Multi-round game", (engine) => {
   assertEqual(mode.roundCount, 3, "Should have 3 rounds");
 });
 
+runner.test("Player damage resets between rounds", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+
+  // Deal damage to player 1
+  let player1 = engine.getPlayerById("p1")!;
+  player1.takeDamage(50, engine.gameTime);
+
+  // Verify damage was taken (amount may vary by role toughness)
+  assert(player1.accumulatedDamage > 0, "Player should have some damage");
+  const damageAfterHit = player1.accumulatedDamage;
+
+  // Kill player 2 to end the round
+  let player2 = engine.getPlayerById("p2")!;
+  player2.die(engine.gameTime);
+
+  // Fast-forward to let game detect win and start next round
+  engine.fastForward(200);
+
+  // Verify we transitioned to round 2
+  assertEqual(engine.currentRound, 2, "Should be on round 2");
+
+  // Re-fetch players (they are replaced with new role assignments each round)
+  player1 = engine.getPlayerById("p1")!;
+  player2 = engine.getPlayerById("p2")!;
+
+  // After round transition, damage should be reset to 0
+  assertEqual(
+    player1.accumulatedDamage,
+    0,
+    `Player damage should reset to 0 after round transition (was ${damageAfterHit})`
+  );
+  assertEqual(player1.isAlive, true, "Player should be alive after round reset");
+  assertEqual(player2.isAlive, true, "Dead player should be revived after round reset");
+});
+
 runner.test("Game validates player count", (engine) => {
   // Setting to false so that player count validation isn't skipped
   engine.testMode = false;
@@ -365,6 +408,166 @@ runner.test("Game tick broadcasts updated damage after movement", (engine) => {
   );
 
   // Clean up
+  gameEvents.removeListener("game:tick", listener);
+});
+
+// ============================================================================
+// DISCONNECTION HANDLING TESTS
+// ============================================================================
+
+runner.test("Disconnected player is tracked correctly", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+
+  const player1 = engine.getPlayerById("p1")!;
+
+  // Initially player is not disconnected
+  assert(!player1.isDisconnected(), "Player should not be disconnected initially");
+
+  // Simulate disconnection
+  engine.handlePlayerDisconnect("p1");
+
+  // Player should now be marked as disconnected
+  assert(player1.isDisconnected(), "Player should be marked as disconnected");
+  assert(player1.disconnectedAt !== null, "Disconnection time should be set");
+});
+
+runner.test("Disconnected player within grace period counts as alive for win conditions", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+
+  // Use 3 players to properly test grace period
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+    { id: "p3", name: "Charlie", socketId: "s3", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+
+  // Kill player 3
+  const player3 = engine.getPlayerById("p3")!;
+  player3.die(engine.gameTime);
+
+  // Disconnect player 1 (within grace period)
+  engine.handlePlayerDisconnect("p1");
+
+  // Player 1 is within grace period, so should still count as effectively alive
+  // Players 1 and 2 are effectively alive (1 disconnected but in grace, 2 connected)
+  const effectivelyAlive = engine.getEffectivelyAlivePlayers();
+  assertEqual(effectivelyAlive.length, 2, "Both Alice and Bob should be effectively alive");
+
+  // Game should not end yet - 2 players still effectively alive
+  const condition = mode.checkWinCondition(engine);
+  assert(!condition.roundEnded, "Round should not end with 2 effectively alive players");
+});
+
+runner.test("Disconnected player beyond grace period is not counted for win condition", (engine) => {
+  const { BasePlayer } = require("@/models/BasePlayer");
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+
+  // Use 3 players to properly test grace period expiration
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+    { id: "p3", name: "Charlie", socketId: "s3", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+
+  // Kill player 3
+  const player3 = engine.getPlayerById("p3")!;
+  player3.die(engine.gameTime);
+
+  // Disconnect player 1
+  const player1 = engine.getPlayerById("p1")!;
+  player1.setDisconnected(engine.gameTime);
+
+  // Verify player 1 is within grace period initially
+  assert(!player1.isDisconnectedBeyondGrace(engine.gameTime), "Should be within grace period initially");
+
+  // Manually advance game time past grace period (without triggering game loop)
+  const gracePeriod = BasePlayer.DISCONNECTION_GRACE_PERIOD;
+  engine.gameTime = gracePeriod + 1000;
+
+  // Now player 1 should be beyond grace period
+  assert(
+    player1.isDisconnectedBeyondGrace(engine.gameTime),
+    "Player should be beyond grace period after time advancement"
+  );
+
+  // Only player 2 should be effectively alive now
+  const effectivelyAlive = engine.getEffectivelyAlivePlayers();
+  assertEqual(effectivelyAlive.length, 1, "Only Bob should be effectively alive");
+  assertEqual(effectivelyAlive[0].id, "p2", "Bob should be the only effectively alive player");
+});
+
+runner.test("Reconnected player is no longer marked as disconnected", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+
+  const player1 = engine.getPlayerById("p1")!;
+
+  // Disconnect player 1
+  engine.handlePlayerDisconnect("p1");
+  assert(player1.isDisconnected(), "Player should be disconnected");
+
+  // Reconnect player 1
+  engine.handlePlayerReconnect("p1", "s1-new");
+  assert(!player1.isDisconnected(), "Player should no longer be disconnected");
+  assertEqual(player1.socketId, "s1-new", "Socket ID should be updated");
+});
+
+runner.test("Game tick includes connection status", (engine) => {
+  const { GameEvents } = require("@/utils/GameEvents");
+  const gameEvents = GameEvents.getInstance();
+
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+
+  let lastTickPayload: any = null;
+  const listener = (payload: any) => {
+    lastTickPayload = payload;
+  };
+  gameEvents.onGameTick(listener);
+
+  // Disconnect player 1
+  engine.handlePlayerDisconnect("p1");
+
+  // Trigger a tick
+  engine.fastForward(100);
+
+  // Verify tick includes connection status
+  assert(lastTickPayload !== null, "Should have received tick");
+  const p1InTick = lastTickPayload.players.find((p: any) => p.id === "p1");
+  assert(p1InTick.isDisconnected === true, "Player 1 should be marked disconnected in tick");
+  assert(typeof p1InTick.graceTimeRemaining === "number", "Grace time remaining should be a number");
+
+  const p2InTick = lastTickPayload.players.find((p: any) => p.id === "p2");
+  assert(p2InTick.isDisconnected === false, "Player 2 should not be disconnected in tick");
+
   gameEvents.removeListener("game:tick", listener);
 });
 

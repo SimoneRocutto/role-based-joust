@@ -69,16 +69,23 @@ function DashboardView() {
   useEffect(() => {
     if (isWaiting) {
       playMusic('music/lobby-music', { loop: true, volume: 0.4 })
+    } else if (isCountdown) {
+      // Play tension buildup music during countdown
+      playMusic('music/tension-medium', { loop: true, volume: 0.4 })
     } else if (isActive) {
       if (aliveCount <= 3) {
         playMusic('music/tension-high', { loop: true, volume: 0.5 })
       } else {
         playMusic('music/tension-medium', { loop: true, volume: 0.4 })
       }
-    } else if (isRoundEnded || isFinished) {
+    } else if (isRoundEnded) {
+      // Loop victory music between rounds so it doesn't stop
+      playMusic('music/victory', { loop: true, volume: 0.5 })
+    } else if (isFinished) {
+      // Don't loop at game end - it's a final fanfare
       playMusic('music/victory', { loop: false, volume: 0.6 })
     }
-  }, [isWaiting, isActive, isRoundEnded, isFinished, aliveCount])
+  }, [isWaiting, isCountdown, isActive, isRoundEnded, isFinished, aliveCount])
 
   return (
     <div className="min-h-screen bg-gray-900 text-white overflow-hidden">

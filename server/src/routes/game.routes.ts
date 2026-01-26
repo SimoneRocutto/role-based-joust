@@ -256,4 +256,44 @@ router.post(
   })
 );
 
+/**
+ * POST /api/game/next-round
+ * Start the next round (admin action)
+ * Re-assigns roles and starts countdown
+ */
+router.post(
+  "/next-round",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { gameEngine } = global;
+
+    if (!gameEngine) {
+      res.status(503).json({
+        success: false,
+        error: "Game engine not initialized",
+      });
+      return;
+    }
+
+    const result = gameEngine.startNextRound();
+
+    if (!result.success) {
+      res.status(400).json({
+        success: false,
+        error: result.message,
+      });
+      return;
+    }
+
+    logger.info("GAME", "Next round started by request", {
+      round: gameEngine.currentRound,
+    });
+
+    res.json({
+      success: true,
+      round: gameEngine.currentRound,
+      totalRounds: gameEngine.currentMode?.roundCount || 1,
+    });
+  })
+);
+
 export default router;

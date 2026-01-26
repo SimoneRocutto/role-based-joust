@@ -45,6 +45,9 @@ export interface GameTickPlayerState {
   points: number;
   totalPoints: number;
   toughness: number;
+  isDisconnected: boolean;
+  disconnectedAt: number | null;
+  graceTimeRemaining: number;
 }
 
 export interface GameTickPayload {

@@ -59,6 +59,9 @@ export function useSocket() {
             points: tp.points,
             totalPoints: tp.totalPoints,
             toughness: tp.toughness,
+            // Connection status
+            isDisconnected: tp.isDisconnected,
+            graceTimeRemaining: tp.graceTimeRemaining,
             // Preserve existing fields if not in tick
             number: existing?.number ?? 0,
             role: existing?.role ?? '',

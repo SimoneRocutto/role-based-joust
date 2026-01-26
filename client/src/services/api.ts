@@ -118,6 +118,18 @@ class ApiService {
     });
   }
 
+  // POST /api/game/next-round
+  async startNextRound(): Promise<{
+    success: boolean;
+    round: number;
+    totalRounds: number;
+    error?: string;
+  }> {
+    return this.request("/game/next-round", {
+      method: "POST",
+    });
+  }
+
   // GET /api/player/:playerId/role
   async getPlayerRole(playerId: string): Promise<{
     success: boolean;

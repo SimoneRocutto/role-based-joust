@@ -61,14 +61,16 @@ export class RoleBasedMode extends GameMode {
   }
 
   /**
-   * Round ends when 1 or 0 players remain
+   * Round ends when 1 or 0 players remain effectively alive
+   * (considers disconnection grace period)
    * Game ends after configured number of rounds
    */
   checkWinCondition(engine: GameEngine): WinCondition {
-    const alive = this.getAlivePlayers(engine);
+    // Use effectively alive to handle disconnections
+    const effectivelyAlive = this.getEffectivelyAlivePlayers(engine);
 
     // Multiple players alive - continue round
-    if (alive.length > 1) {
+    if (effectivelyAlive.length > 1) {
       return {
         roundEnded: false,
         gameEnded: false,
@@ -76,13 +78,13 @@ export class RoleBasedMode extends GameMode {
       };
     }
 
-    // Round is over (0 or 1 players alive)
+    // Round is over (0 or 1 players effectively alive)
     const roundEnded = true;
     const gameEnded = engine.currentRound >= this.roundCount;
 
     // Award last standing bonus if there's a survivor
-    if (alive.length === 1) {
-      const [winner] = alive;
+    if (effectivelyAlive.length === 1) {
+      const [winner] = effectivelyAlive;
       winner.addPoints(this.lastStandingBonus, "last_standing");
       logger.info(
         "MODE",

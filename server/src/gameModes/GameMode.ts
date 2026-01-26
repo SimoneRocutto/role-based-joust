@@ -195,4 +195,19 @@ export abstract class GameMode {
   protected getAlivePlayers(engine: GameEngine): BasePlayer[] {
     return engine.players.filter((p) => p.isAlive);
   }
+
+  /**
+   * Get effectively alive players (alive AND connected or within grace period)
+   * Use this for win condition checks to handle disconnections properly
+   */
+  protected getEffectivelyAlivePlayers(engine: GameEngine): BasePlayer[] {
+    return engine.getEffectivelyAlivePlayers();
+  }
+
+  /**
+   * Get count of effectively alive players
+   */
+  protected getEffectivelyAliveCount(engine: GameEngine): number {
+    return this.getEffectivelyAlivePlayers(engine).length;
+  }
 }

@@ -32,14 +32,16 @@ export class ClassicMode extends GameMode {
   }
 
   /**
-   * Game ends when 1 or 0 players remain alive
+   * Game ends when 1 or 0 players remain effectively alive
+   * (considers disconnection grace period)
    */
   checkWinCondition(engine: GameEngine): WinCondition {
-    const alive = this.getAlivePlayers(engine);
+    // Use effectively alive to handle disconnections
+    const effectivelyAlive = this.getEffectivelyAlivePlayers(engine);
 
     // One player remains - they win
-    if (alive.length === 1) {
-      const [winner] = alive;
+    if (effectivelyAlive.length === 1) {
+      const [winner] = effectivelyAlive;
       logger.info("MODE", `${winner.name} wins Classic mode!`);
       return {
         roundEnded: true,
@@ -49,10 +51,10 @@ export class ClassicMode extends GameMode {
     }
 
     // No players remain - draw
-    if (alive.length === 0) {
+    if (effectivelyAlive.length === 0) {
       logger.info(
         "MODE",
-        "Classic mode ended in a draw - all players eliminated"
+        "Classic mode ended in a draw - all players eliminated or disconnected"
       );
       return {
         roundEnded: true,

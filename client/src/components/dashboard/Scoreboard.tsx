@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { useGameState } from '@/hooks/useGameState'
+import { useGameStore } from '@/store/gameStore'
 import { apiService } from '@/services/api'
 
 function Scoreboard() {
@@ -10,13 +12,64 @@ function Scoreboard() {
     isRoundEnded
   } = useGameState()
 
+  const { setGameState, setScores, updatePlayers } = useGameStore()
+  const [isResetting, setIsResetting] = useState(false)
+  const [isStartingRound, setIsStartingRound] = useState(false)
+
   const handleNextRound = async () => {
-    // TODO: Implement next round logic
-    console.log('Starting next round...')
+    if (isStartingRound) return
+
+    setIsStartingRound(true)
+    try {
+      const result = await apiService.startNextRound()
+      if (!result.success) {
+        console.error('Failed to start next round:', result.error)
+      }
+      // The server will emit countdown and role assignment events
+      // which the client will handle via socket listeners
+    } catch (error) {
+      console.error('Failed to start next round:', error)
+    } finally {
+      setIsStartingRound(false)
+    }
   }
 
-  const handleNewGame = () => {
-    window.location.reload()
+  const handleNewGame = async () => {
+    if (isResetting) return
+
+    setIsResetting(true)
+    try {
+      // Call server to reset the game
+      await apiService.stopGame()
+
+      // Reset client state
+      setGameState('waiting')
+      setScores([])
+
+      // Fetch lobby players (they should still be connected)
+      const lobbyResult = await apiService.getLobbyPlayers()
+      if (lobbyResult.success && lobbyResult.players.length > 0) {
+        const playerStates = lobbyResult.players.map((p) => ({
+          id: p.id,
+          name: p.name,
+          number: p.number,
+          role: '',
+          isAlive: p.isAlive,
+          points: 0,
+          totalPoints: 0,
+          toughness: 1.0,
+          accumulatedDamage: 0,
+          statusEffects: [],
+        }))
+        updatePlayers(playerStates)
+      }
+    } catch (error) {
+      console.error('Failed to reset game:', error)
+      // Fallback to reload if API fails
+      window.location.reload()
+    } finally {
+      setIsResetting(false)
+    }
   }
 
   // Sort scores by rank
@@ -93,16 +146,26 @@ function Scoreboard() {
         {isRoundEnded && !isFinished ? (
           <button
             onClick={handleNextRound}
-            className="px-12 py-4 bg-blue-600 hover:bg-blue-700 rounded-lg text-2xl font-bold transition-colors"
+            disabled={isStartingRound}
+            className={`px-12 py-4 rounded-lg text-2xl font-bold transition-colors ${
+              isStartingRound
+                ? 'bg-gray-600 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
           >
-            NEXT ROUND →
+            {isStartingRound ? 'STARTING...' : 'NEXT ROUND →'}
           </button>
         ) : (
           <button
             onClick={handleNewGame}
-            className="px-12 py-4 bg-green-600 hover:bg-green-700 rounded-lg text-2xl font-bold transition-colors"
+            disabled={isResetting}
+            className={`px-12 py-4 rounded-lg text-2xl font-bold transition-colors ${
+              isResetting
+                ? 'bg-gray-600 cursor-not-allowed'
+                : 'bg-green-600 hover:bg-green-700'
+            }`}
           >
-            NEW GAME
+            {isResetting ? 'RESETTING...' : 'NEW GAME'}
           </button>
         )}
       </div>

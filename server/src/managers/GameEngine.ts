@@ -25,6 +25,7 @@ const gameEvents = GameEvents.getInstance();
 export class GameEngine {
   // ========== PLAYERS ==========
   players: BasePlayer[] = [];
+  private playerDataCache: PlayerData[] = []; // Cache original player data for role re-assignment
 
   // ========== GAME MODE ==========
   currentMode: GameMode | null = null;
@@ -111,18 +112,11 @@ export class GameEngine {
       playerCount: playerData.length,
     });
 
-    // Get role pool from override or mode
-    const rolePool = overrideRolePool ?? this.currentMode.getRolePool(playerData.length);
+    // Cache player data for role re-assignment in subsequent rounds
+    this.playerDataCache = [...playerData];
 
-    // Create players with roles (or BasePlayer if no roles)
-    if (rolePool.length > 0) {
-      this.players = RoleFactory.getInstance().assignRoles(playerData, {
-        pool: rolePool,
-      });
-    } else {
-      // No roles - use BasePlayer
-      this.players = playerData.map((data) => new BasePlayer(data));
-    }
+    // Create players with roles for first round
+    this.assignRolesForRound(overrideRolePool);
 
     // Set first round
     this.currentRound = 1;
@@ -133,6 +127,49 @@ export class GameEngine {
     } else {
       this.startCountdown();
     }
+  }
+
+  /**
+   * Assign roles to players for the current round
+   * Uses cached player data and creates new player instances with roles
+   */
+  private assignRolesForRound(overrideRolePool?: string[]): void {
+    if (!this.currentMode) return;
+
+    // Preserve totalPoints from previous rounds
+    const previousTotalPoints = new Map<string, number>();
+    for (const player of this.players) {
+      previousTotalPoints.set(player.id, player.totalPoints);
+    }
+
+    // Get role pool from override or mode
+    const rolePool = overrideRolePool ?? this.currentMode.getRolePool(this.playerDataCache.length);
+
+    // Create players with roles (or BasePlayer if no roles)
+    if (rolePool.length > 0) {
+      this.players = RoleFactory.getInstance().assignRoles(this.playerDataCache, {
+        pool: rolePool,
+      });
+    } else {
+      // No roles - use BasePlayer
+      this.players = this.playerDataCache.map((data) => new BasePlayer(data));
+    }
+
+    // Restore totalPoints from previous rounds
+    for (const player of this.players) {
+      const previousTotal = previousTotalPoints.get(player.id);
+      if (previousTotal !== undefined) {
+        player.totalPoints = previousTotal;
+      }
+    }
+
+    logger.info("ENGINE", "Roles assigned for round", {
+      round: this.currentRound,
+      players: this.players.map((p) => ({
+        name: p.name,
+        role: p.constructor.name,
+      })),
+    });
   }
 
   /**
@@ -236,9 +273,10 @@ export class GameEngine {
     this.gameTime = 0;
     this.lastTickTime = Date.now();
 
-    // Reset all players
+    // Reset all players for the new round
     this.players.forEach((player) => {
       player.isAlive = true;
+      player.accumulatedDamage = 0; // Reset health for new round
       player.points = 0;
       player.clearStatusEffects(0);
       player.onInit(0);
@@ -288,6 +326,11 @@ export class GameEngine {
    * Called every tickRate milliseconds
    */
   private tick(): void {
+    // Only process ticks when game is active
+    if (this.gameState !== "active") {
+      return;
+    }
+
     const now = Date.now();
     const deltaTime = now - this.lastTickTime;
     this.lastTickTime = now;
@@ -308,7 +351,7 @@ export class GameEngine {
       }
     }
 
-    // Emit tick event with player states
+    // Emit tick event with player states (including connection status)
     gameEvents.emitGameTick({
       gameTime: this.gameTime,
       players: this.players.map((p) => ({
@@ -319,6 +362,9 @@ export class GameEngine {
         points: p.points,
         totalPoints: p.totalPoints,
         toughness: p.toughness,
+        isDisconnected: p.isDisconnected(),
+        disconnectedAt: p.disconnectedAt,
+        graceTimeRemaining: p.getGraceTimeRemaining(this.gameTime),
       })),
     });
 
@@ -361,15 +407,51 @@ export class GameEngine {
     // Check if game is over
     if (condition.gameEnded) {
       this.endGame();
-    } else {
-      // Start next round after delay
+    } else if (this.testMode) {
+      // In test mode, auto-advance to next round for automated testing
       this.currentRound++;
-      setTimeout(() => {
-        if (this.gameState === "round-ended") {
-          this.startRound();
-        }
-      }, 3000); // 3 second break between rounds
+      this.assignRolesForRound();
+      this.startRound();
     }
+    // In normal mode, wait for manual startNextRound() call
+  }
+
+  /**
+   * Start the next round (called by admin/API)
+   * Re-assigns roles and starts countdown before round begins
+   */
+  startNextRound(): { success: boolean; message?: string } {
+    if (this.gameState !== "round-ended") {
+      return {
+        success: false,
+        message: `Cannot start next round from state: ${this.gameState}`,
+      };
+    }
+
+    if (!this.currentMode) {
+      return { success: false, message: "No game mode set" };
+    }
+
+    const totalRounds = this.currentMode.roundCount;
+    if (this.currentRound >= totalRounds) {
+      return {
+        success: false,
+        message: "All rounds completed",
+      };
+    }
+
+    // Advance to next round
+    this.currentRound++;
+
+    logger.info("ENGINE", `Starting next round: ${this.currentRound}`);
+
+    // Re-assign roles for the new round
+    this.assignRolesForRound();
+
+    // Start countdown (which will emit role assignments and then start the round)
+    this.startCountdown();
+
+    return { success: true };
   }
 
   /**
@@ -422,6 +504,7 @@ export class GameEngine {
 
     this.gameState = "waiting";
     this.players = [];
+    this.playerDataCache = [];
     this.currentRound = 0;
     this.gameTime = 0;
 
@@ -481,6 +564,62 @@ export class GameEngine {
     if (this.currentMode) {
       this.currentMode.onPlayerMove(player, movementData.intensity || 0, this);
     }
+  }
+
+  // ========================================================================
+  // CONNECTION HANDLING
+  // ========================================================================
+
+  /**
+   * Handle player disconnection during active game
+   */
+  handlePlayerDisconnect(playerId: string): void {
+    if (!this.isActive()) return;
+
+    const player = this.getPlayerById(playerId);
+    if (!player || !player.isAlive) return;
+
+    player.setDisconnected(this.gameTime);
+
+    logger.info("ENGINE", `Player ${player.name} disconnected during game`, {
+      playerId,
+      gameTime: this.gameTime,
+      gracePeriod: BasePlayer.DISCONNECTION_GRACE_PERIOD,
+    });
+  }
+
+  /**
+   * Handle player reconnection during active game
+   */
+  handlePlayerReconnect(playerId: string, newSocketId: string): void {
+    const player = this.getPlayerById(playerId);
+    if (!player) return;
+
+    // Update the socket ID in the player object
+    player.setReconnected(newSocketId);
+
+    logger.info("ENGINE", `Player ${player.name} reconnected to game`, {
+      playerId,
+      newSocketId,
+    });
+  }
+
+  /**
+   * Get players who are effectively "out" (dead or disconnected beyond grace period)
+   */
+  getEffectivelyOutPlayers(): BasePlayer[] {
+    return this.players.filter(
+      (p) => !p.isAlive || p.isDisconnectedBeyondGrace(this.gameTime)
+    );
+  }
+
+  /**
+   * Get players who are effectively "alive" (alive and connected or within grace period)
+   */
+  getEffectivelyAlivePlayers(): BasePlayer[] {
+    return this.players.filter(
+      (p) => p.isAlive && !p.isDisconnectedBeyondGrace(this.gameTime)
+    );
   }
 
   // ========================================================================

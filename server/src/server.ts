@@ -100,6 +100,11 @@ io.on("connection", (socket) => {
     const result = connectionManager.reconnect(data.token, socket.id);
 
     if (result.success) {
+      // Notify game engine of reconnection if game is active
+      if (gameEngine.isActive()) {
+        gameEngine.handlePlayerReconnect(result.playerId!, socket.id);
+      }
+
       const player = gameEngine.getPlayerById(result.playerId!);
       const playerNumber = connectionManager.getPlayerNumber(result.playerId!);
 
@@ -183,7 +188,15 @@ io.on("connection", (socket) => {
       reason,
     });
 
+    // Get player ID before removing connection mapping
+    const playerId = connectionManager.getPlayerId(socket.id);
+
     connectionManager.handleDisconnect(socket.id);
+
+    // Notify game engine if game is active
+    if (playerId && gameEngine.isActive()) {
+      gameEngine.handlePlayerDisconnect(playerId);
+    }
 
     // Broadcast updated lobby list to all clients
     io.emit("lobby:update", {

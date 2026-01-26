@@ -35,6 +35,10 @@ export class BasePlayer {
   totalPoints: number = 0;
   toughness: number = 1.0;
 
+  // ========== CONNECTION STATE ==========
+  disconnectedAt: number | null = null; // Timestamp when player disconnected, null if connected
+  static readonly DISCONNECTION_GRACE_PERIOD = 10000; // 10 seconds
+
   // ========== MOVEMENT ==========
   lastMovementData: MovementData | null = null;
   movementHistory: MovementData[] = [];
@@ -303,6 +307,61 @@ export class BasePlayer {
     this.statusEffects.forEach((effect, id) => {
       this.removeStatusEffect(id, gameTime);
     });
+  }
+
+  // ========================================================================
+  // CONNECTION STATE
+  // ========================================================================
+
+  /**
+   * Mark player as disconnected
+   */
+  setDisconnected(gameTime: number): void {
+    if (this.disconnectedAt === null) {
+      this.disconnectedAt = gameTime;
+      logger.info("PLAYER", `${this.name} disconnected`, {
+        playerId: this.id,
+        gameTime,
+      });
+    }
+  }
+
+  /**
+   * Mark player as reconnected
+   */
+  setReconnected(newSocketId: string): void {
+    if (this.disconnectedAt !== null) {
+      logger.info("PLAYER", `${this.name} reconnected`, {
+        playerId: this.id,
+        disconnectedFor: Date.now() - this.disconnectedAt,
+      });
+      this.disconnectedAt = null;
+    }
+    this.socketId = newSocketId;
+  }
+
+  /**
+   * Check if player is currently disconnected
+   */
+  isDisconnected(): boolean {
+    return this.disconnectedAt !== null;
+  }
+
+  /**
+   * Check if player has been disconnected longer than the grace period
+   */
+  isDisconnectedBeyondGrace(currentGameTime: number): boolean {
+    if (this.disconnectedAt === null) return false;
+    return (currentGameTime - this.disconnectedAt) >= BasePlayer.DISCONNECTION_GRACE_PERIOD;
+  }
+
+  /**
+   * Get time remaining in grace period (or 0 if grace period expired)
+   */
+  getGraceTimeRemaining(currentGameTime: number): number {
+    if (this.disconnectedAt === null) return BasePlayer.DISCONNECTION_GRACE_PERIOD;
+    const elapsed = currentGameTime - this.disconnectedAt;
+    return Math.max(0, BasePlayer.DISCONNECTION_GRACE_PERIOD - elapsed);
   }
 
   // ========================================================================
