@@ -249,6 +249,7 @@ gameEvents.onRoundEnd((payload) => {
     scores: payload.scores.map((s) => ({
       playerId: s.player.id,
       playerName: s.player.name,
+      playerNumber: connectionManager.getPlayerNumber(s.player.id) ?? 0,
       score: s.score,
       rank: s.rank,
       status: s.status,
@@ -264,11 +265,13 @@ gameEvents.onGameEnd((payload) => {
       ? {
           id: payload.winner.id,
           name: payload.winner.name,
+          number: connectionManager.getPlayerNumber(payload.winner.id) ?? 0,
         }
       : null,
     scores: payload.scores.map((s) => ({
       playerId: s.player.id,
       playerName: s.player.name,
+      playerNumber: connectionManager.getPlayerNumber(s.player.id) ?? 0,
       score: s.score,
       rank: s.rank,
       status: s.status,

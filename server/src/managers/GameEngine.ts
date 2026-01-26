@@ -181,8 +181,33 @@ export class GameEngine {
       duration: this.countdownDuration,
     });
 
+    // Reset all players for the new round (before countdown so dashboard shows alive players)
+    this.players.forEach((player) => {
+      player.isAlive = true;
+      player.accumulatedDamage = 0;
+      player.points = 0;
+      player.clearStatusEffects(0);
+    });
+
     // Emit role assignments to each player
     this.emitRoleAssignments();
+
+    // Emit a game tick so dashboard shows fresh player states during countdown
+    gameEvents.emitGameTick({
+      gameTime: 0,
+      players: this.players.map((p) => ({
+        id: p.id,
+        name: p.name,
+        isAlive: p.isAlive,
+        accumulatedDamage: p.accumulatedDamage,
+        points: p.points,
+        totalPoints: p.totalPoints,
+        toughness: p.toughness,
+        isDisconnected: p.isDisconnected(),
+        disconnectedAt: p.disconnectedAt,
+        graceTimeRemaining: p.getGraceTimeRemaining(0),
+      })),
+    });
 
     // If countdown is 0, skip directly to game start
     if (this.countdownDuration <= 0) {
@@ -273,12 +298,8 @@ export class GameEngine {
     this.gameTime = 0;
     this.lastTickTime = Date.now();
 
-    // Reset all players for the new round
+    // Initialize players for the round (basic reset already done in startCountdown)
     this.players.forEach((player) => {
-      player.isAlive = true;
-      player.accumulatedDamage = 0; // Reset health for new round
-      player.points = 0;
-      player.clearStatusEffects(0);
       player.onInit(0);
     });
 

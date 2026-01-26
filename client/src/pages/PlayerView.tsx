@@ -146,32 +146,23 @@ function PlayerView() {
         </div>
       )}
 
-      {/* Countdown State - Role Reveal */}
+      {/* Countdown State - No role info shown (roles are hidden, spoken via TTS only) */}
       {isCountdown && (
         <div className="fullscreen bg-gray-900 flex flex-col items-center justify-center gap-6 p-8">
           <ConnectionStatus />
 
-          {/* Show role info if assigned */}
-          {myRole ? (
-            <div className="text-center">
-              <div className="text-xl text-gray-400 mb-2">You are the</div>
-              <div className="text-5xl font-bold text-yellow-400 mb-4">
-                {myRole.displayName}
-              </div>
-              <div className="text-lg text-gray-300 mb-8 max-w-md">
-                {myRole.description}
-              </div>
+          {/* Player info without role details */}
+          <div className="text-center">
+            <div className="text-8xl font-bold text-white mb-4">
+              #{myPlayerNumber}
             </div>
-          ) : (
-            <div className="text-center">
-              <div className="text-3xl text-gray-300 mb-2">
-                {myPlayer?.name || 'Player'}
-              </div>
-              <div className="text-xl text-gray-500">
-                Preparing game...
-              </div>
+            <div className="text-3xl text-gray-300 mb-2">
+              {myPlayer?.name || 'Player'}
             </div>
-          )}
+            <div className="text-xl text-gray-500 mb-8">
+              Get ready...
+            </div>
+          </div>
 
           {/* Countdown display */}
           <div className="text-center">
@@ -222,8 +213,8 @@ function PlayerView() {
         </div>
       )}
 
-      {/* Dead State */}
-      {isMyPlayerDead && (
+      {/* Dead State - only show when not in countdown (countdown takes precedence for new round) */}
+      {isMyPlayerDead && !isCountdown && (
         <div className="fullscreen bg-health-dead flex flex-col items-center justify-center gap-8 dead-screen">
           <div className="text-9xl">💀</div>
           <div className="text-5xl font-bold text-gray-500">ELIMINATED</div>
