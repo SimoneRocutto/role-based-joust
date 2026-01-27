@@ -4,6 +4,7 @@ import { AUDIO_VOLUMES } from "@/utils/constants";
 class AudioManager {
   private sounds: Map<string, Howl> = new Map();
   private currentMusic: Howl | null = null;
+  private currentTrack: string | null = null;
   private originalMusicVolume: number = AUDIO_VOLUMES.MUSIC;
   private isMuted = false;
   private isSpeaking = false;
@@ -40,6 +41,8 @@ class AudioManager {
 
   // Music management
   playMusic(track: string, options: { loop?: boolean; volume?: number } = {}) {
+    if (track === this.currentTrack) return;
+
     const { loop = true, volume = AUDIO_VOLUMES.MUSIC } = options;
 
     // Stop current music
@@ -61,6 +64,7 @@ class AudioManager {
     }
 
     this.originalMusicVolume = volume;
+    this.currentTrack = track;
     this.currentMusic = sound;
 
     sound.play();
