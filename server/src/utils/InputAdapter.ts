@@ -48,17 +48,12 @@ export class InputAdapter {
     z: number;
     timestamp?: number;
   }): MovementData {
-    // Phone accelerometers typically range from -10 to +10
-    // We clamp to ensure values stay within expected range
-    const x = this.clamp(raw.x, -10, 10);
-    const y = this.clamp(raw.y, -10, 10);
-    const z = this.clamp(raw.z, -10, 10);
-
+    const { x, y, z, timestamp } = raw;
     return {
       x,
       y,
       z,
-      timestamp: raw.timestamp || Date.now(),
+      timestamp: timestamp || Date.now(),
     };
   }
 

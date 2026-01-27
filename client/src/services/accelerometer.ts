@@ -62,8 +62,7 @@ class AccelerometerService {
     }
     this.lastSendTime = now;
 
-    // Get acceleration data (including gravity)
-    const acc = event.accelerationIncludingGravity;
+    const acc = event.acceleration;
     if (!acc || acc.x === null || acc.y === null || acc.z === null) {
       return;
     }
@@ -86,9 +85,8 @@ class AccelerometerService {
     );
 
     // Calculate intensity as normalized magnitude (0-1 range roughly)
-    // Subtract gravity (approximately 9.8) and normalize
     const magnitude = Math.sqrt(x * x + y * y + z * z);
-    const intensity = Math.max(0, (magnitude - 9.8) / 10);
+    const intensity = Math.max(0, magnitude / 10);
 
     const data: MovementData = {
       x,

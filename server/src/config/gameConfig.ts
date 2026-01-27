@@ -22,8 +22,8 @@ export interface GameConfig {
 
 export const gameConfig: GameConfig = {
   movement: {
-    dangerThreshold: 0.7, // 70% intensity is dangerous
-    damageMultiplier: 100, // Damage = (intensity - threshold) * 100
+    dangerThreshold: 0.1, // 10% intensity is dangerous
+    damageMultiplier: 50, // Damage = (intensity - threshold) * 100
     historySize: 5, // Average last 5 movements
     smoothingEnabled: true, // Use smoothing by default
   },
