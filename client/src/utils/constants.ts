@@ -51,6 +51,8 @@ export const SOUND_FILES = {
   VICTORY: "music/victory",
 
   // Effects
+  COUNTDOWN_BEEP: "effects/countdown-beep",
+  COUNTDOWN_GO: "effects/countdown-go",
   DAMAGE: "effects/damage",
   DEATH: "effects/death",
   LOW_HEALTH_HEARTBEAT: "effects/low-health-heartbeat",

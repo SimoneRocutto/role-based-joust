@@ -64,7 +64,7 @@ export function useSocket() {
             graceTimeRemaining: tp.graceTimeRemaining,
             // Preserve existing fields if not in tick
             number: existing?.number ?? 0,
-            role: existing?.role ?? '',
+            role: existing?.role ?? "",
             statusEffects: existing?.statusEffects ?? [],
           };
         });
@@ -78,7 +78,7 @@ export function useSocket() {
 
       // If it's me
       if (victimId === myPlayerId) {
-        audioManager.play("death", { volume: 0.5 });
+        audioManager.play("effects/death", { volume: 0.5 });
       }
     });
 
@@ -98,7 +98,11 @@ export function useSocket() {
       const updatedPlayers = existingPlayers.map((player) => {
         const scoreEntry = scores.find((s) => s.playerId === player.id);
         if (scoreEntry) {
-          return { ...player, points: scoreEntry.score, totalPoints: scoreEntry.score };
+          return {
+            ...player,
+            points: scoreEntry.score,
+            totalPoints: scoreEntry.score,
+          };
         }
         return player;
       });
@@ -112,7 +116,11 @@ export function useSocket() {
       const updatedPlayers = existingPlayers.map((player) => {
         const scoreEntry = scores.find((s) => s.playerId === player.id);
         if (scoreEntry) {
-          return { ...player, points: scoreEntry.score, totalPoints: scoreEntry.score };
+          return {
+            ...player,
+            points: scoreEntry.score,
+            totalPoints: scoreEntry.score,
+          };
         }
         return player;
       });
@@ -181,7 +189,7 @@ export function useSocket() {
         id: p.id,
         name: p.name,
         number: p.number,
-        role: '',
+        role: "",
         isAlive: p.isAlive,
         isReady: p.isReady ?? false,
         points: 0,
@@ -202,15 +210,22 @@ export function useSocket() {
       // This clears the checkmarks from the previous round
       if (phase === "countdown") {
         const existingPlayers = useGameStore.getState().players;
-        const resetPlayers = existingPlayers.map((p) => ({ ...p, isReady: false }));
+        const resetPlayers = existingPlayers.map((p) => ({
+          ...p,
+          isReady: false,
+        }));
         updatePlayers(resetPlayers);
       }
 
       // Play countdown sounds
-      if (phase === "countdown" && secondsRemaining <= 3 && secondsRemaining > 0) {
-        audioManager.play("countdown-beep", { volume: 0.5 });
+      if (
+        phase === "countdown" &&
+        secondsRemaining <= 3 &&
+        secondsRemaining > 0
+      ) {
+        audioManager.play("effects/countdown-beep", { volume: 0.5 });
       } else if (phase === "go") {
-        audioManager.play("countdown-go", { volume: 0.7 });
+        audioManager.play("effects/countdown-go", { volume: 0.7 });
       }
     });
 

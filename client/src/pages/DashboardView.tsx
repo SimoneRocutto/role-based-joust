@@ -115,14 +115,16 @@ function DashboardView() {
       // Play tension buildup music during countdown
       playMusic('music/tension-medium', { loop: true, volume: 0.4 })
     } else if (isActive) {
+      // Todo use a different music when only 3 players remain
       if (aliveCount <= 3) {
-        playMusic('music/tension-high', { loop: true, volume: 0.5 })
+        playMusic('music/tension-medium', { loop: true, volume: 0.5 })
       } else {
         playMusic('music/tension-medium', { loop: true, volume: 0.4 })
       }
     } else if (isRoundEnded) {
       // Loop victory music between rounds so it doesn't stop
-      playMusic('music/victory', { loop: true, volume: 0.5 })
+      // Todo add round victory music
+      playMusic('music/tension-medium', { loop: true, volume: 0.5 })
     } else if (isFinished) {
       // Don't loop at game end - it's a final fanfare
       playMusic('music/victory', { loop: false, volume: 0.6 })

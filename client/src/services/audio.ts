@@ -47,8 +47,9 @@ class AudioManager {
 
     // Stop current music
     if (this.currentMusic) {
-      this.currentMusic.fade(this.currentMusic.volume(), 0, 500);
-      this.currentMusic.once("fade", () => this.currentMusic?.stop());
+      const currentMusic = this.currentMusic;
+      currentMusic.fade(currentMusic.volume(), 0, 500);
+      currentMusic.once("fade", () => currentMusic?.stop());
     }
 
     // Get or create sound
@@ -68,7 +69,6 @@ class AudioManager {
     this.currentMusic = sound;
 
     sound.play();
-    sound.fade(0, this.isMuted ? 0 : volume, 1000);
   }
 
   stopMusic() {
