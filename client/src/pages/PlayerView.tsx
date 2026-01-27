@@ -160,7 +160,7 @@ function PlayerView() {
 
     // Check if player took damage (simplified - in real app track previous damage)
     if (myPlayer.accumulatedDamage > 0) {
-      play('effects/damage', { volume: 0.3 })
+      play('effects/damage', { volume: 0.3, noRepeatFor: 1000 })
     }
   }, [myPlayer?.accumulatedDamage])
 

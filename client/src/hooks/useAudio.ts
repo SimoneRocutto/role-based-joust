@@ -7,7 +7,9 @@ export function useAudio() {
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPlayingMusic, setIsPlayingMusic] = useState(false);
-  const [isAudioUnlocked, setIsAudioUnlocked] = useState(audioManager.isUnlocked);
+  const [isAudioUnlocked, setIsAudioUnlocked] = useState(
+    audioManager.isUnlocked
+  );
 
   useEffect(() => {
     // Preload all sounds
@@ -35,7 +37,10 @@ export function useAudio() {
     };
   }, []);
 
-  const play = (soundName: string, options?: { volume?: number }) => {
+  const play = (
+    soundName: string,
+    options?: { volume?: number; noRepeatFor?: number }
+  ) => {
     audioManager.play(soundName, options);
   };
 

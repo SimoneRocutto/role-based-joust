@@ -3,6 +3,7 @@ import { AUDIO_VOLUMES } from "@/utils/constants";
 
 class AudioManager {
   private sounds: Map<string, Howl> = new Map();
+  private bannedSoundList: Set<string> = new Set();
   private currentMusic: Howl | null = null;
   private currentTrack: string | null = null;
   private originalMusicVolume: number = AUDIO_VOLUMES.MUSIC;
@@ -92,16 +93,29 @@ class AudioManager {
   }
 
   // Sound effects
-  play(soundName: string, options: { volume?: number } = {}) {
+  play(
+    soundName: string,
+    options: { volume?: number; noRepeatFor?: number } = {}
+  ) {
     const sound = this.sounds.get(soundName);
     if (!sound) {
       console.warn(`Sound '${soundName}' not preloaded`);
       return;
     }
 
+    if (this.bannedSoundList.has(soundName)) return;
+
     const volume = options.volume ?? AUDIO_VOLUMES.SFX;
     sound.volume(this.isMuted ? 0 : volume);
     sound.play();
+
+    // Prevent the same sound for `noRepeatFor` ms
+    if (options.noRepeatFor) {
+      this.bannedSoundList.add(soundName);
+      setTimeout(() => {
+        this.bannedSoundList.delete(soundName);
+      }, options.noRepeatFor);
+    }
   }
 
   loop(soundName: string, options: { volume?: number } = {}) {
