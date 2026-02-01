@@ -9,6 +9,7 @@ This file is the primary entry point for Claude Code working on this repository.
 1. **Always run tests after changes.** After modifying server code, run `cd server && npm test`. After modifying client code, run `cd client && npm run test:run`. These are fast and should always pass before you consider a task done.
 2. **Suggest e2e tests when appropriate.** If changes affect game flow, socket events, UI interactions, or the join/play/dashboard user journey, remind the user to run e2e tests (`cd client && npm run test:e2e`). E2e tests are slower so don't run them automatically, but do flag when they're relevant.
 3. **Update docs when changing features.** If you change a socket event, REST endpoint, game flow, role mechanic, or any documented behavior, update the relevant doc file(s) in the same task. Use the doc index below to find which file to update. This is part of the work, not a separate step.
+4. **Track TODO.md.** After completing a task, check `TODO.md` to see if the work resolves any listed item. If it does, remove that line from the file. When a task is done and there are remaining items in `TODO.md`, suggest tackling the next one (top item = highest priority).
 
 ## Project Overview
 
