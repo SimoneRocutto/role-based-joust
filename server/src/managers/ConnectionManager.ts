@@ -255,7 +255,7 @@ export class ConnectionManager {
   }
 
   /**
-   * Handle disconnection
+   * Handle disconnection (keeps player data for potential reconnection)
    */
   handleDisconnect(socketId: string): void {
     const playerId = this.socketPlayers.get(socketId);
@@ -274,6 +274,27 @@ export class ConnectionManager {
     this.playerSockets.delete(playerId);
     this.socketPlayers.delete(socketId);
     this.lastActivity.delete(socketId);
+  }
+
+  /**
+   * Fully remove a player (clears all data including number, name, token)
+   * Use this when reconnection is not needed (e.g. lobby disconnect)
+   */
+  removePlayer(playerId: string): void {
+    const socketId = this.playerSockets.get(playerId);
+
+    if (socketId) {
+      this.socketPlayers.delete(socketId);
+      this.lastActivity.delete(socketId);
+    }
+
+    this.playerSockets.delete(playerId);
+    this.playerNumbers.delete(playerId);
+    this.playerNames.delete(playerId);
+    this.sessionTokens.delete(playerId);
+    this.playerReadyState.delete(playerId);
+
+    logger.info("CONNECTION", `Player ${playerId} fully removed`);
   }
 
   /**

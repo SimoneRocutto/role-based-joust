@@ -320,11 +320,16 @@ io.on("connection", (socket) => {
     // Get player ID before removing connection mapping
     const playerId = connectionManager.getPlayerId(socket.id);
 
-    connectionManager.handleDisconnect(socket.id);
+    if (playerId && gameEngine.gameState === "waiting") {
+      // No active game — fully remove player so their number is freed
+      connectionManager.removePlayer(playerId);
+    } else {
+      // Game in progress — keep player data for reconnection
+      connectionManager.handleDisconnect(socket.id);
 
-    // Notify game engine if game is active
-    if (playerId && gameEngine.isActive()) {
-      gameEngine.handlePlayerDisconnect(playerId);
+      if (playerId && gameEngine.isActive()) {
+        gameEngine.handlePlayerDisconnect(playerId);
+      }
     }
 
     // Broadcast updated lobby list to all clients

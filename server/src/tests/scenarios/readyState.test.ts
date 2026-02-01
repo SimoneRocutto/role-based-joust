@@ -547,6 +547,102 @@ runner.test("ConnectionManager: Ready state can be tracked during finished game 
 });
 
 // ============================================================================
+// PLAYER NUMBER REASSIGNMENT TESTS
+// ============================================================================
+
+runner.test("ConnectionManager: removePlayer frees player number for reuse", (engine) => {
+  const connectionManager = ConnectionManager.getInstance();
+  connectionManager.clearAll();
+
+  // Register two players
+  connectionManager.registerConnection("p1", "socket1", "Alice", true);
+  const { playerNumber: num2 } = connectionManager.registerConnection("p2", "socket2", "Bob", true);
+  assertEqual(num2, 2, "Bob should be player #2");
+
+  // Fully remove player 2
+  connectionManager.removePlayer("p2");
+
+  // New player should get #2 (the freed number)
+  const { playerNumber: num3 } = connectionManager.registerConnection("p3", "socket3", "Charlie", true);
+  assertEqual(num3, 2, "Charlie should get freed player number #2");
+
+  connectionManager.clearAll();
+});
+
+runner.test("ConnectionManager: removePlayer clears all player data", (engine) => {
+  const connectionManager = ConnectionManager.getInstance();
+  connectionManager.clearAll();
+
+  connectionManager.registerConnection("p1", "socket1", "Alice", true);
+  connectionManager.setPlayerReady("p1", true);
+
+  // Verify data exists
+  assertEqual(connectionManager.getPlayerName("p1"), "Alice", "Name should exist before removal");
+  assertEqual(connectionManager.getPlayerNumber("p1"), 1, "Number should exist before removal");
+  assertEqual(connectionManager.getPlayerReady("p1"), true, "Ready state should exist before removal");
+
+  // Remove player
+  connectionManager.removePlayer("p1");
+
+  // Verify all data is gone
+  assertEqual(connectionManager.getPlayerName("p1"), undefined, "Name should be gone after removal");
+  assertEqual(connectionManager.getPlayerNumber("p1"), undefined, "Number should be gone after removal");
+  assertEqual(connectionManager.getPlayerReady("p1"), false, "Ready state should be gone after removal");
+  assertEqual(connectionManager.isConnected("p1"), false, "Should not be connected after removal");
+
+  // Should not appear in lobby
+  const lobbyPlayers = connectionManager.getLobbyPlayers();
+  assertEqual(lobbyPlayers.length, 0, "No players should be in lobby after removal");
+
+  connectionManager.clearAll();
+});
+
+runner.test("ConnectionManager: handleDisconnect preserves player number (for reconnection)", (engine) => {
+  const connectionManager = ConnectionManager.getInstance();
+  connectionManager.clearAll();
+
+  connectionManager.registerConnection("p1", "socket1", "Alice", true);
+  const { playerNumber: num2 } = connectionManager.registerConnection("p2", "socket2", "Bob", true);
+  assertEqual(num2, 2, "Bob should be player #2");
+
+  // Regular disconnect (keeps data for reconnection)
+  connectionManager.handleDisconnect("socket2");
+
+  // Player number should still be reserved
+  assertEqual(connectionManager.getPlayerNumber("p2"), 2, "Number should be preserved after handleDisconnect");
+
+  // New player should NOT get #2
+  const { playerNumber: num3 } = connectionManager.registerConnection("p3", "socket3", "Charlie", true);
+  assertEqual(num3, 3, "Charlie should get #3 since #2 is reserved for reconnection");
+
+  connectionManager.clearAll();
+});
+
+runner.test("ConnectionManager: removePlayer then new player gets lowest available number", (engine) => {
+  const connectionManager = ConnectionManager.getInstance();
+  connectionManager.clearAll();
+
+  // Register 3 players
+  connectionManager.registerConnection("p1", "socket1", "Alice", true);
+  connectionManager.registerConnection("p2", "socket2", "Bob", true);
+  connectionManager.registerConnection("p3", "socket3", "Charlie", true);
+
+  // Remove player #1 and #3
+  connectionManager.removePlayer("p1");
+  connectionManager.removePlayer("p3");
+
+  // Next player should get #1 (lowest available)
+  const { playerNumber: num4 } = connectionManager.registerConnection("p4", "socket4", "Diana", true);
+  assertEqual(num4, 1, "Diana should get #1 (lowest available)");
+
+  // Next player should get #3
+  const { playerNumber: num5 } = connectionManager.registerConnection("p5", "socket5", "Eve", true);
+  assertEqual(num5, 3, "Eve should get #3 (next lowest available)");
+
+  connectionManager.clearAll();
+});
+
+// ============================================================================
 // RUN TESTS
 // ============================================================================
 
