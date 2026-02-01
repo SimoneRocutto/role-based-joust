@@ -142,6 +142,37 @@ describe('Scoreboard', () => {
         expect(apiService.stopGame).toHaveBeenCalledTimes(1)
       })
     })
+
+    it('shows ready count when players are readying up', () => {
+      act(() => {
+        useGameStore.getState().setReadyCount({ ready: 2, total: 5 })
+      })
+
+      render(<Scoreboard />)
+
+      expect(screen.getByTestId('ready-count')).toHaveTextContent('2/5 players ready')
+    })
+
+    it('shows starting message when all players are ready', () => {
+      act(() => {
+        useGameStore.getState().setReadyCount({ ready: 3, total: 3 })
+      })
+
+      render(<Scoreboard />)
+
+      expect(screen.getByTestId('ready-count')).toHaveTextContent('3/3 players ready')
+      expect(screen.getByTestId('ready-count')).toHaveTextContent('starting new game')
+    })
+
+    it('does not show ready count when total is 0', () => {
+      act(() => {
+        useGameStore.getState().setReadyCount({ ready: 0, total: 0 })
+      })
+
+      render(<Scoreboard />)
+
+      expect(screen.queryByTestId('ready-count')).not.toBeInTheDocument()
+    })
   })
 
   describe('leaderboard rendering', () => {

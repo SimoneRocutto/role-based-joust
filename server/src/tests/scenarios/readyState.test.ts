@@ -458,6 +458,95 @@ runner.test("GameEngine: isDevMode reflects NODE_ENV", (engine) => {
 });
 
 // ============================================================================
+// READY STATE RESET ON GAME STOP TESTS
+// ============================================================================
+
+runner.test("ConnectionManager: Ready state is reset when game is stopped via stopGame + resetAllReadyState pattern", (engine) => {
+  const connectionManager = ConnectionManager.getInstance();
+  connectionManager.clearAll();
+
+  // Register players and set them ready (simulating lobby ready state)
+  connectionManager.registerConnection("p1", "socket1", "Alice", true);
+  connectionManager.registerConnection("p2", "socket2", "Bob", true);
+  connectionManager.setPlayerReady("p1", true);
+  connectionManager.setPlayerReady("p2", true);
+
+  let readyCount = connectionManager.getReadyCount();
+  assertEqual(readyCount.ready, 2, "Both players should be ready before stop");
+
+  // Simulate what the stop route does: stopGame + resetAllReadyState
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "socket1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "socket2", isBot: true, behavior: "idle" },
+  ];
+  engine.startGame(players);
+  engine.stopGame();
+  connectionManager.resetAllReadyState();
+
+  // Verify ConnectionManager ready state is reset
+  readyCount = connectionManager.getReadyCount();
+  assertEqual(readyCount.ready, 0, "No players should be ready after stop + reset");
+  assertEqual(connectionManager.getPlayerReady("p1"), false, "Player 1 should not be ready");
+  assertEqual(connectionManager.getPlayerReady("p2"), false, "Player 2 should not be ready");
+
+  // Verify lobby players show as not ready
+  const lobbyPlayers = connectionManager.getLobbyPlayers();
+  for (const p of lobbyPlayers) {
+    assertEqual(p.isReady, false, `${p.name} should not be ready in lobby after stop`);
+  }
+
+  connectionManager.clearAll();
+});
+
+// ============================================================================
+// FINISHED STATE READY TESTS
+// ============================================================================
+
+runner.test("GameEngine: lastModeKey stores the mode key", (engine) => {
+  // Default should be "role-based"
+  assertEqual(engine.lastModeKey, "role-based", "Default lastModeKey should be role-based");
+
+  // Set a custom key
+  engine.lastModeKey = "classic";
+  assertEqual(engine.lastModeKey, "classic", "lastModeKey should be updatable");
+});
+
+runner.test("ConnectionManager: Ready state can be tracked during finished game state", (engine) => {
+  const connectionManager = ConnectionManager.getInstance();
+  connectionManager.clearAll();
+
+  // Register players
+  connectionManager.registerConnection("p1", "socket1", "Alice", true);
+  connectionManager.registerConnection("p2", "socket2", "Bob", true);
+
+  // Start and finish a game
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "socket1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "socket2", isBot: true, behavior: "idle" },
+  ];
+  engine.startGame(players);
+
+  // Track ready in ConnectionManager (as the finished state handler does)
+  connectionManager.setPlayerReady("p1", true);
+  assertEqual(connectionManager.getPlayerReady("p1"), true, "Player 1 should be ready");
+  assertEqual(connectionManager.getPlayerReady("p2"), false, "Player 2 should not be ready yet");
+
+  const readyCount = connectionManager.getReadyCount();
+  assertEqual(readyCount.ready, 1, "1 player should be ready");
+  assertEqual(readyCount.total, 2, "Total should be 2");
+
+  connectionManager.setPlayerReady("p2", true);
+  const finalCount = connectionManager.getReadyCount();
+  assertEqual(finalCount.ready, 2, "Both players should be ready");
+
+  connectionManager.clearAll();
+});
+
+// ============================================================================
 // RUN TESTS
 // ============================================================================
 

@@ -218,11 +218,15 @@ router.post(
 
     // Set mode on engine
     gameEngine.setGameMode(gameMode);
+    gameEngine.lastModeKey = mode || "role-based";
 
     // Set countdown duration if provided
     if (typeof countdownDuration === "number") {
       gameEngine.setCountdownDuration(countdownDuration);
     }
+
+    // Clear lobby ready states so they don't carry into finished state
+    connectionManager.resetAllReadyState();
 
     // Convert lobby players to PlayerData format
     const playerData = lobbyPlayers.map((p) => ({
@@ -269,6 +273,7 @@ router.post(
     }
 
     gameEngine.stopGame();
+    connectionManager.resetAllReadyState();
 
     logger.info("GAME", "Game stopped by request");
 

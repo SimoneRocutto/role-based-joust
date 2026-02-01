@@ -7,6 +7,7 @@ import { Server as SocketIOServer } from "socket.io";
 import app from "./app";
 import { GameEngine } from "@/managers/GameEngine";
 import { ConnectionManager } from "@/managers/ConnectionManager";
+import { GameModeFactory } from "@/factories/GameModeFactory";
 import { InputAdapter } from "@/utils/InputAdapter";
 import { Logger } from "@/utils/Logger";
 
@@ -251,6 +252,51 @@ io.on("connection", (socket) => {
         isReady: true,
       });
       gameEvents.emitReadyCountUpdate(readyCount);
+    } else if (gameEngine.gameState === "finished") {
+      // Game ended - track ready in ConnectionManager for auto-relaunch
+      connectionManager.setPlayerReady(data.playerId, true);
+      const readyCount = connectionManager.getReadyCount();
+
+      // Emit ready events so dashboard/players see ready state
+      gameEvents.emitPlayerReady({
+        playerId: data.playerId,
+        playerName,
+        playerNumber,
+        isReady: true,
+      });
+      gameEvents.emitReadyCountUpdate(readyCount);
+
+      // Check if all connected players are ready for auto-relaunch
+      if (readyCount.ready >= readyCount.total && readyCount.total >= 2) {
+        logger.info("SOCKET", "All players ready at game end - auto-launching new game");
+
+        const modeKey = gameEngine.lastModeKey;
+
+        // Stop old game and reset ready state
+        gameEngine.stopGame();
+        connectionManager.resetAllReadyState();
+
+        // Launch new game with same mode
+        const factory = GameModeFactory.getInstance();
+        const gameMode = factory.createMode(modeKey);
+        gameEngine.setGameMode(gameMode);
+        gameEngine.lastModeKey = modeKey;
+
+        const lobbyPlayers = connectionManager.getLobbyPlayers();
+        if (lobbyPlayers.length >= 2) {
+          const playerData = lobbyPlayers.map((p) => ({
+            id: p.id,
+            name: p.name,
+            socketId: connectionManager.getSocketId(p.id) || "",
+          }));
+          gameEngine.startGame(playerData);
+
+          logger.info("SOCKET", "New game auto-launched", {
+            mode: modeKey,
+            playerCount: playerData.length,
+          });
+        }
+      }
     }
   });
 

@@ -48,6 +48,9 @@ export class GameEngine {
   // ========== TEST MODE ==========
   testMode: boolean = false;
 
+  // ========== LAST GAME MODE ==========
+  lastModeKey: string = "role-based";
+
   // ========== READY STATE ==========
   private playerReadyState: Map<string, boolean> = new Map();
   readonly isDevMode: boolean = process.env.NODE_ENV === "development";

@@ -9,7 +9,8 @@ function Scoreboard() {
     currentRound,
     totalRounds,
     isFinished,
-    isRoundEnded
+    isRoundEnded,
+    readyCount
   } = useGameState()
 
   const { setGameState, setScores, updatePlayers } = useGameStore()
@@ -140,6 +141,18 @@ function Scoreboard() {
           ))}
         </div>
       </div>
+
+      {/* Ready count indicator for game end */}
+      {isFinished && readyCount.total > 0 && (
+        <div className="text-center mb-4">
+          <p className="text-xl text-gray-300" data-testid="ready-count">
+            {readyCount.ready}/{readyCount.total} players ready
+            {readyCount.ready >= readyCount.total && readyCount.total >= 2
+              ? ' — starting new game...'
+              : ''}
+          </p>
+        </div>
+      )}
 
       {/* Action Buttons */}
       <div className="text-center flex justify-center gap-4">
