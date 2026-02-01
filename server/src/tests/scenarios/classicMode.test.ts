@@ -1,0 +1,197 @@
+import { TestRunner, assert, assertEqual } from "../testRunner";
+import { GameModeFactory } from "@/factories/GameModeFactory";
+import { gameConfig, resetMovementConfig } from "@/config/gameConfig";
+import { GameEvents } from "@/utils/GameEvents";
+import type { PlayerData } from "@/types/index";
+
+const runner = new TestRunner();
+
+// ============================================================================
+// CLASSIC MODE CONFIGURATION TESTS
+// ============================================================================
+
+runner.test("Classic mode sets countdown to 3 seconds", (engine) => {
+  resetMovementConfig();
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+
+  // Access private countdownDuration via any cast
+  assertEqual(
+    (engine as any).countdownDuration,
+    3,
+    "Countdown should be set to 3 seconds for classic mode"
+  );
+
+  resetMovementConfig();
+});
+
+runner.test("Classic mode enables oneshot mode", (engine) => {
+  resetMovementConfig();
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+
+  assertEqual(
+    gameConfig.movement.oneshotMode,
+    true,
+    "oneshotMode should be enabled for classic mode"
+  );
+
+  resetMovementConfig();
+});
+
+runner.test("Classic mode resets movement config on game end", (engine) => {
+  resetMovementConfig();
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+
+  // oneshotMode should be enabled
+  assertEqual(gameConfig.movement.oneshotMode, true, "oneshotMode should be on");
+
+  // Simulate game end by calling onGameEnd
+  mode.onGameEnd(engine);
+
+  assertEqual(
+    gameConfig.movement.oneshotMode,
+    false,
+    "oneshotMode should be reset after game end"
+  );
+});
+
+runner.test("stopGame resets movement config and countdown", (engine) => {
+  resetMovementConfig();
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+
+  // Verify classic config is active
+  assertEqual(gameConfig.movement.oneshotMode, true, "oneshotMode should be on");
+  assertEqual((engine as any).countdownDuration, 3, "Countdown should be 3");
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+  engine.stopGame();
+
+  assertEqual(
+    gameConfig.movement.oneshotMode,
+    false,
+    "oneshotMode should be reset after stopGame"
+  );
+  assertEqual(
+    (engine as any).countdownDuration,
+    10,
+    "Countdown should be reset to 10 after stopGame"
+  );
+});
+
+// ============================================================================
+// ONESHOT MODE DAMAGE TESTS
+// ============================================================================
+
+runner.test("Oneshot mode kills player on any movement above threshold", (engine) => {
+  resetMovementConfig();
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+
+  const player = engine.getPlayerById("p1")!;
+  assert(player.isAlive, "Player should start alive");
+  assertEqual(player.movementConfig.oneshotMode, true, "Player should have oneshotMode");
+
+  // Simulate movement just above threshold (tiny excess)
+  // threshold is 0.10, so intensity ~0.11 should still kill
+  // magnitude = intensity * 17.32, so for 0.12 intensity: magnitude = 2.08
+  // x=2.08, y=0, z=0 -> magnitude = 2.08 -> normalized = 2.08/17.32 ≈ 0.12
+  player.updateMovement(
+    { x: 2.08, y: 0, z: 0, timestamp: Date.now() },
+    engine.gameTime
+  );
+
+  assert(!player.isAlive, "Player should be dead from oneshot mode");
+
+  resetMovementConfig();
+});
+
+runner.test("Oneshot mode does not kill player below threshold", (engine) => {
+  resetMovementConfig();
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+
+  const player = engine.getPlayerById("p1")!;
+
+  // Simulate movement below threshold
+  // Very small movement that stays under 0.10
+  player.updateMovement(
+    { x: 0.5, y: 0, z: 0, timestamp: Date.now() },
+    engine.gameTime
+  );
+
+  assert(player.isAlive, "Player should still be alive below threshold");
+  assertEqual(player.accumulatedDamage, 0, "Player should have no damage");
+
+  resetMovementConfig();
+});
+
+// ============================================================================
+// ROLE ASSIGNMENT SKIP TESTS
+// ============================================================================
+
+runner.test("Classic mode does not emit role assignments", (engine) => {
+  resetMovementConfig();
+  const gameEvents = GameEvents.getInstance();
+
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+
+  // Track role:assigned events
+  let roleAssignedCount = 0;
+  const listener = () => {
+    roleAssignedCount++;
+  };
+  gameEvents.on("role:assigned", listener);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+
+  assertEqual(
+    roleAssignedCount,
+    0,
+    "Should not emit role:assigned events for classic mode"
+  );
+
+  gameEvents.removeListener("role:assigned", listener);
+  resetMovementConfig();
+});
+
+// Note: Cannot test role-based mode emitting role:assigned events because
+// test mode skips countdown (where emitRoleAssignments is called).
+
+// ============================================================================
+// RUN TESTS
+// ============================================================================
+
+export async function runClassicModeTests() {
+  return runner.run();
+}
+
+// Allow direct execution
+runClassicModeTests();

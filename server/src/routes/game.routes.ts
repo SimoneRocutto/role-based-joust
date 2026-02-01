@@ -372,6 +372,7 @@ router.post(
       updateMovementConfig({
         dangerThreshold: preset.dangerThreshold,
         damageMultiplier: preset.damageMultiplier,
+        oneshotMode: preset.oneshotMode ?? false,
       });
 
       logger.info("GAME", "Sensitivity updated", { preset: sensitivity });

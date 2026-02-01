@@ -20,6 +20,7 @@ export interface MovementConfig {
   damageMultiplier: number;
   historySize: number;
   smoothingEnabled: boolean;
+  oneshotMode: boolean;
 }
 
 export interface PlayerState {

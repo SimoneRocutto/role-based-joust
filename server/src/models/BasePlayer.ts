@@ -163,6 +163,15 @@ export class BasePlayer {
     const threshold = this.movementConfig.dangerThreshold;
 
     if (intensity > threshold) {
+      if (this.movementConfig.oneshotMode) {
+        logger.debug("MOVEMENT", `${this.name} oneshot kill triggered`, {
+          intensity,
+          threshold,
+        });
+        this.takeDamage(this.deathThreshold, gameTime);
+        return;
+      }
+
       const excess = intensity - threshold;
       const baseDamage = excess * this.movementConfig.damageMultiplier;
 

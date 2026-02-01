@@ -5,7 +5,7 @@ import type { GameState, WinCondition } from "@/types/game.types";
 import { RoleFactory } from "@/factories/RoleFactory";
 import { GameEvents } from "@/utils/GameEvents";
 import { Logger } from "@/utils/Logger";
-import { gameConfig } from "@/config/gameConfig";
+import { gameConfig, resetMovementConfig } from "@/config/gameConfig";
 
 const logger = Logger.getInstance();
 const gameEvents = GameEvents.getInstance();
@@ -290,6 +290,12 @@ export class GameEngine {
    * Emit role assignment info to each player via their socket
    */
   private emitRoleAssignments(): void {
+    // Skip role assignments for modes without roles (e.g., Classic)
+    if (this.currentMode && !this.currentMode.useRoles) {
+      logger.debug("ENGINE", "Skipping role assignments (mode has no roles)");
+      return;
+    }
+
     for (const player of this.players) {
       const roleInfo = {
         playerId: player.id,
@@ -550,6 +556,10 @@ export class GameEngine {
     this.currentRound = 0;
     this.gameTime = 0;
     this.resetReadyState();
+
+    // Reset movement config and countdown to defaults
+    resetMovementConfig();
+    this.countdownDuration = 10;
 
     // Notify clients that game was stopped
     gameEvents.emitGameStopped();

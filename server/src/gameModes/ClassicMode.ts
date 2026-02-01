@@ -3,6 +3,7 @@ import type { GameEngine } from "@/managers/GameEngine";
 import type { BasePlayer } from "@/models/BasePlayer";
 import type { WinCondition, ScoreEntry } from "@/types/index";
 import { Logger } from "@/utils/Logger";
+import { updateMovementConfig, resetMovementConfig } from "@/config/gameConfig";
 
 const logger = Logger.getInstance();
 
@@ -23,6 +24,23 @@ export class ClassicMode extends GameMode {
   override useRoles = false;
   override multiRound = false;
   override roundCount = 1;
+
+  /**
+   * Configure classic mode: 3s countdown + oneshot damage
+   */
+  override onModeSelected(engine: GameEngine): void {
+    super.onModeSelected(engine);
+    engine.setCountdownDuration(3);
+    updateMovementConfig({ oneshotMode: true });
+  }
+
+  /**
+   * Reset movement config on game end
+   */
+  override onGameEnd(engine: GameEngine): void {
+    super.onGameEnd(engine);
+    resetMovementConfig();
+  }
 
   /**
    * No roles in classic mode

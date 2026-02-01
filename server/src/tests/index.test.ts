@@ -3,6 +3,7 @@ import { runRoleTests } from "./scenarios/roles.test";
 import { runStatusEffectTests } from "./scenarios/statusEffects.test";
 import { runReadyStateTests } from "./scenarios/readyState.test";
 import { runSettingsTests } from "./scenarios/settings.test";
+import { runClassicModeTests } from "./scenarios/classicMode.test";
 
 /**
  * Run all test suites
@@ -22,6 +23,7 @@ async function runAllTests() {
     statusEffects: { passed: 0, failed: 0, total: 0 },
     readyState: { passed: 0, failed: 0, total: 0 },
     settings: { passed: 0, failed: 0, total: 0 },
+    classicMode: { passed: 0, failed: 0, total: 0 },
   };
 
   // Run core tests
@@ -44,6 +46,10 @@ async function runAllTests() {
   console.log("\n⚙️ Running Settings Tests...\n");
   results.settings = await runSettingsTests();
 
+  // Run classic mode tests
+  console.log("\n🎮 Running Classic Mode Tests...\n");
+  results.classicMode = await runClassicModeTests();
+
   // Print overall summary
   console.log("\n");
   console.log("╔═══════════════════════════════════════════════════════════════╗");
@@ -52,11 +58,11 @@ async function runAllTests() {
   console.log("\n");
 
   const totalPassed =
-    results.core.passed + results.roles.passed + results.statusEffects.passed + results.readyState.passed + results.settings.passed;
+    results.core.passed + results.roles.passed + results.statusEffects.passed + results.readyState.passed + results.settings.passed + results.classicMode.passed;
   const totalFailed =
-    results.core.failed + results.roles.failed + results.statusEffects.failed + results.readyState.failed + results.settings.failed;
+    results.core.failed + results.roles.failed + results.statusEffects.failed + results.readyState.failed + results.settings.failed + results.classicMode.failed;
   const totalTests =
-    results.core.total + results.roles.total + results.statusEffects.total + results.readyState.total + results.settings.total;
+    results.core.total + results.roles.total + results.statusEffects.total + results.readyState.total + results.settings.total + results.classicMode.total;
 
   console.log(`Core Tests:          ${results.core.passed}/${results.core.total} passed`);
   console.log(`Role Tests:          ${results.roles.passed}/${results.roles.total} passed`);
@@ -65,6 +71,7 @@ async function runAllTests() {
   );
   console.log(`Ready State Tests:   ${results.readyState.passed}/${results.readyState.total} passed`);
   console.log(`Settings Tests:      ${results.settings.passed}/${results.settings.total} passed`);
+  console.log(`Classic Mode Tests:  ${results.classicMode.passed}/${results.classicMode.total} passed`);
   console.log("\n" + "─".repeat(65) + "\n");
   console.log(`TOTAL:               ${totalPassed}/${totalTests} passed`);
 

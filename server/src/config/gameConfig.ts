@@ -3,6 +3,7 @@ export interface MovementConfig {
   damageMultiplier: number; // Multiplier for excess movement damage
   historySize: number; // Number of movements to keep for smoothing
   smoothingEnabled: boolean; // Use averaged movement or instant
+  oneshotMode: boolean; // Any movement above threshold = instant death
 }
 
 export interface DamageConfig {
@@ -26,6 +27,7 @@ export interface SensitivityPreset {
   description: string;
   dangerThreshold: number;
   damageMultiplier: number;
+  oneshotMode?: boolean;
 }
 
 export const sensitivityPresets: SensitivityPreset[] = [
@@ -33,6 +35,7 @@ export const sensitivityPresets: SensitivityPreset[] = [
   { key: "medium", label: "Medium", description: "Default — current behavior", dangerThreshold: 0.10, damageMultiplier: 50 },
   { key: "high", label: "High", description: "Punishing — small movements hurt", dangerThreshold: 0.05, damageMultiplier: 70 },
   { key: "extreme", label: "Extreme", description: "Brutal — almost any movement is deadly", dangerThreshold: 0.02, damageMultiplier: 100 },
+  { key: "oneshot", label: "One Shot", description: "Any movement above threshold = instant death", dangerThreshold: 0.10, damageMultiplier: 50, oneshotMode: true },
 ];
 
 const defaultMovement: MovementConfig = {
@@ -40,6 +43,7 @@ const defaultMovement: MovementConfig = {
   damageMultiplier: 50, // Damage = (intensity - threshold) * 100
   historySize: 5, // Average last 5 movements
   smoothingEnabled: true, // Use smoothing by default
+  oneshotMode: false, // Normal damage calculation
 };
 
 export const gameConfig: GameConfig = {
