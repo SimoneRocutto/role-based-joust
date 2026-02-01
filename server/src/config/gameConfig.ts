@@ -20,13 +20,30 @@ export interface GameConfig {
   tick: TickConfig;
 }
 
+export interface SensitivityPreset {
+  key: string;
+  label: string;
+  description: string;
+  dangerThreshold: number;
+  damageMultiplier: number;
+}
+
+export const sensitivityPresets: SensitivityPreset[] = [
+  { key: "low", label: "Low", description: "Forgiving — need big movements to take damage", dangerThreshold: 0.20, damageMultiplier: 30 },
+  { key: "medium", label: "Medium", description: "Default — current behavior", dangerThreshold: 0.10, damageMultiplier: 50 },
+  { key: "high", label: "High", description: "Punishing — small movements hurt", dangerThreshold: 0.05, damageMultiplier: 70 },
+  { key: "extreme", label: "Extreme", description: "Brutal — almost any movement is deadly", dangerThreshold: 0.02, damageMultiplier: 100 },
+];
+
+const defaultMovement: MovementConfig = {
+  dangerThreshold: 0.1, // 10% intensity is dangerous
+  damageMultiplier: 50, // Damage = (intensity - threshold) * 100
+  historySize: 5, // Average last 5 movements
+  smoothingEnabled: true, // Use smoothing by default
+};
+
 export const gameConfig: GameConfig = {
-  movement: {
-    dangerThreshold: 0.1, // 10% intensity is dangerous
-    damageMultiplier: 50, // Damage = (intensity - threshold) * 100
-    historySize: 5, // Average last 5 movements
-    smoothingEnabled: true, // Use smoothing by default
-  },
+  movement: { ...defaultMovement },
 
   damage: {
     baseThreshold: 100, // Takes 100 damage to die
@@ -37,3 +54,11 @@ export const gameConfig: GameConfig = {
     rate: parseInt(process.env.TICK_RATE || "100", 10), // 100ms per tick
   },
 };
+
+export function updateMovementConfig(partial: Partial<MovementConfig>): void {
+  Object.assign(gameConfig.movement, partial);
+}
+
+export function resetMovementConfig(): void {
+  Object.assign(gameConfig.movement, defaultMovement);
+}

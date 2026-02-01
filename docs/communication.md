@@ -532,6 +532,68 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
 
 ---
 
+### `GET /api/game/settings`
+
+**Purpose**: Get current movement sensitivity settings and available presets
+
+**Response**:
+
+```typescript
+{
+  success: boolean,
+  sensitivity: string,       // Current preset key ("low" | "medium" | "high" | "extreme" | "custom")
+  movement: {
+    dangerThreshold: number, // 0-1, intensity above which damage occurs
+    damageMultiplier: number // Multiplier for excess movement damage
+  },
+  presets: Array<{
+    key: string,
+    label: string,
+    description: string,
+    dangerThreshold: number,
+    damageMultiplier: number
+  }>
+}
+```
+
+---
+
+### `POST /api/game/settings`
+
+**Purpose**: Update movement sensitivity settings via preset name or custom values
+
+**Request** (option A — preset):
+
+```typescript
+{
+  sensitivity: string  // "low" | "medium" | "high" | "extreme"
+}
+```
+
+**Request** (option B — custom):
+
+```typescript
+{
+  dangerThreshold?: number,  // 0.001-1
+  damageMultiplier?: number  // 1-500
+}
+```
+
+**Response**:
+
+```typescript
+{
+  success: boolean,
+  sensitivity: string,       // Matched preset key or "custom"
+  movement: {
+    dangerThreshold: number,
+    damageMultiplier: number
+  }
+}
+```
+
+---
+
 ### `POST /api/game/create` (Deprecated)
 
 **Purpose**: Create game lobby without starting. Use `/api/game/launch` instead.

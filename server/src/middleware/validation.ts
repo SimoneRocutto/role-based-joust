@@ -43,6 +43,15 @@ const schemas = {
   reconnect: {
     token: { type: "string", required: true, minLength: 10 },
   },
+
+  /**
+   * Game settings (sensitivity) validation
+   */
+  gameSettings: {
+    sensitivity: { type: "string", required: false },
+    dangerThreshold: { type: "number", required: false, min: 0.001, max: 1 },
+    damageMultiplier: { type: "number", required: false, min: 1, max: 500 },
+  },
 };
 
 type SchemaKey = keyof typeof schemas;

@@ -2,6 +2,7 @@ import { runCoreTests } from "./scenarios/core.test";
 import { runRoleTests } from "./scenarios/roles.test";
 import { runStatusEffectTests } from "./scenarios/statusEffects.test";
 import { runReadyStateTests } from "./scenarios/readyState.test";
+import { runSettingsTests } from "./scenarios/settings.test";
 
 /**
  * Run all test suites
@@ -20,6 +21,7 @@ async function runAllTests() {
     roles: { passed: 0, failed: 0, total: 0 },
     statusEffects: { passed: 0, failed: 0, total: 0 },
     readyState: { passed: 0, failed: 0, total: 0 },
+    settings: { passed: 0, failed: 0, total: 0 },
   };
 
   // Run core tests
@@ -38,6 +40,10 @@ async function runAllTests() {
   console.log("\n🤝 Running Ready State Tests...\n");
   results.readyState = await runReadyStateTests();
 
+  // Run settings tests
+  console.log("\n⚙️ Running Settings Tests...\n");
+  results.settings = await runSettingsTests();
+
   // Print overall summary
   console.log("\n");
   console.log("╔═══════════════════════════════════════════════════════════════╗");
@@ -46,11 +52,11 @@ async function runAllTests() {
   console.log("\n");
 
   const totalPassed =
-    results.core.passed + results.roles.passed + results.statusEffects.passed + results.readyState.passed;
+    results.core.passed + results.roles.passed + results.statusEffects.passed + results.readyState.passed + results.settings.passed;
   const totalFailed =
-    results.core.failed + results.roles.failed + results.statusEffects.failed + results.readyState.failed;
+    results.core.failed + results.roles.failed + results.statusEffects.failed + results.readyState.failed + results.settings.failed;
   const totalTests =
-    results.core.total + results.roles.total + results.statusEffects.total + results.readyState.total;
+    results.core.total + results.roles.total + results.statusEffects.total + results.readyState.total + results.settings.total;
 
   console.log(`Core Tests:          ${results.core.passed}/${results.core.total} passed`);
   console.log(`Role Tests:          ${results.roles.passed}/${results.roles.total} passed`);
@@ -58,6 +64,7 @@ async function runAllTests() {
     `Status Effect Tests: ${results.statusEffects.passed}/${results.statusEffects.total} passed`
   );
   console.log(`Ready State Tests:   ${results.readyState.passed}/${results.readyState.total} passed`);
+  console.log(`Settings Tests:      ${results.settings.passed}/${results.settings.total} passed`);
   console.log("\n" + "─".repeat(65) + "\n");
   console.log(`TOTAL:               ${totalPassed}/${totalTests} passed`);
 

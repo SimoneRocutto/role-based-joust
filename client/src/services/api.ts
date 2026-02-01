@@ -131,6 +131,34 @@ class ApiService {
     });
   }
 
+  // GET /api/game/settings
+  async getSettings(): Promise<{
+    success: boolean;
+    sensitivity: string;
+    movement: { dangerThreshold: number; damageMultiplier: number };
+    presets: Array<{
+      key: string;
+      label: string;
+      description: string;
+      dangerThreshold: number;
+      damageMultiplier: number;
+    }>;
+  }> {
+    return this.request("/game/settings");
+  }
+
+  // POST /api/game/settings
+  async updateSettings(payload: { sensitivity: string }): Promise<{
+    success: boolean;
+    sensitivity: string;
+    movement: { dangerThreshold: number; damageMultiplier: number };
+  }> {
+    return this.request("/game/settings", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
   // GET /api/player/:playerId/role
   async getPlayerRole(playerId: string): Promise<{
     success: boolean;

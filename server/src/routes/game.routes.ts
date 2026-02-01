@@ -4,6 +4,11 @@ import { validate } from "@/middleware/validation";
 import { GameModeFactory } from "@/factories/GameModeFactory";
 import { ConnectionManager } from "@/managers/ConnectionManager";
 import { Logger } from "@/utils/Logger";
+import {
+  gameConfig,
+  sensitivityPresets,
+  updateMovementConfig,
+} from "@/config/gameConfig";
 
 const router = Router();
 const logger = Logger.getInstance();
@@ -310,6 +315,101 @@ router.post(
       success: true,
       round: gameEngine.currentRound,
       totalRounds: gameEngine.currentMode?.roundCount || 1,
+    });
+  })
+);
+
+/**
+ * GET /api/game/settings
+ * Get current movement sensitivity settings and available presets
+ */
+router.get(
+  "/settings",
+  asyncHandler(async (req: Request, res: Response) => {
+    const currentPreset = sensitivityPresets.find(
+      (p) =>
+        p.dangerThreshold === gameConfig.movement.dangerThreshold &&
+        p.damageMultiplier === gameConfig.movement.damageMultiplier
+    );
+
+    res.json({
+      success: true,
+      sensitivity: currentPreset?.key || "custom",
+      movement: {
+        dangerThreshold: gameConfig.movement.dangerThreshold,
+        damageMultiplier: gameConfig.movement.damageMultiplier,
+      },
+      presets: sensitivityPresets,
+    });
+  })
+);
+
+/**
+ * POST /api/game/settings
+ * Update movement sensitivity settings
+ * Body: { sensitivity: string } (preset name) or { dangerThreshold, damageMultiplier } (custom)
+ */
+router.post(
+  "/settings",
+  validate("gameSettings"),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { sensitivity, dangerThreshold, damageMultiplier } = req.body;
+
+    if (sensitivity) {
+      const preset = sensitivityPresets.find((p) => p.key === sensitivity);
+      if (!preset) {
+        res.status(400).json({
+          success: false,
+          error: `Unknown sensitivity preset: ${sensitivity}. Available: ${sensitivityPresets.map((p) => p.key).join(", ")}`,
+        });
+        return;
+      }
+      updateMovementConfig({
+        dangerThreshold: preset.dangerThreshold,
+        damageMultiplier: preset.damageMultiplier,
+      });
+
+      logger.info("GAME", "Sensitivity updated", { preset: sensitivity });
+
+      res.json({
+        success: true,
+        sensitivity: preset.key,
+        movement: {
+          dangerThreshold: preset.dangerThreshold,
+          damageMultiplier: preset.damageMultiplier,
+        },
+      });
+      return;
+    }
+
+    if (dangerThreshold !== undefined || damageMultiplier !== undefined) {
+      const update: Partial<{ dangerThreshold: number; damageMultiplier: number }> = {};
+      if (dangerThreshold !== undefined) update.dangerThreshold = dangerThreshold;
+      if (damageMultiplier !== undefined) update.damageMultiplier = damageMultiplier;
+      updateMovementConfig(update);
+
+      logger.info("GAME", "Movement config updated", update);
+
+      const currentPreset = sensitivityPresets.find(
+        (p) =>
+          p.dangerThreshold === gameConfig.movement.dangerThreshold &&
+          p.damageMultiplier === gameConfig.movement.damageMultiplier
+      );
+
+      res.json({
+        success: true,
+        sensitivity: currentPreset?.key || "custom",
+        movement: {
+          dangerThreshold: gameConfig.movement.dangerThreshold,
+          damageMultiplier: gameConfig.movement.damageMultiplier,
+        },
+      });
+      return;
+    }
+
+    res.status(400).json({
+      success: false,
+      error: "Provide either 'sensitivity' (preset name) or 'dangerThreshold'/'damageMultiplier' values",
     });
   })
 );

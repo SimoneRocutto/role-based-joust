@@ -10,13 +10,17 @@ function AdminControls() {
   const [modes, setModes] = useState<GameMode[]>([])
   const [selectedMode, setSelectedMode] = useState('role-based')
   const [selectedTheme, setSelectedTheme] = useState('standard')
+  const [selectedSensitivity, setSelectedSensitivity] = useState('medium')
+  const [sensitivityPresets, setSensitivityPresets] = useState<
+    Array<{ key: string; label: string; description: string }>
+  >([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // Check if all players are ready (for production mode)
   const allPlayersReady = readyCount.total > 0 && readyCount.ready === readyCount.total
 
-  // Fetch available game modes
+  // Fetch available game modes and settings
   useEffect(() => {
     apiService
       .getGameModes()
@@ -29,7 +33,29 @@ function AdminControls() {
         console.error('Failed to fetch game modes:', err)
         setError('Failed to load game modes')
       })
+
+    apiService
+      .getSettings()
+      .then((data) => {
+        if (data.success) {
+          setSensitivityPresets(data.presets)
+          setSelectedSensitivity(data.sensitivity)
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch settings:', err)
+      })
   }, [])
+
+  const handleSensitivityChange = async (value: string) => {
+    setSelectedSensitivity(value)
+    try {
+      await apiService.updateSettings({ sensitivity: value })
+    } catch (err) {
+      console.error('Failed to update sensitivity:', err)
+      setError('Failed to update sensitivity')
+    }
+  }
 
   const handleLaunchGame = async () => {
     if (players.length < 2) {
@@ -106,6 +132,31 @@ function AdminControls() {
             </select>
           </div>
         )}
+      </div>
+
+      {/* Sensitivity Selection */}
+      <div className="mb-4">
+        <label className="block text-sm text-gray-400 mb-2">Movement Sensitivity</label>
+        <div className="flex gap-2">
+          {sensitivityPresets.map((preset) => (
+            <button
+              key={preset.key}
+              onClick={() => handleSensitivityChange(preset.key)}
+              disabled={loading}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                selectedSensitivity === preset.key
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+              title={preset.description}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-gray-500 mt-1">
+          {sensitivityPresets.find((p) => p.key === selectedSensitivity)?.description}
+        </p>
       </div>
 
       {/* Connected Players */}
