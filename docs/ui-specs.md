@@ -1,6 +1,6 @@
 # Extended Joust - Complete Specification
 
-## Part 3: UI Specifications
+## UI Specifications
 
 ---
 
@@ -578,4 +578,4 @@ export const PLAYER_NUMBER_SIZES = {
 
 ---
 
-This specification continues in **Part 4: Communication Protocol** →
+Next: see `communication.md` →

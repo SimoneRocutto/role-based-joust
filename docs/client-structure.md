@@ -1,6 +1,6 @@
 # Extended Joust - Complete Specification
 
-## Part 5: Project Structure & Implementation Notes
+## Client Project Structure & Implementation Notes
 
 ---
 

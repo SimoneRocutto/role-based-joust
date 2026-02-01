@@ -1,0 +1,106 @@
+server/
+├── src/
+│   ├── models/                      # Core game entities
+│   │   ├── BasePlayer.ts           # Abstract base class for all players/roles
+│   │   │                           # Movement processing, damage calculation,
+│   │   │                           # status effect management, lifecycle hooks
+│   │   │                           # (onInit, onTick, beforeDeath, die, onDeath),
+│   │   │                           # points system, bot behavior
+│   │   │
+│   │   ├── StatusEffect.ts         # Abstract base class for status effects
+│   │   │                           # Lifecycle hooks, duration management,
+│   │   │                           # priority system, damage modification,
+│   │   │                           # death prevention
+│   │   │
+│   │   ├── roles/                  # Role implementations (auto-discovered)
+│   │   │   ├── Vampire.ts          # Bloodlust mechanic, priority 20
+│   │   │   ├── Beast.ts            # Increased toughness (1.5x), priority 10
+│   │   │   ├── BeastHunter.ts      # Bonus points when Beast dies, priority 5
+│   │   │   └── Angel.ts            # One-time death prevention, priority 50
+│   │   │
+│   │   └── statusEffects/          # Status effect implementations (auto-discovered)
+│   │       ├── Invulnerability.ts  # Blocks all damage, priority 100
+│   │       ├── Shielded.ts        # Absorbs damage up to capacity, priority 80
+│   │       ├── Strengthened.ts    # Increased damage resistance, priority 60
+│   │       ├── Weakened.ts        # Reduces toughness, priority 50
+│   │       └── Excited.ts         # Must keep moving or die, priority 10
+│   │
+│   ├── gameModes/                  # Game mode implementations (auto-discovered)
+│   │   ├── GameMode.ts             # Abstract base class (template methods,
+│   │   │                           # hooks, getRolePool, checkWinCondition,
+│   │   │                           # calculateFinalScores)
+│   │   ├── ClassicMode.ts          # No roles, pure survival, single round
+│   │   └── RoleBasedMode.ts        # Roles + multi-round (3) + points
+│   │
+│   ├── managers/
+│   │   ├── GameEngine.ts           # Core game loop (100ms tick), state machine
+│   │   │                           # (waiting → countdown → active → round-ended → finished),
+│   │   │                           # player management, round/match flow,
+│   │   │                           # test mode (bots, fast-forward)
+│   │   ├── GameState.ts            # Round history, snapshots, statistics
+│   │   ├── ConnectionManager.ts    # Session tokens, socket-player mapping,
+│   │   │                           # heartbeat/timeout, ready state, lobby
+│   │   └── StatusEffectManager.ts  # Auto-discovery registry for effects
+│   │
+│   ├── factories/
+│   │   ├── RoleFactory.ts          # Auto-discovers roles from models/roles/,
+│   │   │                           # assigns roles randomly to players
+│   │   └── GameModeFactory.ts      # Auto-discovers modes from gameModes/,
+│   │                               # creates mode instances
+│   │
+│   ├── utils/
+│   │   ├── GameEvents.ts           # EventEmitter singleton (game:tick, player:death,
+│   │   │                           # round:start/end, game:end, vampire:bloodlust,
+│   │   │                           # game:countdown, player:ready, ready:update, etc.)
+│   │   ├── Logger.ts               # Logging with levels, categories, file output,
+│   │   │                           # filtering, querying, export
+│   │   └── InputAdapter.ts         # Normalizes device input (phone/joycon/custom)
+│   │
+│   ├── routes/
+│   │   ├── game.routes.ts          # POST /game/launch (primary), /game/next-round,
+│   │   │                           # /game/stop, GET /game/config, /game/modes,
+│   │   │                           # /game/lobby, /game/state
+│   │   │                           # Deprecated: POST /game/create, /game/start
+│   │   ├── player.routes.ts        # POST /player/move, /player/reconnect,
+│   │   │                           # GET /player/:id/role, /player/:id/state
+│   │   └── debug.routes.ts         # Debug/test endpoints (dev only):
+│   │                               # state, bot commands, fastforward, reset, logs
+│   │
+│   ├── tests/
+│   │   ├── testRunner.ts           # Custom test harness (no Jest/Mocha)
+│   │   ├── index.test.ts           # Entry point, runs all suites
+│   │   └── scenarios/
+│   │       ├── core.test.ts        # Engine, game flow, movement, damage
+│   │       ├── roles.test.ts       # Role-specific mechanics
+│   │       ├── statusEffects.test.ts # Effect lifecycle and priority
+│   │       └── readyState.test.ts  # Ready state in lobby and between rounds
+│   │
+│   ├── types/
+│   │   ├── player.types.ts         # PlayerData, PlayerState, MovementData
+│   │   ├── game.types.ts           # GameState, RoundInfo, ScoreEntry
+│   │   ├── mode.types.ts           # ModeConfig, ModeInfo, RoleTheme
+│   │   ├── status.types.ts         # StatusEffectConfig
+│   │   ├── events.types.ts         # Event payload types
+│   │   ├── bot.types.ts            # Bot behavior types
+│   │   ├── factory.types.ts        # Factory types
+│   │   ├── logger.types.ts         # Logger types
+│   │   ├── test.types.ts           # Test types
+│   │   └── index.ts                # Barrel export
+│   │
+│   ├── config/
+│   │   ├── gameConfig.ts           # Movement, damage, tick rate settings
+│   │   ├── roleConfig.ts           # Per-role settings (cooldowns, durations)
+│   │   ├── roleThemes.ts           # Theme → role list mapping
+│   │   └── priorities.ts           # Priority constants
+│   │
+│   ├── middleware/
+│   │   ├── errorHandler.ts         # Global error handling
+│   │   └── validation.ts           # Request validation
+│   │
+│   ├── app.ts                      # Express setup, route registration, middleware
+│   └── server.ts                   # Entry point: HTTP server, Socket.IO init,
+│                                   # socket event handlers, game event broadcasting
+│
+├── docs/                           # Server documentation
+├── dist/                           # Compiled JS (gitignored)
+└── logs/                           # Runtime logs (gitignored)

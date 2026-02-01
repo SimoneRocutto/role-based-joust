@@ -1,6 +1,6 @@
 # Extended Joust - Complete Specification
 
-## Part 2: Audio System
+## Audio System
 
 ---
 
@@ -500,4 +500,4 @@ localStorage.setItem("audioSettings", JSON.stringify(settings));
 
 ---
 
-This specification continues in **Part 3: UI Specifications** →
+Next: see `ui-specs.md` →

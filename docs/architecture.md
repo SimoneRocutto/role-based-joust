@@ -1,6 +1,6 @@
 # Extended Joust - Complete Specification
 
-## Part 1: Project Overview & Architecture
+## Project Overview & Architecture
 
 ---
 
@@ -127,50 +127,44 @@ Backend serves everything on port 3000:
 
 ### 1. Lobby Phase
 
-1. Host opens dashboard (`/dashboard`)
-2. Host creates game (selects mode + theme)
-3. Players navigate to host's IP (`http://192.168.x.x:3000`)
-4. Players enter names and join (`/join` → `/player`)
-5. Dashboard shows connected players waiting
-6. Host clicks "Start Game"
+1. Admin opens dashboard (`/dashboard`)
+2. Players navigate to host's IP (`http://192.168.x.x:3000`)
+3. Players enter names and join (`/join` → `/player`)
+4. Dashboard shows connected players and their ready status
+5. Players shake their device to ready up (or click in dev mode — controlled by URL parameter, not Node environment)
+6. Once all players are ready, admin clicks "Start Game" and selects mode
 
-### 2. Role Assignment (7 seconds)
+### 2. Countdown + Role Assignment
 
 1. Server assigns roles randomly based on theme
-2. Each player receives private `role:assigned` event
-3. **TTS plays in earbud**: "You are the Vampire. Your goal is to kill during bloodlust to gain points."
-4. Target info included if applicable: "Your target is Player #3."
-5. Dashboard shows countdown: "Game starting in 7... 6... 5..."
+2. Each player receives private `role:assigned` event with role name, description, and difficulty
+3. **TTS plays in earbud**: "You are the Vampire." + role description
+4. Dashboard shows countdown (default 10 seconds, configurable)
 
-### 3. Countdown (3 seconds)
-
-1. Dashboard announces: "3... 2... 1... GO!"
-2. All players hear countdown via dashboard (not in earbuds)
-
-### 4. Active Gameplay
+### 3. Active Gameplay
 
 1. Game loop ticks every 100ms
 2. Phones send accelerometer data at 10Hz (every 100ms)
 3. Server calculates movement intensity (0-1 scale)
-4. Excessive movement (>0.7 intensity) → damage applied
+4. Excessive movement → damage applied
 5. Damage accumulates → health decreases → background color changes
-6. Death → phone screen goes gray with 💀 skull
+6. Death → phone screen goes gray
 7. Round continues until 0-1 players remain alive
 
-### 5. Round End
+### 4. Round End
 
-1. Last standing player gets +5 bonus points
-2. Dashboard transitions to full-screen leaderboard
-3. Shows round scores + cumulative totals
-4. **15-second break** with manual "Next Round" button
-5. Repeat steps 2-5 for next round
+1. Last standing player gets +5 points
+2. Dashboard transitions to leaderboard showing round scores + cumulative totals
+3. Players shake to ready up for the next round
+4. Once all players are ready, the next round starts automatically (no admin action needed between rounds)
+5. Roles are re-assigned randomly each round. Points carry through.
 
-### 6. Game End (After 3 rounds)
+### 5. Game End (After 3 rounds)
 
-1. Final leaderboard displayed
+1. Final leaderboard displayed ranked by total points
 2. Winner announced
 3. Victory audio plays
-4. Option to start new game
+4. Admin clicks to return to main dashboard, where a new game can start
 
 ---
 
@@ -186,10 +180,10 @@ Backend serves everything on port 3000:
 ### Disconnection Handling
 
 1. Player disconnects (WiFi drop, battery dies, etc.)
-2. Server keeps player data for **10 seconds**
-3. Player has 10s to reconnect using `sessionToken`
+2. Server keeps session data for **5 minutes** (heartbeat monitor runs every 30s)
+3. Player can reconnect using `sessionToken`
 4. If reconnects: Resume with same `playerNumber` and game state
-5. If timeout expires: Player kicked, slot available
+5. If session expires: Player must rejoin
 
 ### Reconnection Flow
 
@@ -197,19 +191,15 @@ Backend serves everything on port 3000:
 socket.on("disconnect", () => {
   setConnected(false);
 
-  // Try to reconnect every 2s for 10s
   const token = localStorage.getItem("sessionToken");
-  const interval = setInterval(() => {
-    socket.emit("player:reconnect", { token, socketId: socket.id });
-  }, 2000);
-
-  setTimeout(() => clearInterval(interval), 10000); // Give up after 10s
+  // On reconnect, send only the token. Server gets socketId from the connection.
+  socket.emit("player:reconnect", { token });
 });
 
 socket.on("player:reconnected", (data) => {
   if (data.success) {
     setConnected(true);
-    // Restore player state
+    // Restore player state from data.player
   }
 });
 ```
@@ -332,4 +322,4 @@ mkcert localhost 192.168.1.x
 
 ---
 
-This specification continues in **Part 2: Audio System** →
+Next: see `audio.md` →
