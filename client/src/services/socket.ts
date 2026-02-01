@@ -157,6 +157,8 @@ class SocketService {
       secondsRemaining: number;
       totalSeconds: number;
       phase: "countdown" | "go";
+      roundNumber: number;
+      totalRounds: number;
     }) => void
   ) {
     this.on("game:countdown", callback);

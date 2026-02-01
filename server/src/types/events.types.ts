@@ -64,6 +64,8 @@ export interface CountdownEvent {
   secondsRemaining: number;
   totalSeconds: number;
   phase: "countdown" | "go";
+  roundNumber: number;
+  totalRounds: number;
 }
 
 export interface PlayerReadyEvent {

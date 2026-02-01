@@ -219,6 +219,9 @@ export class GameEngine {
       })),
     });
 
+    const roundNumber = this.currentRound;
+    const totalRounds = this.currentMode?.roundCount || 1;
+
     // If countdown is 0, skip directly to game start
     if (this.countdownDuration <= 0) {
       logger.info("ENGINE", "Countdown skipped (duration=0)");
@@ -226,6 +229,8 @@ export class GameEngine {
         secondsRemaining: 0,
         totalSeconds: 0,
         phase: "go",
+        roundNumber,
+        totalRounds,
       });
       this.startRound();
       return;
@@ -239,6 +244,8 @@ export class GameEngine {
       secondsRemaining: this.countdownSeconds,
       totalSeconds: this.countdownDuration,
       phase: "countdown",
+      roundNumber,
+      totalRounds,
     });
 
     // Start countdown timer
@@ -251,6 +258,8 @@ export class GameEngine {
           secondsRemaining: this.countdownSeconds,
           totalSeconds: this.countdownDuration,
           phase: "countdown",
+          roundNumber,
+          totalRounds,
         });
 
         logger.debug("ENGINE", `Countdown: ${this.countdownSeconds}`);
@@ -260,6 +269,8 @@ export class GameEngine {
           secondsRemaining: 0,
           totalSeconds: this.countdownDuration,
           phase: "go",
+          roundNumber,
+          totalRounds,
         });
 
         logger.info("ENGINE", "Countdown complete - GO!");

@@ -202,9 +202,10 @@ export function useSocket() {
     });
 
     // Countdown events
-    socketService.onCountdown(({ secondsRemaining, phase }) => {
+    socketService.onCountdown(({ secondsRemaining, phase, roundNumber, totalRounds }) => {
       setCountdown(secondsRemaining, phase);
       setGameState("countdown");
+      setRound(roundNumber, totalRounds);
 
       // Reset ready state for all players when countdown starts
       // This clears the checkmarks from the previous round
