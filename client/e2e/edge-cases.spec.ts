@@ -1,5 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 import {
+  test,
   resetServerState,
   openDashboard,
   openPlayerJoin,
@@ -113,14 +114,14 @@ test.describe('Edge Cases', () => {
       expect(page.url()).toContain('/player');
 
       // Should show waiting state, not an error
-      await expect(page.locator('text=WAITING FOR GAME')).toBeVisible();
+      await expect(page.locator('text=/CLICK TO READY|SHAKE TO READY/i')).toBeVisible();
     });
 
     test('emoji in name is handled', async ({ page }) => {
       await joinAsPlayer(page, 'Player 🎮');
 
       expect(page.url()).toContain('/player');
-      await expect(page.locator('text=WAITING FOR GAME')).toBeVisible();
+      await expect(page.locator('text=/CLICK TO READY|SHAKE TO READY/i')).toBeVisible();
     });
   });
 
@@ -293,7 +294,7 @@ test.describe('Error Recovery', () => {
 
     // The socket should maintain connection
     // This test verifies the UI doesn't break
-    await expect(page.locator('text=WAITING FOR GAME')).toBeVisible();
+    await expect(page.locator('text=/CLICK TO READY|SHAKE TO READY/i')).toBeVisible();
   });
 
   test('dashboard handles game stop gracefully', async ({ context }) => {

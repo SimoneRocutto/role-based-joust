@@ -47,6 +47,14 @@ export default defineConfig({
                 target: backendTarget,
                 changeOrigin: true,
                 ws: true,
+                // Suppress expected proxy errors (EPIPE/ECONNRESET) when
+                // sockets close during normal page teardown or reconnection
+                configure: (proxy) => {
+                    proxy.on('error', (err, _req, _res) => {
+                        if (err.code === 'ECONNRESET' || err.code === 'EPIPE') return;
+                        console.error('[vite] ws proxy error:', err.message);
+                    });
+                },
             }
         }
     },

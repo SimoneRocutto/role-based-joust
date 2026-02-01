@@ -1,5 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 import {
+  test,
   resetServerState,
   openDashboard,
   openPlayerJoin,
@@ -87,10 +88,10 @@ test.describe('Socket Events', () => {
         timeout: 5000,
       });
       await expect(
-        player1.locator('text=/You are the|Preparing/i')
+        player1.locator('text=Get ready')
       ).toBeVisible({ timeout: 5000 });
       await expect(
-        player2.locator('text=/You are the|Preparing/i')
+        player2.locator('text=Get ready')
       ).toBeVisible({ timeout: 5000 });
     });
 
@@ -157,11 +158,11 @@ test.describe('Socket Events', () => {
       // Start game
       await dashboard.click('button:has-text("Start Game")');
 
-      // Both players should receive their role
-      await expect(player1.locator('text=You are the')).toBeVisible({
+      // Both players should see countdown screen (roles are communicated via TTS audio)
+      await expect(player1.locator('text=Get ready')).toBeVisible({
         timeout: 10000,
       });
-      await expect(player2.locator('text=You are the')).toBeVisible({
+      await expect(player2.locator('text=Get ready')).toBeVisible({
         timeout: 10000,
       });
     });
@@ -181,24 +182,17 @@ test.describe('Socket Events', () => {
       // Start game
       await dashboard.click('button:has-text("Start Game")');
 
-      // Wait for role display
-      await expect(player1.locator('text=You are the')).toBeVisible({
+      // Wait for countdown screen (roles are communicated via TTS audio, not displayed visually)
+      await expect(player1.locator('text=Get ready')).toBeVisible({
+        timeout: 10000,
+      });
+      await expect(player2.locator('text=Get ready')).toBeVisible({
         timeout: 10000,
       });
 
-      // Get role names
-      const role1Text = await player1
-        .locator('.text-yellow-400')
-        .first()
-        .textContent();
-      const role2Text = await player2
-        .locator('.text-yellow-400')
-        .first()
-        .textContent();
-
-      // Roles should be defined (not null/undefined)
-      expect(role1Text).toBeTruthy();
-      expect(role2Text).toBeTruthy();
+      // Verify both players are in countdown state by checking for player numbers
+      await expect(player1.locator('text=/#\\d+/')).toBeVisible();
+      await expect(player2.locator('text=/#\\d+/')).toBeVisible();
     });
   });
 

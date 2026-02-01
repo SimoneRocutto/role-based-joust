@@ -1,4 +1,4 @@
-import { Page, expect, BrowserContext } from '@playwright/test';
+import { test as base, Page, expect, BrowserContext } from '@playwright/test';
 
 /**
  * E2E Test Helpers for Extended Joust
@@ -10,6 +10,47 @@ import { Page, expect, BrowserContext } from '@playwright/test';
 // API Base URL (server)
 export const API_URL = 'http://localhost:4000';
 export const CLIENT_URL = 'http://localhost:5173';
+
+/**
+ * Gracefully disconnect Socket.IO on a page to avoid EPIPE errors
+ * on the Vite WebSocket proxy when the page is closed.
+ */
+export async function disconnectSocket(page: Page): Promise<void> {
+  try {
+    if (!page.isClosed()) {
+      await page.evaluate(() => {
+        // Access the singleton socketService and disconnect gracefully
+        const mod = (window as any).__socketService;
+        if (mod && typeof mod.disconnect === 'function') {
+          mod.disconnect();
+        }
+        // Also close any raw socket.io instances on the page
+        if ((window as any).io?.sockets) {
+          for (const s of (window as any).io.sockets) {
+            s.disconnect();
+          }
+        }
+      });
+    }
+  } catch {
+    // Page may already be closed or navigating — ignore
+  }
+}
+
+/**
+ * Custom test fixture that gracefully disconnects all socket connections
+ * before Playwright tears down contexts/pages, preventing Vite proxy
+ * EPIPE errors.
+ */
+export const test = base.extend({
+  context: async ({ context }, use) => {
+    await use(context);
+    // After test: gracefully disconnect sockets on all open pages
+    for (const page of context.pages()) {
+      await disconnectSocket(page);
+    }
+  },
+});
 
 /**
  * Reset server state before tests
@@ -175,9 +216,9 @@ export async function getLobbyPlayers(): Promise<any> {
  * Verify player is in waiting state (not dead)
  */
 export async function expectPlayerWaiting(playerPage: Page): Promise<void> {
-  // Should see "WAITING FOR GAME START" text
+  // Should see ready button or waiting message (dev mode shows "CLICK TO READY", after readying shows "Waiting for other players...")
   await expect(
-    playerPage.locator('text=/WAITING FOR GAME|Waiting for players/i')
+    playerPage.locator('text=/CLICK TO READY|SHAKE TO READY|Waiting for other players/i')
   ).toBeVisible();
 
   // Should NOT see skull emoji or "ELIMINATED"

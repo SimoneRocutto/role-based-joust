@@ -72,17 +72,18 @@ export default defineConfig({
   ],
 
   // Run local dev servers before starting tests
-  // Uncomment if you want Playwright to start the servers
-  // webServer: [
-  //   {
-  //     command: 'cd ../server && npm run dev',
-  //     port: 3000,
-  //     reuseExistingServer: !process.env.CI,
-  //   },
-  //   {
-  //     command: 'npm run dev',
-  //     port: 5173,
-  //     reuseExistingServer: !process.env.CI,
-  //   },
-  // ],
+  webServer: [
+    {
+      command: 'cd ../server && npm run dev',
+      port: 4000,
+      reuseExistingServer: !process.env.CI,
+      timeout: 30000,
+    },
+    {
+      command: 'npm run dev',
+      port: 5173,
+      reuseExistingServer: !process.env.CI,
+      timeout: 30000,
+    },
+  ],
 });

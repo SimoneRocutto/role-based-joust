@@ -216,3 +216,8 @@ class SocketService {
 
 // Singleton instance
 export const socketService = new SocketService();
+
+// Expose for e2e test cleanup (graceful disconnect prevents Vite proxy EPIPE errors)
+if (typeof window !== 'undefined') {
+  (window as any).__socketService = socketService;
+}

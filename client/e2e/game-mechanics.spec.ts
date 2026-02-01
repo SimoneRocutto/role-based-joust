@@ -1,5 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 import {
+  test,
   resetServerState,
   openDashboard,
   openPlayerJoin,
@@ -287,9 +288,9 @@ test.describe('Game Mechanics', () => {
       // Use 1 second countdown to see role info
       await launchGameFast(1, 'role-based');
 
-      // During countdown, players should see role info
+      // During countdown, players should see countdown screen (roles are communicated via TTS audio)
       await expect(
-        player1.locator('text=You are the')
+        player1.locator('text=Get ready')
       ).toBeVisible({ timeout: 5000 });
     });
   });

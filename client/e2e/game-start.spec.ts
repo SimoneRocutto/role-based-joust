@@ -1,5 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
 import {
+  test,
   resetServerState,
   openDashboard,
   openPlayerJoin,
@@ -68,13 +69,13 @@ test.describe('Game Start Flow', () => {
     // Start the game
     await startGameFromDashboard(dashboard);
 
-    // Players should see countdown or role info
+    // Players should see countdown screen with "Get ready..." text
     await expect(
-      player1.locator('text=/You are the|Preparing game/i')
+      player1.locator('text=Get ready')
     ).toBeVisible({ timeout: 5000 });
 
     await expect(
-      player2.locator('text=/You are the|Preparing game/i')
+      player2.locator('text=Get ready')
     ).toBeVisible({ timeout: 5000 });
   });
 
@@ -160,10 +161,9 @@ test.describe('Game Start Flow', () => {
     // Start the game
     await dashboard.click('button:has-text("Start Game")');
 
-    // Players should see role info during countdown
-    // Look for the "You are the" text specifically
+    // Players should see countdown screen (roles are communicated via TTS audio, not visually)
     await expect(
-      player1.locator('text=You are the')
+      player1.locator('text=Get ready')
     ).toBeVisible({ timeout: 10000 });
   });
 
