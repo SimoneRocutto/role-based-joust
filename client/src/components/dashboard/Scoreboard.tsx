@@ -141,20 +141,33 @@ function Scoreboard() {
         </div>
       </div>
 
-      {/* Action Button */}
-      <div className="text-center">
+      {/* Action Buttons */}
+      <div className="text-center flex justify-center gap-4">
         {isRoundEnded && !isFinished ? (
-          <button
-            onClick={handleNextRound}
-            disabled={isStartingRound}
-            className={`px-12 py-4 rounded-lg text-2xl font-bold transition-colors ${
-              isStartingRound
-                ? 'bg-gray-600 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700'
-            }`}
-          >
-            {isStartingRound ? 'STARTING...' : 'NEXT ROUND →'}
-          </button>
+          <>
+            <button
+              onClick={handleNextRound}
+              disabled={isStartingRound}
+              className={`px-12 py-4 rounded-lg text-2xl font-bold transition-colors ${
+                isStartingRound
+                  ? 'bg-gray-600 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+            >
+              {isStartingRound ? 'STARTING...' : 'NEXT ROUND →'}
+            </button>
+            <button
+              onClick={handleNewGame}
+              disabled={isResetting}
+              className={`px-8 py-4 rounded-lg text-2xl font-bold transition-colors ${
+                isResetting
+                  ? 'bg-gray-600 cursor-not-allowed'
+                  : 'bg-red-600 hover:bg-red-700'
+              }`}
+            >
+              {isResetting ? 'STOPPING...' : 'STOP GAME'}
+            </button>
+          </>
         ) : (
           <button
             onClick={handleNewGame}

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useGameState } from '@/hooks/useGameState'
 import { useAudio } from '@/hooks/useAudio'
 import { useGameStore } from '@/store/gameStore'
@@ -21,9 +21,44 @@ function DashboardView() {
     aliveCount,
   } = useGameState()
 
-  const { updatePlayers, setGameState, setDevMode, setPlayerReady, setReadyCount } = useGameStore()
+  const { updatePlayers, setGameState, setScores, setDevMode, setPlayerReady, setReadyCount } = useGameStore()
   const { playMusic, play, isAudioUnlocked } = useAudio()
   const lastReadyPlayerRef = useRef<string | null>(null)
+  const [isStopping, setIsStopping] = useState(false)
+
+  const handleStopGame = async () => {
+    if (isStopping) return
+
+    setIsStopping(true)
+    try {
+      await apiService.stopGame()
+
+      setGameState('waiting')
+      setScores([])
+
+      const lobbyResult = await apiService.getLobbyPlayers()
+      if (lobbyResult.success && lobbyResult.players.length > 0) {
+        const playerStates = lobbyResult.players.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          number: p.number,
+          role: '',
+          isAlive: p.isAlive,
+          points: 0,
+          totalPoints: 0,
+          toughness: 1.0,
+          accumulatedDamage: 0,
+          statusEffects: [],
+        }))
+        updatePlayers(playerStates)
+      }
+    } catch (error) {
+      console.error('Failed to stop game:', error)
+      window.location.reload()
+    } finally {
+      setIsStopping(false)
+    }
+  }
 
   // Fetch current state on mount (for page refresh)
   useEffect(() => {
@@ -152,11 +187,28 @@ function DashboardView() {
 
             {/* Player Grid */}
             <PlayerGrid />
+
+            {/* Stop Game button during active gameplay */}
+            {(isCountdown || isActive) && (
+              <div className="mt-6 text-center">
+                <button
+                  onClick={handleStopGame}
+                  disabled={isStopping}
+                  className={`px-8 py-3 rounded-lg text-lg font-bold transition-colors ${
+                    isStopping
+                      ? 'bg-gray-600 cursor-not-allowed'
+                      : 'bg-red-600 hover:bg-red-700'
+                  }`}
+                >
+                  {isStopping ? 'STOPPING...' : 'STOP GAME'}
+                </button>
+              </div>
+            )}
           </>
         )}
 
-        {/* Scoreboard (only at game end) */}
-        {isFinished && <Scoreboard />}
+        {/* Scoreboard (round end or game end) */}
+        {(isRoundEnded || isFinished) && <Scoreboard />}
       </div>
 
       {/* Event Feed */}
