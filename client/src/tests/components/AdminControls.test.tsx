@@ -22,6 +22,7 @@ vi.mock('@/services/api', () => ({
         { key: 'medium', label: 'Medium', description: 'Default — current behavior' },
         { key: 'high', label: 'High', description: 'Punishing — small movements hurt' },
         { key: 'extreme', label: 'Extreme', description: 'Brutal — almost any movement is deadly' },
+        { key: 'oneshot', label: 'One Shot', description: 'Any movement above threshold = instant death' },
       ],
     }),
     updateSettings: vi.fn().mockResolvedValue({
@@ -114,6 +115,45 @@ describe('AdminControls', () => {
 
     await waitFor(() => {
       expect(apiService.getSettings).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it('auto-switches sensitivity to oneshot when classic mode is selected', async () => {
+    render(<AdminControls />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Classic')).toBeInTheDocument()
+    })
+
+    // Select classic mode
+    fireEvent.change(screen.getByDisplayValue('Role Based'), { target: { value: 'classic' } })
+
+    await waitFor(() => {
+      expect(apiService.updateSettings).toHaveBeenCalledWith({ sensitivity: 'oneshot' })
+    })
+  })
+
+  it('auto-switches sensitivity to medium when switching from classic to role-based', async () => {
+    render(<AdminControls />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Classic')).toBeInTheDocument()
+    })
+
+    // Select classic mode first
+    fireEvent.change(screen.getByDisplayValue('Role Based'), { target: { value: 'classic' } })
+
+    await waitFor(() => {
+      expect(apiService.updateSettings).toHaveBeenCalledWith({ sensitivity: 'oneshot' })
+    })
+
+    vi.clearAllMocks()
+
+    // Switch back to role-based
+    fireEvent.change(screen.getByDisplayValue('Classic'), { target: { value: 'role-based' } })
+
+    await waitFor(() => {
+      expect(apiService.updateSettings).toHaveBeenCalledWith({ sensitivity: 'medium' })
     })
   })
 })

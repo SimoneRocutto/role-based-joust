@@ -47,6 +47,15 @@ function AdminControls() {
       })
   }, [])
 
+  const handleModeChange = (mode: string) => {
+    setSelectedMode(mode)
+    // Auto-switch sensitivity based on mode
+    const targetSensitivity = mode === 'classic' ? 'oneshot' : 'medium'
+    if (targetSensitivity !== selectedSensitivity) {
+      handleSensitivityChange(targetSensitivity)
+    }
+  }
+
   const handleSensitivityChange = async (value: string) => {
     setSelectedSensitivity(value)
     try {
@@ -103,7 +112,7 @@ function AdminControls() {
           <label className="block text-sm text-gray-400 mb-2">Game Mode</label>
           <select
             value={selectedMode}
-            onChange={(e) => setSelectedMode(e.target.value)}
+            onChange={(e) => handleModeChange(e.target.value)}
             className="w-full px-4 py-2 bg-gray-700 rounded-lg text-white"
             disabled={loading}
           >

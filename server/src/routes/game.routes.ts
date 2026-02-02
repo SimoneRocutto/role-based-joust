@@ -334,7 +334,8 @@ router.get(
     const currentPreset = sensitivityPresets.find(
       (p) =>
         p.dangerThreshold === gameConfig.movement.dangerThreshold &&
-        p.damageMultiplier === gameConfig.movement.damageMultiplier
+        p.damageMultiplier === gameConfig.movement.damageMultiplier &&
+        (p.oneshotMode ?? false) === gameConfig.movement.oneshotMode
     );
 
     res.json({
@@ -399,7 +400,8 @@ router.post(
       const currentPreset = sensitivityPresets.find(
         (p) =>
           p.dangerThreshold === gameConfig.movement.dangerThreshold &&
-          p.damageMultiplier === gameConfig.movement.damageMultiplier
+          p.damageMultiplier === gameConfig.movement.damageMultiplier &&
+          (p.oneshotMode ?? false) === gameConfig.movement.oneshotMode
       );
 
       res.json({
