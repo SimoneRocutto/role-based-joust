@@ -230,6 +230,15 @@ export function useSocket() {
       }
     });
 
+    // Mode events (game events like speed-shift)
+    socketService.onModeEvent(({ eventType }) => {
+      if (eventType === "speed-shift:start") {
+        audioManager.setMusicRate(2.0);
+      } else if (eventType === "speed-shift:end") {
+        audioManager.setMusicRate(1.0);
+      }
+    });
+
     // Game stopped (emergency stop)
     socketService.onGameStopped(() => {
       setGameState("waiting");
@@ -256,6 +265,7 @@ export function useSocket() {
       socketService.off("role:assigned");
       socketService.off("lobby:update");
       socketService.off("game:countdown");
+      socketService.off("mode:event");
       socketService.off("game:stopped");
       socketService.off("error");
     };

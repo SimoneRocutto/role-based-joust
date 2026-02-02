@@ -9,6 +9,7 @@ function createMockHowl() {
     fade: vi.fn(),
     volume: vi.fn().mockReturnValue(0.5),
     loop: vi.fn(),
+    rate: vi.fn(),
     playing: vi.fn().mockReturnValue(false),
     once: vi.fn((event: string, cb: () => void) => {
       if (event === 'fade') setTimeout(cb, 0)
@@ -74,6 +75,12 @@ class AudioManager {
   fadeMusic(targetVolume: number, duration: number) {
     if (this.currentMusic && !this.isMuted) {
       this.currentMusic.fade(this.currentMusic.volume(), targetVolume, duration)
+    }
+  }
+
+  setMusicRate(rate: number) {
+    if (this.currentMusic) {
+      this.currentMusic.rate(rate)
     }
   }
 
@@ -404,6 +411,29 @@ describe('AudioManager', () => {
       const callback = vi.fn()
       audioManager.onUnlock(callback)
       expect(callback).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('setMusicRate', () => {
+    it('sets playback rate on current music', async () => {
+      await audioManager.preload(['music/lobby'])
+      audioManager.playMusic('music/lobby')
+      audioManager.setMusicRate(2.0)
+
+      expect(createdSounds[0].rate).toHaveBeenCalledWith(2.0)
+    })
+
+    it('does nothing if no music is playing', () => {
+      expect(() => audioManager.setMusicRate(1.5)).not.toThrow()
+    })
+
+    it('can reset rate back to normal', async () => {
+      await audioManager.preload(['music/lobby'])
+      audioManager.playMusic('music/lobby')
+      audioManager.setMusicRate(2.0)
+      audioManager.setMusicRate(1.0)
+
+      expect(createdSounds[0].rate).toHaveBeenCalledWith(1.0)
     })
   })
 

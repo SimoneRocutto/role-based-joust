@@ -461,6 +461,11 @@ gameEvents.onReadyCountUpdate((payload) => {
   io.emit("ready:update", payload);
 });
 
+// Broadcast mode events (game events like speed-shift)
+gameEvents.onModeEvent((payload) => {
+  io.emit("mode:event", payload);
+});
+
 // Send role assignment to individual players
 gameEvents.on(
   "role:assigned",

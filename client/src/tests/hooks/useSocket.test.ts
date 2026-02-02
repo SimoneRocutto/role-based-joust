@@ -35,6 +35,7 @@ vi.mock("@/services/socket", () => ({
     onCountdown: (cb: Function) =>
       socketEventHandlers.set("game:countdown", cb),
     onError: (cb: Function) => socketEventHandlers.set("error", cb),
+    onModeEvent: (cb: Function) => socketEventHandlers.set("mode:event", cb),
     sendMovement: vi.fn(),
     joinGame: vi.fn(),
     reconnect: vi.fn(),
@@ -47,6 +48,7 @@ const audioLoopCalls: Array<{ sound: string; options?: any }> = [];
 const audioStopCalls: string[] = [];
 const audioSpeakCalls: string[] = [];
 const audioPlayMusicCalls: Array<{ track: string; options?: any }> = [];
+const audioSetMusicRateCalls: number[] = [];
 
 // Mock audioManager
 vi.mock("@/services/audio", () => ({
@@ -65,6 +67,9 @@ vi.mock("@/services/audio", () => ({
     },
     speak: (text: string) => {
       audioSpeakCalls.push(text);
+    },
+    setMusicRate: (rate: number) => {
+      audioSetMusicRateCalls.push(rate);
     },
   },
 }));
@@ -94,6 +99,7 @@ describe("useSocket", () => {
     audioStopCalls.length = 0;
     audioSpeakCalls.length = 0;
     audioPlayMusicCalls.length = 0;
+    audioSetMusicRateCalls.length = 0;
   });
 
   afterEach(() => {
@@ -734,6 +740,55 @@ describe("useSocket", () => {
       });
 
       expect(audioLoopCalls).toHaveLength(0);
+    });
+  });
+
+  describe("mode:event (speed-shift)", () => {
+    it("registers mode:event listener on mount", () => {
+      renderHook(() => useSocket());
+      expect(socketEventHandlers.has("mode:event")).toBe(true);
+    });
+
+    it("speeds up music on speed-shift:start", () => {
+      renderHook(() => useSocket());
+
+      act(() => {
+        triggerSocketEvent("mode:event", {
+          modeName: "Classic",
+          eventType: "speed-shift:start",
+          data: { phase: "fast", dangerThreshold: 0.3 },
+        });
+      });
+
+      expect(audioSetMusicRateCalls).toContain(2.0);
+    });
+
+    it("resets music rate on speed-shift:end", () => {
+      renderHook(() => useSocket());
+
+      act(() => {
+        triggerSocketEvent("mode:event", {
+          modeName: "Classic",
+          eventType: "speed-shift:end",
+          data: { phase: "slow", dangerThreshold: 0.1 },
+        });
+      });
+
+      expect(audioSetMusicRateCalls).toContain(1.0);
+    });
+
+    it("ignores unknown mode events", () => {
+      renderHook(() => useSocket());
+
+      act(() => {
+        triggerSocketEvent("mode:event", {
+          modeName: "Classic",
+          eventType: "unknown-event",
+          data: {},
+        });
+      });
+
+      expect(audioSetMusicRateCalls).toHaveLength(0);
     });
   });
 

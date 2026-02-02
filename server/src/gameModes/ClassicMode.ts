@@ -4,6 +4,8 @@ import type { BasePlayer } from "@/models/BasePlayer";
 import type { WinCondition, ScoreEntry } from "@/types/index";
 import { Logger } from "@/utils/Logger";
 import { updateMovementConfig, resetMovementConfig } from "@/config/gameConfig";
+import { GameEventManager } from "@/managers/GameEventManager";
+import { GameEventFactory } from "@/factories/GameEventFactory";
 
 const logger = Logger.getInstance();
 
@@ -25,6 +27,8 @@ export class ClassicMode extends GameMode {
   override multiRound = false;
   override roundCount = 1;
 
+  private eventManager = new GameEventManager();
+
   /**
    * Configure classic mode: 3s countdown + oneshot damage
    */
@@ -35,9 +39,39 @@ export class ClassicMode extends GameMode {
   }
 
   /**
-   * Reset movement config on game end
+   * Register game events on round start
+   */
+  override onRoundStart(engine: GameEngine, roundNumber: number): void {
+    super.onRoundStart(engine, roundNumber);
+
+    const factory = GameEventFactory.getInstance();
+    if (factory.eventExists("speed-shift")) {
+      this.eventManager.registerEvent(factory.createEvent("speed-shift"));
+    }
+
+    this.eventManager.onRoundStart(engine, 0);
+  }
+
+  /**
+   * Tick game events each frame
+   */
+  override onTick(engine: GameEngine, gameTime: number): void {
+    this.eventManager.tick(engine, gameTime, engine.tickRate);
+  }
+
+  /**
+   * Clean up events on round end
+   */
+  override onRoundEnd(engine: GameEngine): void {
+    this.eventManager.cleanup(engine, engine.gameTime);
+    super.onRoundEnd(engine);
+  }
+
+  /**
+   * Reset movement config and clean up events on game end
    */
   override onGameEnd(engine: GameEngine): void {
+    this.eventManager.cleanup(engine, engine.gameTime);
     super.onGameEnd(engine);
     resetMovementConfig();
   }
@@ -102,7 +136,7 @@ export class ClassicMode extends GameMode {
   }
 
   /**
-   * Log elimination
+   * Log elimination and notify game events
    */
   override onPlayerDeath(victim: BasePlayer, engine: GameEngine): void {
     const alive = this.getAliveCount(engine);
@@ -112,5 +146,6 @@ export class ClassicMode extends GameMode {
         alive !== 1 ? "s" : ""
       } remaining.`
     );
+    this.eventManager.onPlayerDeath(victim, engine, engine.gameTime);
   }
 }

@@ -28,11 +28,6 @@ runner.test("Medium preset matches default config", (engine) => {
   const medium = sensitivityPresets.find((p) => p.key === "medium")!;
 
   assertEqual(
-    gameConfig.movement.dangerThreshold,
-    medium.dangerThreshold,
-    "Default dangerThreshold should match medium preset"
-  );
-  assertEqual(
     gameConfig.movement.damageMultiplier,
     medium.damageMultiplier,
     "Default damageMultiplier should match medium preset"
@@ -115,15 +110,9 @@ runner.test("Applying a preset updates config correctly", (engine) => {
   const highPreset = sensitivityPresets.find((p) => p.key === "high")!;
 
   updateMovementConfig({
-    dangerThreshold: highPreset.dangerThreshold,
     damageMultiplier: highPreset.damageMultiplier,
   });
 
-  assertEqual(
-    gameConfig.movement.dangerThreshold,
-    0.05,
-    "dangerThreshold should match high preset"
-  );
   assertEqual(
     gameConfig.movement.damageMultiplier,
     70,
@@ -133,24 +122,16 @@ runner.test("Applying a preset updates config correctly", (engine) => {
   resetMovementConfig();
 });
 
-runner.test("Standard presets have decreasing dangerThreshold", (engine) => {
-  // Only check standard presets (exclude oneshot which has its own behavior)
-  const standardPresets = sensitivityPresets.filter((p) => !p.oneshotMode);
-  for (let i = 1; i < standardPresets.length; i++) {
-    assert(
-      standardPresets[i].dangerThreshold < standardPresets[i - 1].dangerThreshold,
-      `Preset ${standardPresets[i].key} should have lower dangerThreshold than ${standardPresets[i - 1].key}`
-    );
-  }
-});
-
 runner.test("Standard presets have increasing damageMultiplier", (engine) => {
   // Only check standard presets (exclude oneshot which has its own behavior)
   const standardPresets = sensitivityPresets.filter((p) => !p.oneshotMode);
   for (let i = 1; i < standardPresets.length; i++) {
     assert(
-      standardPresets[i].damageMultiplier > standardPresets[i - 1].damageMultiplier,
-      `Preset ${standardPresets[i].key} should have higher damageMultiplier than ${standardPresets[i - 1].key}`
+      standardPresets[i].damageMultiplier >
+        standardPresets[i - 1].damageMultiplier,
+      `Preset ${
+        standardPresets[i].key
+      } should have higher damageMultiplier than ${standardPresets[i - 1].key}`
     );
   }
 });
@@ -158,7 +139,11 @@ runner.test("Standard presets have increasing damageMultiplier", (engine) => {
 runner.test("Oneshot preset has oneshotMode enabled", (engine) => {
   const oneshot = sensitivityPresets.find((p) => p.key === "oneshot")!;
   assert(oneshot !== undefined, "Oneshot preset should exist");
-  assertEqual(oneshot.oneshotMode, true, "Oneshot preset should have oneshotMode=true");
+  assertEqual(
+    oneshot.oneshotMode,
+    true,
+    "Oneshot preset should have oneshotMode=true"
+  );
 });
 
 runner.test("Applying oneshot preset sets oneshotMode", (engine) => {
@@ -166,15 +151,22 @@ runner.test("Applying oneshot preset sets oneshotMode", (engine) => {
   const oneshot = sensitivityPresets.find((p) => p.key === "oneshot")!;
 
   updateMovementConfig({
-    dangerThreshold: oneshot.dangerThreshold,
     damageMultiplier: oneshot.damageMultiplier,
     oneshotMode: oneshot.oneshotMode ?? false,
   });
 
-  assertEqual(gameConfig.movement.oneshotMode, true, "oneshotMode should be enabled");
+  assertEqual(
+    gameConfig.movement.oneshotMode,
+    true,
+    "oneshotMode should be enabled"
+  );
 
   resetMovementConfig();
-  assertEqual(gameConfig.movement.oneshotMode, false, "oneshotMode should be reset to false");
+  assertEqual(
+    gameConfig.movement.oneshotMode,
+    false,
+    "oneshotMode should be reset to false"
+  );
 });
 
 // Export for test runner

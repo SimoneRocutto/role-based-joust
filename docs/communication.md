@@ -543,7 +543,6 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
   success: boolean,
   sensitivity: string,       // Current preset key ("low" | "medium" | "high" | "extreme" | "custom")
   movement: {
-    dangerThreshold: number, // 0-1, intensity above which damage occurs
     damageMultiplier: number // Multiplier for excess movement damage
   },
   presets: Array<{
@@ -586,7 +585,6 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
   success: boolean,
   sensitivity: string,       // Matched preset key or "custom"
   movement: {
-    dangerThreshold: number,
     damageMultiplier: number
   }
 }

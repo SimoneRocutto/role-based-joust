@@ -25,17 +25,42 @@ export interface SensitivityPreset {
   key: string;
   label: string;
   description: string;
-  dangerThreshold: number;
   damageMultiplier: number;
   oneshotMode?: boolean;
 }
 
 export const sensitivityPresets: SensitivityPreset[] = [
-  { key: "low", label: "Low", description: "Forgiving — need big movements to take damage", dangerThreshold: 0.20, damageMultiplier: 30 },
-  { key: "medium", label: "Medium", description: "Default — current behavior", dangerThreshold: 0.10, damageMultiplier: 50 },
-  { key: "high", label: "High", description: "Punishing — small movements hurt", dangerThreshold: 0.05, damageMultiplier: 70 },
-  { key: "extreme", label: "Extreme", description: "Brutal — almost any movement is deadly", dangerThreshold: 0.02, damageMultiplier: 100 },
-  { key: "oneshot", label: "One Shot", description: "Any movement above threshold = instant death", dangerThreshold: 0.10, damageMultiplier: 50, oneshotMode: true },
+  {
+    key: "low",
+    label: "Low",
+    description: "Forgiving — need big movements to take damage",
+    damageMultiplier: 30,
+  },
+  {
+    key: "medium",
+    label: "Medium",
+    description: "Default — current behavior",
+    damageMultiplier: 50,
+  },
+  {
+    key: "high",
+    label: "High",
+    description: "Punishing — small movements hurt",
+    damageMultiplier: 70,
+  },
+  {
+    key: "extreme",
+    label: "Extreme",
+    description: "Brutal — almost any movement is deadly",
+    damageMultiplier: 100,
+  },
+  {
+    key: "oneshot",
+    label: "One Shot",
+    description: "Any movement above threshold = instant death",
+    damageMultiplier: 50,
+    oneshotMode: true,
+  },
 ];
 
 const defaultMovement: MovementConfig = {

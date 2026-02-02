@@ -333,7 +333,6 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const currentPreset = sensitivityPresets.find(
       (p) =>
-        p.dangerThreshold === gameConfig.movement.dangerThreshold &&
         p.damageMultiplier === gameConfig.movement.damageMultiplier &&
         (p.oneshotMode ?? false) === gameConfig.movement.oneshotMode
     );
@@ -366,12 +365,13 @@ router.post(
       if (!preset) {
         res.status(400).json({
           success: false,
-          error: `Unknown sensitivity preset: ${sensitivity}. Available: ${sensitivityPresets.map((p) => p.key).join(", ")}`,
+          error: `Unknown sensitivity preset: ${sensitivity}. Available: ${sensitivityPresets
+            .map((p) => p.key)
+            .join(", ")}`,
         });
         return;
       }
       updateMovementConfig({
-        dangerThreshold: preset.dangerThreshold,
         damageMultiplier: preset.damageMultiplier,
         oneshotMode: preset.oneshotMode ?? false,
       });
@@ -382,7 +382,6 @@ router.post(
         success: true,
         sensitivity: preset.key,
         movement: {
-          dangerThreshold: preset.dangerThreshold,
           damageMultiplier: preset.damageMultiplier,
         },
       });
@@ -390,16 +389,20 @@ router.post(
     }
 
     if (dangerThreshold !== undefined || damageMultiplier !== undefined) {
-      const update: Partial<{ dangerThreshold: number; damageMultiplier: number }> = {};
-      if (dangerThreshold !== undefined) update.dangerThreshold = dangerThreshold;
-      if (damageMultiplier !== undefined) update.damageMultiplier = damageMultiplier;
+      const update: Partial<{
+        dangerThreshold: number;
+        damageMultiplier: number;
+      }> = {};
+      if (dangerThreshold !== undefined)
+        update.dangerThreshold = dangerThreshold;
+      if (damageMultiplier !== undefined)
+        update.damageMultiplier = damageMultiplier;
       updateMovementConfig(update);
 
       logger.info("GAME", "Movement config updated", update);
 
       const currentPreset = sensitivityPresets.find(
         (p) =>
-          p.dangerThreshold === gameConfig.movement.dangerThreshold &&
           p.damageMultiplier === gameConfig.movement.damageMultiplier &&
           (p.oneshotMode ?? false) === gameConfig.movement.oneshotMode
       );
@@ -417,7 +420,8 @@ router.post(
 
     res.status(400).json({
       success: false,
-      error: "Provide either 'sensitivity' (preset name) or 'dangerThreshold'/'damageMultiplier' values",
+      error:
+        "Provide either 'sensitivity' (preset name) or 'dangerThreshold'/'damageMultiplier' values",
     });
   })
 );

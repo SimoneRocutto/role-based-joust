@@ -109,3 +109,9 @@ export interface ReadyCountPayload {
   ready: number;
   total: number;
 }
+
+export interface ModeEventPayload {
+  modeName: string;
+  eventType: string;
+  data: Record<string, any>;
+}

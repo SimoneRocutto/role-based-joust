@@ -423,7 +423,52 @@ getSortedStatusEffects(): StatusEffect[] {
 - Enum provides named constants
 - Sort comparison is type-safe
 
-### 9. Event System
+### 9. Game Events System
+
+Game events are game-wide effects that alter gameplay for all players. They follow the same patterns as StatusEffect (lifecycle hooks, priority-based execution) and roles (auto-discovery).
+
+**Core Types:**
+
+```typescript
+// Base class for all game events
+abstract class GameEvent {
+  readonly id: string;                    // Unique instance ID
+  static readonly eventKey: string;       // Lookup key (e.g., "speed-shift")
+  static readonly displayName: string;    // Human-readable name
+  static readonly description: string;    // Dashboard text
+  static priority: number;                // Higher = processes first
+
+  isActive: boolean;
+  startTime: number | null;
+  duration: number | null;                // null = indefinite
+
+  abstract onStart(engine: GameEngine, gameTime: number): void;
+  abstract onEnd(engine: GameEngine, gameTime: number): void;
+  onTick(engine: GameEngine, gameTime: number, deltaTime: number): void;
+  shouldActivate(engine: GameEngine, gameTime: number): boolean;
+  shouldDeactivate(engine: GameEngine, gameTime: number): boolean;
+  onPlayerDeath(victim: BasePlayer, engine: GameEngine, gameTime: number): void;
+  onRoundStart(engine: GameEngine, gameTime: number): void;
+  getInfo(gameTime: number): GameEventInfo;
+}
+
+interface GameEventInfo {
+  id: string;
+  key: string;
+  displayName: string;
+  description: string;
+  isActive: boolean;
+  remainingTime: number | null;
+}
+```
+
+**GameEventManager** manages the lifecycle: registration, activation/deactivation based on `shouldActivate`/`shouldDeactivate`, ticking active events, forwarding player death notifications, and cleanup on round end.
+
+**GameEventFactory** auto-discovers event classes from `server/src/gameEvents/` (excluding the base `GameEvent.ts`), registers them by static `eventKey`, and creates instances on demand.
+
+**Integration:** Each GameMode owns a `GameEventManager` and wires it into `onRoundStart`, `onTick`, `onPlayerDeath`, `onRoundEnd`, and `onGameEnd` hooks.
+
+### 10. Event System
 
 Events use TypeScript for payload typing:
 

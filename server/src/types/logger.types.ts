@@ -21,7 +21,9 @@ export type LogCategory =
   | "HTTP"
   | "ERROR"
   | "SERVER"
-  | "ANGEL";
+  | "ANGEL"
+  | "EVENT_MGR"
+  | "SPEED_SHIFT";
 
 export interface LogEntry {
   timestamp: string;

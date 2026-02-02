@@ -54,20 +54,7 @@ function AdminControls() {
     // Auto-switch sensitivity based on mode
     const targetSensitivity = mode === 'classic' ? 'oneshot' : 'medium'
     if (targetSensitivity !== selectedSensitivity) {
-      handleSensitivityChange(targetSensitivity)
-    }
-  }
-
-  const handleSensitivityChange = async (value: string) => {
-    setSelectedSensitivity(value)
-    try {
-      const result = await apiService.updateSettings({ sensitivity: value })
-      if (result.success) {
-        setDangerThreshold(result.movement.dangerThreshold)
-      }
-    } catch (err) {
-      console.error('Failed to update sensitivity:', err)
-      setError('Failed to update sensitivity')
+      setSelectedSensitivity(targetSensitivity)
     }
   }
 
@@ -168,7 +155,7 @@ function AdminControls() {
           {sensitivityPresets.map((preset) => (
             <button
               key={preset.key}
-              onClick={() => handleSensitivityChange(preset.key)}
+              onClick={() => setSelectedSensitivity(preset.key)}
               disabled={loading}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 selectedSensitivity === preset.key

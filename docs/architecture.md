@@ -297,6 +297,30 @@ mkcert localhost 192.168.1.x
 
 ---
 
+## 🎲 Game Events System
+
+Game events are temporary, game-wide effects that alter gameplay for all players simultaneously. They are distinct from the `GameEvents` Socket.IO event bus — `GameEvent` (singular) is the base class for game-wide effects, while `GameEvents` (plural) is the message bus.
+
+### Architecture
+
+- **GameEvent base class** (`server/src/gameEvents/GameEvent.ts`) — abstract class with lifecycle hooks (`onStart`, `onEnd`, `onTick`, `shouldActivate`, `shouldDeactivate`)
+- **GameEventFactory** (`server/src/factories/GameEventFactory.ts`) — auto-discovers event classes from `server/src/gameEvents/` directory
+- **GameEventManager** (`server/src/managers/GameEventManager.ts`) — manages event lifecycle during a round, owned by each GameMode instance
+- **SpeedShift** (`server/src/gameEvents/SpeedShift.ts`) — first concrete event: alternates between slow/fast phases with escalating probability
+
+### How It Works
+
+1. Each GameMode creates a `GameEventManager` and registers events via `GameEventFactory` in `onRoundStart`
+2. On each tick, the manager checks inactive events for activation, ticks active events, and checks deactivation
+3. Events communicate to clients via `mode:event` Socket.IO messages (emitted through `GameEvents.emitModeEvent()`)
+4. Client listens for `mode:event` and dispatches to handlers (e.g., music speed change for speed-shift)
+
+### Adding New Events
+
+Add a `.ts` file to `server/src/gameEvents/` extending `GameEvent` with a static `eventKey`. It will be auto-discovered. See `docs/extending-the-game.ts` for a full example.
+
+---
+
 ## 🎨 Visual Design Philosophy
 
 ### Player View (Phone Screen)

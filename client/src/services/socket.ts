@@ -15,6 +15,7 @@ import type {
   SocketErrorPayload,
   PlayerReadyPayload,
   ReadyCountPayload,
+  ModeEventPayload,
 } from "@/types/socket.types";
 
 // In development, use empty string to connect via Vite proxy (same origin)
@@ -170,6 +171,10 @@ class SocketService {
 
   onReadyCountUpdate(callback: (data: ReadyCountPayload) => void) {
     this.on("ready:update", callback);
+  }
+
+  onModeEvent(callback: (data: ModeEventPayload) => void) {
+    this.on("mode:event", callback);
   }
 
   // Generic event listener management

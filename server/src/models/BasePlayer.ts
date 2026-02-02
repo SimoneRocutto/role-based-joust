@@ -160,10 +160,11 @@ export class BasePlayer {
    * Can be overridden by roles for custom behavior
    */
   protected checkMovementDamage(intensity: number, gameTime: number): void {
-    const threshold = this.movementConfig.dangerThreshold;
-
+    // Read threshold from live global config so game events (e.g. SpeedShift)
+    // can change it mid-round
+    const threshold = gameConfig.movement.dangerThreshold;
     if (intensity > threshold) {
-      if (this.movementConfig.oneshotMode) {
+      if (gameConfig.movement.oneshotMode) {
         logger.debug("MOVEMENT", `${this.name} oneshot kill triggered`, {
           intensity,
           threshold,
@@ -173,7 +174,7 @@ export class BasePlayer {
       }
 
       const excess = intensity - threshold;
-      const baseDamage = excess * this.movementConfig.damageMultiplier;
+      const baseDamage = excess * gameConfig.movement.damageMultiplier;
 
       logger.debug("MOVEMENT", `${this.name} excessive movement`, {
         intensity,

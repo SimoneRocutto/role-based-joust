@@ -92,6 +92,12 @@ class AudioManager {
     }
   }
 
+  setMusicRate(rate: number) {
+    if (this.currentMusic) {
+      this.currentMusic.rate(rate);
+    }
+  }
+
   // Sound effects
   play(
     soundName: string,

@@ -451,3 +451,95 @@ export function isVampire(player: BasePlayer): player is Vampire {
 export function isBeast(player: BasePlayer): player is Beast {
   return player instanceof Beast;
 }
+
+
+// ============================================================================
+// PART 4: GAME EVENTS
+// ============================================================================
+//
+// Game events are game-wide effects that alter gameplay for all players.
+// They extend GameEvent and are auto-discovered from server/src/gameEvents/.
+// Key hooks: onStart, onEnd, onTick, shouldActivate, shouldDeactivate
+//
+// Currently implemented: SpeedShift
+// Example below shows how to create a new game event.
+
+// --- Example: SuddenDeath (HYPOTHETICAL) ---
+// All players take double damage for 10 seconds.
+
+import { GameEvent } from '../gameEvents/GameEvent';
+import type { GameEngine } from '../managers/GameEngine';
+import { updateMovementConfig, gameConfig } from '../config/gameConfig';
+import { GameEvents as GameEventsUtil } from '../utils/GameEvents';
+
+const gameEventsUtil = GameEventsUtil.getInstance();
+
+export class SuddenDeath extends GameEvent {
+  static readonly eventKey = 'sudden-death';
+  static readonly displayName = 'Sudden Death';
+  static readonly description = 'Double damage for everyone!';
+  static priority = 15;
+
+  private savedMultiplier: number = 50;
+
+  // Activate after 60 seconds of gameplay
+  shouldActivate(engine: GameEngine, gameTime: number): boolean {
+    return gameTime >= 60000;
+  }
+
+  // Deactivate after 10 seconds
+  shouldDeactivate(engine: GameEngine, gameTime: number): boolean {
+    if (this.startTime !== null) {
+      return gameTime - this.startTime >= 10000;
+    }
+    return false;
+  }
+
+  onStart(engine: GameEngine, gameTime: number): void {
+    this.savedMultiplier = gameConfig.movement.damageMultiplier;
+    updateMovementConfig({ damageMultiplier: this.savedMultiplier * 2 });
+
+    gameEventsUtil.emitModeEvent({
+      modeName: engine.currentMode?.name || 'Unknown',
+      eventType: 'sudden-death:start',
+      data: { damageMultiplier: this.savedMultiplier * 2 },
+    });
+  }
+
+  onEnd(engine: GameEngine, gameTime: number): void {
+    updateMovementConfig({ damageMultiplier: this.savedMultiplier });
+
+    gameEventsUtil.emitModeEvent({
+      modeName: engine.currentMode?.name || 'Unknown',
+      eventType: 'sudden-death:end',
+      data: { damageMultiplier: this.savedMultiplier },
+    });
+  }
+}
+
+// To use in a mode, register it in onRoundStart:
+//
+//   import { GameEventFactory } from '@/factories/GameEventFactory';
+//   import { GameEventManager } from '@/managers/GameEventManager';
+//
+//   class MyMode extends GameMode {
+//     private eventManager = new GameEventManager();
+//
+//     override onRoundStart(engine: GameEngine, roundNumber: number): void {
+//       super.onRoundStart(engine, roundNumber);
+//       const factory = GameEventFactory.getInstance();
+//       if (factory.eventExists('sudden-death')) {
+//         this.eventManager.registerEvent(factory.createEvent('sudden-death'));
+//       }
+//       this.eventManager.onRoundStart(engine, 0);
+//     }
+//
+//     override onTick(engine: GameEngine, gameTime: number): void {
+//       this.eventManager.tick(engine, gameTime, engine.tickRate);
+//     }
+//
+//     override onRoundEnd(engine: GameEngine): void {
+//       this.eventManager.cleanup(engine, engine.gameTime);
+//       super.onRoundEnd(engine);
+//     }
+//   }
