@@ -118,6 +118,33 @@ describe('AdminControls', () => {
     })
   })
 
+  it('renders movement threshold slider', async () => {
+    render(<AdminControls />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Movement Threshold/)).toBeInTheDocument()
+      expect(screen.getByText('How much movement is needed before taking damage')).toBeInTheDocument()
+    })
+
+    const slider = screen.getByRole('slider')
+    expect(slider).toBeInTheDocument()
+    expect(slider).toHaveValue('10') // default 0.10 = 10%
+  })
+
+  it('calls updateSettings with dangerThreshold when slider changes', async () => {
+    render(<AdminControls />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('slider')).toBeInTheDocument()
+    })
+
+    fireEvent.change(screen.getByRole('slider'), { target: { value: '20' } })
+
+    await waitFor(() => {
+      expect(apiService.updateSettings).toHaveBeenCalledWith({ dangerThreshold: 0.20 })
+    })
+  })
+
   it('auto-switches sensitivity to oneshot when classic mode is selected', async () => {
     render(<AdminControls />)
 

@@ -148,7 +148,7 @@ class ApiService {
   }
 
   // POST /api/game/settings
-  async updateSettings(payload: { sensitivity: string }): Promise<{
+  async updateSettings(payload: { sensitivity?: string; dangerThreshold?: number }): Promise<{
     success: boolean;
     sensitivity: string;
     movement: { dangerThreshold: number; damageMultiplier: number };

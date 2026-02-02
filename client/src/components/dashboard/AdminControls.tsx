@@ -14,6 +14,7 @@ function AdminControls() {
   const [sensitivityPresets, setSensitivityPresets] = useState<
     Array<{ key: string; label: string; description: string }>
   >([])
+  const [dangerThreshold, setDangerThreshold] = useState(0.10)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -40,6 +41,7 @@ function AdminControls() {
         if (data.success) {
           setSensitivityPresets(data.presets)
           setSelectedSensitivity(data.sensitivity)
+          setDangerThreshold(data.movement.dangerThreshold)
         }
       })
       .catch((err) => {
@@ -59,10 +61,26 @@ function AdminControls() {
   const handleSensitivityChange = async (value: string) => {
     setSelectedSensitivity(value)
     try {
-      await apiService.updateSettings({ sensitivity: value })
+      const result = await apiService.updateSettings({ sensitivity: value })
+      if (result.success) {
+        setDangerThreshold(result.movement.dangerThreshold)
+      }
     } catch (err) {
       console.error('Failed to update sensitivity:', err)
       setError('Failed to update sensitivity')
+    }
+  }
+
+  const handleThresholdChange = async (value: number) => {
+    setDangerThreshold(value)
+    try {
+      const result = await apiService.updateSettings({ dangerThreshold: value })
+      if (result.success) {
+        setSelectedSensitivity(result.sensitivity)
+      }
+    } catch (err) {
+      console.error('Failed to update threshold:', err)
+      setError('Failed to update threshold')
     }
   }
 
@@ -165,6 +183,29 @@ function AdminControls() {
         </div>
         <p className="text-xs text-gray-500 mt-1">
           {sensitivityPresets.find((p) => p.key === selectedSensitivity)?.description}
+        </p>
+      </div>
+
+      {/* Movement Threshold */}
+      <div className="mb-4">
+        <label className="block text-sm text-gray-400 mb-2">
+          Movement Threshold: {(dangerThreshold * 100).toFixed(0)}%
+        </label>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-gray-500">Sensitive</span>
+          <input
+            type="range"
+            min="1"
+            max="50"
+            value={Math.round(dangerThreshold * 100)}
+            onChange={(e) => handleThresholdChange(parseInt(e.target.value) / 100)}
+            disabled={loading}
+            className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+          />
+          <span className="text-xs text-gray-500">Forgiving</span>
+        </div>
+        <p className="text-xs text-gray-500 mt-1">
+          How much movement is needed before taking damage
         </p>
       </div>
 
