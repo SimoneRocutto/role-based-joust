@@ -35,6 +35,9 @@ interface GameStore {
   // All players (for dashboard)
   players: PlayerState[];
 
+  // Game events state
+  tempoMode: "slow" | "fast";
+
   // UI state
   latestEvent: string | null;
   scores: ScoreEntry[];
@@ -57,6 +60,7 @@ interface GameStore {
   setPlayerReady: (playerId: string, isReady: boolean) => void;
   setReadyCount: (count: { ready: number; total: number }) => void;
   setDevMode: (isDevMode: boolean) => void;
+  setTempoMode: (tempo: "slow" | "fast") => void;
   setMyReady: (isReady: boolean) => void;
   resetReadyState: () => void;
   reset: () => void;
@@ -87,6 +91,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   readyCount: { ready: 0, total: 0 },
   isDevMode: false,
   myIsReady: false,
+
+  tempoMode: "slow",
 
   players: [],
 
@@ -176,6 +182,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setDevMode: (isDevMode) => set({ isDevMode }),
 
+  setTempoMode: (tempo) => set({ tempoMode: tempo }),
+
   setMyReady: (isReady) => set({ myIsReady: isReady }),
 
   resetReadyState: () =>
@@ -202,6 +210,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       readyPlayers: new Set(),
       readyCount: { ready: 0, total: 0 },
       myIsReady: false,
+      tempoMode: "slow",
       players: [],
       latestEvent: null,
       scores: [],

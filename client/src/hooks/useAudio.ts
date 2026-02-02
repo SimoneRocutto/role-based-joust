@@ -63,6 +63,10 @@ export function useAudio() {
     audioManager.stopMusic();
   };
 
+  const setMusicRate = (rate: number) => {
+    audioManager.setMusicRate(rate);
+  };
+
   const speak = (text: string) => {
     audioManager.speak(text);
   };
@@ -100,6 +104,7 @@ export function useAudio() {
     stop,
     playMusic,
     stopMusic,
+    setMusicRate,
     speak,
     stopSpeaking,
     mute,

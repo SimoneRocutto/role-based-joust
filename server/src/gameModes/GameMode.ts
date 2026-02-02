@@ -135,6 +135,19 @@ export abstract class GameMode {
   }
 
   // ========================================================================
+  // GAME EVENTS
+  // ========================================================================
+
+  /**
+   * Get the list of game event names to activate for this mode.
+   * Override in subclasses to enable specific events.
+   * Event names must match what GameEventFactory can create.
+   */
+  getGameEvents(): string[] {
+    return [];
+  }
+
+  // ========================================================================
   // UTILITY METHODS
   // ========================================================================
 

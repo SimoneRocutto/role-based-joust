@@ -49,6 +49,7 @@
     "paths": {
       "@/models/*": ["models/*"],
       "@/gameModes/*": ["gameModes/*"],
+      "@/gameEvents/*": ["gameEvents/*"],
       "@/managers/*": ["managers/*"],
       "@/factories/*": ["factories/*"],
       "@/utils/*": ["utils/*"],

@@ -82,6 +82,12 @@ class AudioManager {
     }
   }
 
+  setMusicRate(rate: number) {
+    if (this.currentMusic) {
+      this.currentMusic.rate(rate);
+    }
+  }
+
   fadeMusic(targetVolume: number, duration: number) {
     if (this.currentMusic && !this.isMuted) {
       this.currentMusic.fade(

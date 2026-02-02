@@ -3,6 +3,8 @@ import type { PlayerData, MovementData } from "@/types/player.types";
 import type { GameMode } from "@/gameModes/GameMode";
 import type { GameState, WinCondition } from "@/types/game.types";
 import { RoleFactory } from "@/factories/RoleFactory";
+import { GameEventFactory } from "@/factories/GameEventFactory";
+import type { GameEvent } from "@/gameEvents/GameEvent";
 import { GameEvents } from "@/utils/GameEvents";
 import { Logger } from "@/utils/Logger";
 import { gameConfig, resetMovementConfig } from "@/config/gameConfig";
@@ -29,6 +31,9 @@ export class GameEngine {
 
   // ========== GAME MODE ==========
   currentMode: GameMode | null = null;
+
+  // ========== GAME EVENTS ==========
+  activeGameEvents: GameEvent[] = [];
 
   // ========== GAME STATE ==========
   gameState: GameState = "waiting";
@@ -342,6 +347,9 @@ export class GameEngine {
       this.currentMode.onRoundStart(this, this.currentRound);
     }
 
+    // Initialize game events from mode
+    this.initializeGameEvents();
+
     // Emit round start event
     gameEvents.emitRoundStart({
       roundNumber: this.currentRound,
@@ -370,6 +378,28 @@ export class GameEngine {
   }
 
   /**
+   * Initialize game events from the current mode
+   */
+  private initializeGameEvents(): void {
+    this.activeGameEvents = [];
+
+    if (!this.currentMode) return;
+
+    const eventNames = this.currentMode.getGameEvents();
+    if (eventNames.length === 0) return;
+
+    const factory = GameEventFactory.getInstance();
+    for (const name of eventNames) {
+      const event = factory.createEvent(name);
+      if (event) {
+        event.onRoundStart(this);
+        this.activeGameEvents.push(event);
+        logger.info("ENGINE", `Game event activated: ${event.getName()}`);
+      }
+    }
+  }
+
+  /**
    * Main game tick
    * Called every tickRate milliseconds
    */
@@ -389,6 +419,11 @@ export class GameEngine {
     // Notify mode
     if (this.currentMode) {
       this.currentMode.onTick(this, this.gameTime);
+    }
+
+    // Tick game events
+    for (const event of this.activeGameEvents) {
+      event.onTick(this, this.gameTime);
     }
 
     // Update all players (sorted by priority)
@@ -443,6 +478,12 @@ export class GameEngine {
     if (this.currentMode) {
       this.currentMode.onRoundEnd(this);
     }
+
+    // Clean up game events
+    for (const event of this.activeGameEvents) {
+      event.onRoundEnd(this);
+    }
+    this.activeGameEvents = [];
 
     // Emit round end event
     const scores = this.currentMode?.calculateFinalScores(this) || [];
@@ -555,6 +596,7 @@ export class GameEngine {
     this.playerDataCache = [];
     this.currentRound = 0;
     this.gameTime = 0;
+    this.activeGameEvents = [];
     this.resetReadyState();
 
     // Reset movement config and countdown to defaults

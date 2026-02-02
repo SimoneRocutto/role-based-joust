@@ -172,6 +172,10 @@ class SocketService {
     this.on("ready:update", callback);
   }
 
+  onModeEvent(callback: (data: { modeName: string; eventType: string; data: Record<string, any> }) => void) {
+    this.on("mode:event", callback);
+  }
+
   // Generic event listener management
   on(event: string, callback: Function) {
     if (!this.socket) return;

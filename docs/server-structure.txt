@@ -25,11 +25,19 @@ server/
 │   │       ├── Weakened.ts        # Reduces toughness, priority 50
 │   │       └── Excited.ts         # Must keep moving or die, priority 10
 │   │
+│   ├── gameEvents/                  # Game event implementations (auto-discovered)
+│   │   ├── GameEvent.ts            # Abstract base class for game events
+│   │   │                           # Lifecycle hooks: onRoundStart, onTick,
+│   │   │                           # onRoundEnd, onPlayerDeath
+│   │   └── TempoShift.ts           # Alternates slow/fast movement thresholds
+│   │                               # with compounding shift probability
+│   │
 │   ├── gameModes/                  # Game mode implementations (auto-discovered)
 │   │   ├── GameMode.ts             # Abstract base class (template methods,
 │   │   │                           # hooks, getRolePool, checkWinCondition,
-│   │   │                           # calculateFinalScores)
-│   │   ├── ClassicMode.ts          # No roles, pure survival, single round
+│   │   │                           # calculateFinalScores, getGameEvents)
+│   │   ├── ClassicMode.ts          # No roles, pure survival, single round,
+│   │   │                           # tempo-shift event
 │   │   └── RoleBasedMode.ts        # Roles + multi-round (3) + points
 │   │
 │   ├── managers/
@@ -45,8 +53,10 @@ server/
 │   ├── factories/
 │   │   ├── RoleFactory.ts          # Auto-discovers roles from models/roles/,
 │   │   │                           # assigns roles randomly to players
-│   │   └── GameModeFactory.ts      # Auto-discovers modes from gameModes/,
-│   │                               # creates mode instances
+│   │   ├── GameModeFactory.ts      # Auto-discovers modes from gameModes/,
+│   │   │                           # creates mode instances
+│   │   └── GameEventFactory.ts     # Auto-discovers game events from gameEvents/,
+│   │                               # creates event instances by name
 │   │
 │   ├── utils/
 │   │   ├── GameEvents.ts           # EventEmitter singleton (game:tick, player:death,
@@ -73,7 +83,8 @@ server/
 │   │       ├── core.test.ts        # Engine, game flow, movement, damage
 │   │       ├── roles.test.ts       # Role-specific mechanics
 │   │       ├── statusEffects.test.ts # Effect lifecycle and priority
-│   │       └── readyState.test.ts  # Ready state in lobby and between rounds
+│   │       ├── readyState.test.ts  # Ready state in lobby and between rounds
+│   │       └── gameEvents.test.ts  # Game event system and tempo shift
 │   │
 │   ├── types/
 │   │   ├── player.types.ts         # PlayerData, PlayerState, MovementData

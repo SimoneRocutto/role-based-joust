@@ -21,8 +21,8 @@ function DashboardView() {
     aliveCount,
   } = useGameState()
 
-  const { updatePlayers, setGameState, setScores, setDevMode, setPlayerReady, setReadyCount } = useGameStore()
-  const { playMusic, play, isAudioUnlocked } = useAudio()
+  const { updatePlayers, setGameState, setScores, setDevMode, setPlayerReady, setReadyCount, setTempoMode } = useGameStore()
+  const { playMusic, play, setMusicRate, isAudioUnlocked } = useAudio()
   const lastReadyPlayerRef = useRef<string | null>(null)
   const [isStopping, setIsStopping] = useState(false)
 
@@ -138,6 +138,21 @@ function DashboardView() {
       socketService.off('ready:update')
     }
   }, [setPlayerReady, setReadyCount, play])
+
+  // Listen for mode events (e.g., tempo shifts)
+  useEffect(() => {
+    socketService.onModeEvent((data) => {
+      if (data.eventType === 'tempo:shift') {
+        const tempo = data.data.tempo as 'slow' | 'fast'
+        setTempoMode(tempo)
+        setMusicRate(tempo === 'fast' ? 2 : 1)
+      }
+    })
+
+    return () => {
+      socketService.off('mode:event')
+    }
+  }, [setTempoMode, setMusicRate])
 
   // Background music management
   useEffect(() => {

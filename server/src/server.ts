@@ -432,6 +432,11 @@ gameEvents.onVampireBloodlustEnd((payload) => {
   });
 });
 
+// Broadcast mode events (e.g., tempo shifts)
+gameEvents.onModeEvent((payload) => {
+  io.emit("mode:event", payload);
+});
+
 // Broadcast countdown events
 gameEvents.onCountdown((payload) => {
   io.emit("game:countdown", payload);

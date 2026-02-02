@@ -313,6 +313,30 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
 
 ---
 
+#### `mode:event`
+
+**When**: A game mode event occurs (e.g., tempo shift in Classic mode)
+
+**Payload**:
+
+```typescript
+{
+  modeName: string,          // Name of the active game mode
+  eventType: string,         // Event identifier (e.g., "tempo:shift")
+  data: Record<string, any>  // Event-specific data
+}
+```
+
+**Tempo shift data** (`eventType === "tempo:shift"`):
+
+```typescript
+{
+  tempo: "slow" | "fast"     // Current tempo state
+}
+```
+
+---
+
 #### `role:assigned`
 
 **When**: Game starts, each player receives their role privately (emitted directly to the player's socket, not broadcast)

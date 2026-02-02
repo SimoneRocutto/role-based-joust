@@ -43,6 +43,13 @@ export class ClassicMode extends GameMode {
   }
 
   /**
+   * Enable tempo shift event in classic mode
+   */
+  override getGameEvents(): string[] {
+    return ["tempo-shift"];
+  }
+
+  /**
    * No roles in classic mode
    */
   getRolePool(playerCount: number): string[] {
