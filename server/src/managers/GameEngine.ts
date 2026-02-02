@@ -439,6 +439,9 @@ export class GameEngine {
 
     this.gameState = "round-ended";
 
+    // Reset ready state so between-rounds screen starts at 0/N
+    this.resetReadyState();
+
     // Notify mode
     if (this.currentMode) {
       this.currentMode.onRoundEnd(this);
@@ -509,6 +512,9 @@ export class GameEngine {
     logger.info("ENGINE", "Game ended");
 
     this.gameState = "finished";
+
+    // Reset ready state so winner screen starts at 0/N
+    this.resetReadyState();
 
     // Calculate final scores
     const finalScores = this.currentMode?.calculateFinalScores(this) || [];

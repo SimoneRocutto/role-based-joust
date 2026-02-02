@@ -186,6 +186,82 @@ runner.test("Classic mode does not emit role assignments", (engine) => {
 // test mode skips countdown (where emitRoleAssignments is called).
 
 // ============================================================================
+// READY STATE RESET ON GAME END TESTS
+// ============================================================================
+
+runner.test("Ready state resets when game ends", (engine) => {
+  resetMovementConfig();
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+
+  // Simulate players being ready (as they would be before a round starts)
+  engine.setPlayerReady("p1", true);
+  engine.setPlayerReady("p2", true);
+
+  const beforeEnd = engine.getReadyCount();
+  assertEqual(beforeEnd.ready, 2, "Both players should be ready before game end");
+
+  // Kill player 2 to trigger game end
+  const player2 = engine.getPlayerById("p2")!;
+  player2.die(engine.gameTime);
+
+  // Fast-forward to let game detect win and end
+  engine.fastForward(200);
+
+  assertEqual(engine.gameState, "finished", "Game should be finished");
+
+  // Ready state should be reset
+  const afterEnd = engine.getReadyCount();
+  assertEqual(afterEnd.ready, 0, "Ready count should be 0 after game end");
+
+  resetMovementConfig();
+});
+
+runner.test("Ready state resets when round ends (role-based)", (engine) => {
+  resetMovementConfig();
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+
+  // Simulate players being ready
+  engine.setPlayerReady("p1", true);
+  engine.setPlayerReady("p2", true);
+
+  const beforeEnd = engine.getReadyCount();
+  assertEqual(beforeEnd.ready, 2, "Both players should be ready before round end");
+
+  // Kill player 2 to end round 1 (not the game — role-based has 3 rounds)
+  let player2 = engine.getPlayerById("p2")!;
+  player2.die(engine.gameTime);
+
+  // Fast-forward to let game detect win
+  engine.fastForward(200);
+
+  // In test mode, it auto-advances to round 2
+  assertEqual(engine.currentRound, 2, "Should be on round 2");
+
+  // Ready state should have been reset during round transition
+  // (resetReadyState is called in endRound and again in startCountdown/startRound)
+  const afterRoundEnd = engine.getReadyCount();
+  assertEqual(afterRoundEnd.ready, 0, "Ready count should be 0 after round transition");
+
+  resetMovementConfig();
+});
+
+// ============================================================================
 // RUN TESTS
 // ============================================================================
 

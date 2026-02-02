@@ -379,6 +379,10 @@ gameEvents.onRoundStart((payload) => {
 
 // Broadcast round end
 gameEvents.onRoundEnd((payload) => {
+  // Emit reset ready count so between-rounds screen starts at 0/N
+  const playerCount = gameEngine.players.length;
+  gameEvents.emitReadyCountUpdate({ ready: 0, total: playerCount });
+
   io.emit("round:end", {
     roundNumber: payload.roundNumber,
     scores: payload.scores.map((s) => ({
@@ -395,6 +399,11 @@ gameEvents.onRoundEnd((payload) => {
 
 // Broadcast game end
 gameEvents.onGameEnd((payload) => {
+  // Reset ready state so winner screen starts at 0/N
+  connectionManager.resetAllReadyState();
+  const lobbyPlayers = connectionManager.getLobbyPlayers();
+  gameEvents.emitReadyCountUpdate({ ready: 0, total: lobbyPlayers.length });
+
   io.emit("game:end", {
     winner: payload.winner
       ? {
