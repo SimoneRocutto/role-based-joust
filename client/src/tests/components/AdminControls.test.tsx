@@ -3,6 +3,13 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import AdminControls from '@/components/dashboard/AdminControls'
 import { useGameStore } from '@/store/gameStore'
 
+// Mock qrcode module
+vi.mock('qrcode', () => ({
+  default: {
+    toDataURL: vi.fn().mockResolvedValue('data:image/png;base64,fake-qr-code'),
+  },
+}))
+
 // Mock the api service
 vi.mock('@/services/api', () => ({
   apiService: {
@@ -181,6 +188,24 @@ describe('AdminControls', () => {
 
     await waitFor(() => {
       expect(apiService.updateSettings).toHaveBeenCalledWith({ sensitivity: 'medium' })
+    })
+  })
+
+  it('renders QR code image with alt text', async () => {
+    render(<AdminControls />)
+
+    await waitFor(() => {
+      const qrImg = screen.getByAltText('Scan to join')
+      expect(qrImg).toBeInTheDocument()
+      expect(qrImg).toHaveAttribute('src', 'data:image/png;base64,fake-qr-code')
+    })
+  })
+
+  it('displays the join URL text', async () => {
+    render(<AdminControls />)
+
+    await waitFor(() => {
+      expect(screen.getByText(`${window.location.origin}/join`)).toBeInTheDocument()
     })
   })
 })

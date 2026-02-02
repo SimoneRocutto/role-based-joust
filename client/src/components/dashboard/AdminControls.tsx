@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import QRCode from 'qrcode'
 import { useGameState } from '@/hooks/useGameState'
 import { useGameStore } from '@/store/gameStore'
 import { apiService } from '@/services/api'
@@ -17,6 +18,9 @@ function AdminControls() {
   const [dangerThreshold, setDangerThreshold] = useState(0.10)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
+
+  const joinUrl = `${window.location.origin}/join`
 
   // Check if all players are ready (for production mode)
   const allPlayersReady = readyCount.total > 0 && readyCount.ready === readyCount.total
@@ -48,6 +52,17 @@ function AdminControls() {
         console.error('Failed to fetch settings:', err)
       })
   }, [])
+
+  // Generate QR code for join URL
+  useEffect(() => {
+    QRCode.toDataURL(joinUrl, {
+      width: 120,
+      margin: 1,
+      color: { dark: '#ffffffff', light: '#00000000' },
+    })
+      .then(setQrDataUrl)
+      .catch((err) => console.error('Failed to generate QR code:', err))
+  }, [joinUrl])
 
   const handleModeChange = (mode: string) => {
     setSelectedMode(mode)
@@ -224,7 +239,7 @@ function AdminControls() {
         </div>
       )}
 
-      {/* Action Button */}
+      {/* Action Button + QR Code */}
       <div className="flex gap-4 items-center">
         {/* In dev mode: always show start button */}
         {isDevMode && (
@@ -254,6 +269,14 @@ function AdminControls() {
               </div>
             )}
           </>
+        )}
+
+        {/* QR Code for joining */}
+        {qrDataUrl && (
+          <div className="flex flex-col items-center gap-1 ml-auto">
+            <img src={qrDataUrl} alt="Scan to join" width={120} height={120} />
+            <span className="text-xs text-gray-400 select-all">{joinUrl}</span>
+          </div>
         )}
       </div>
     </div>
