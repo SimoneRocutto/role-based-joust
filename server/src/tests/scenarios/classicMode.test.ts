@@ -25,45 +25,66 @@ runner.test("Classic mode sets countdown to 3 seconds", (engine) => {
   resetMovementConfig();
 });
 
-runner.test("Classic mode enables oneshot mode", (engine) => {
+runner.test("Classic mode preserves user sensitivity settings", (engine) => {
   resetMovementConfig();
+  // Set a non-default sensitivity
+  gameConfig.movement.oneshotMode = true;
+  gameConfig.movement.damageMultiplier = 100;
+
   const mode = GameModeFactory.getInstance().createMode("classic");
   engine.setGameMode(mode);
 
+  // Classic mode should NOT override user's sensitivity settings
   assertEqual(
     gameConfig.movement.oneshotMode,
     true,
-    "oneshotMode should be enabled for classic mode"
+    "Classic mode should preserve user's oneshotMode setting"
+  );
+  assertEqual(
+    gameConfig.movement.damageMultiplier,
+    100,
+    "Classic mode should preserve user's damageMultiplier setting"
   );
 
   resetMovementConfig();
 });
 
-runner.test("Classic mode resets movement config on game end", (engine) => {
+runner.test("Classic mode restores settings on game end", (engine) => {
   resetMovementConfig();
+  // Set specific sensitivity before game
+  gameConfig.movement.damageMultiplier = 70;
+  gameConfig.movement.oneshotMode = false;
+
   const mode = GameModeFactory.getInstance().createMode("classic");
   engine.setGameMode(mode);
 
-  // oneshotMode should be enabled
-  assertEqual(gameConfig.movement.oneshotMode, true, "oneshotMode should be on");
-
-  // Simulate game end by calling onGameEnd
+  // Simulate game end
   mode.onGameEnd(engine);
 
+  // Settings should be restored to what they were before setGameMode
+  assertEqual(
+    gameConfig.movement.damageMultiplier,
+    70,
+    "damageMultiplier should be restored after game end"
+  );
   assertEqual(
     gameConfig.movement.oneshotMode,
     false,
-    "oneshotMode should be reset after game end"
+    "oneshotMode should be restored after game end"
   );
+
+  resetMovementConfig();
 });
 
-runner.test("stopGame resets movement config and countdown", (engine) => {
+runner.test("stopGame restores movement config and resets countdown", (engine) => {
   resetMovementConfig();
+  // Set specific sensitivity before game
+  gameConfig.movement.damageMultiplier = 100;
+  gameConfig.movement.oneshotMode = true;
+
   const mode = GameModeFactory.getInstance().createMode("classic");
   engine.setGameMode(mode);
 
-  // Verify classic config is active
-  assertEqual(gameConfig.movement.oneshotMode, true, "oneshotMode should be on");
   assertEqual((engine as any).countdownDuration, 3, "Countdown should be 3");
 
   const players: PlayerData[] = [
@@ -74,16 +95,24 @@ runner.test("stopGame resets movement config and countdown", (engine) => {
   engine.startGame(players);
   engine.stopGame();
 
+  // Settings should be restored to what they were before setGameMode
+  assertEqual(
+    gameConfig.movement.damageMultiplier,
+    100,
+    "damageMultiplier should be restored after stopGame"
+  );
   assertEqual(
     gameConfig.movement.oneshotMode,
-    false,
-    "oneshotMode should be reset after stopGame"
+    true,
+    "oneshotMode should be restored after stopGame"
   );
   assertEqual(
     (engine as any).countdownDuration,
     10,
     "Countdown should be reset to 10 after stopGame"
   );
+
+  resetMovementConfig();
 });
 
 // ============================================================================
@@ -92,6 +121,9 @@ runner.test("stopGame resets movement config and countdown", (engine) => {
 
 runner.test("Oneshot mode kills player on any movement above threshold", (engine) => {
   resetMovementConfig();
+  // Explicitly enable oneshot mode (classic mode no longer forces this)
+  gameConfig.movement.oneshotMode = true;
+
   const mode = GameModeFactory.getInstance().createMode("classic");
   engine.setGameMode(mode);
 
@@ -122,6 +154,9 @@ runner.test("Oneshot mode kills player on any movement above threshold", (engine
 
 runner.test("Oneshot mode does not kill player below threshold", (engine) => {
   resetMovementConfig();
+  // Explicitly enable oneshot mode (classic mode no longer forces this)
+  gameConfig.movement.oneshotMode = true;
+
   const mode = GameModeFactory.getInstance().createMode("classic");
   engine.setGameMode(mode);
 
