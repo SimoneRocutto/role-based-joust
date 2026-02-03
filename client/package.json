@@ -13,11 +13,11 @@
     "test:run": "vitest run",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test",
-    "test:e2e:fast": "playwright test --grep-invert 'countdown goes from'",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:debug": "playwright test --debug",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e": "NODE_TLS_REJECT_UNAUTHORIZED=0 playwright test",
+    "test:e2e:fast": "NODE_TLS_REJECT_UNAUTHORIZED=0 playwright test --grep-invert 'countdown goes from'",
+    "test:e2e:ui": "NODE_TLS_REJECT_UNAUTHORIZED=0 playwright test --ui",
+    "test:e2e:debug": "NODE_TLS_REJECT_UNAUTHORIZED=0 playwright test --debug",
+    "test:e2e:headed": "NODE_TLS_REJECT_UNAUTHORIZED=0 playwright test --headed"
   },
   "dependencies": {
     "framer-motion": "^10.16.16",

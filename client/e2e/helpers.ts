@@ -1,5 +1,12 @@
 import { test as base, Page, expect, BrowserContext } from '@playwright/test';
 
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 /**
  * E2E Test Helpers for Extended Joust
  *
@@ -7,9 +14,21 @@ import { test as base, Page, expect, BrowserContext } from '@playwright/test';
  * reusable utilities for common operations.
  */
 
+// Check if SSL certificates exist (same logic as vite.config.js and server.ts)
+const certsDir = path.resolve(__dirname, '../../certs');
+const certsExist =
+  (fs.existsSync(path.join(certsDir, 'server.crt')) &&
+    fs.existsSync(path.join(certsDir, 'server.key'))) ||
+  (fs.existsSync(path.join(certsDir, 'cert.pem')) &&
+    fs.existsSync(path.join(certsDir, 'key.pem')));
+
+// Use HTTPS if certs exist, HTTP otherwise
+const protocol = certsExist ? 'https' : 'http';
+
 // API Base URL (server)
-export const API_URL = 'http://localhost:4000';
-export const CLIENT_URL = 'http://localhost:5173';
+// Note: NODE_TLS_REJECT_UNAUTHORIZED=0 is set in test scripts to allow self-signed certs
+export const API_URL = `${protocol}://localhost:4000`;
+export const CLIENT_URL = `${protocol}://localhost:5173`;
 
 /**
  * Gracefully disconnect Socket.IO on a page to avoid EPIPE errors

@@ -128,8 +128,15 @@ npm run lint      # Run ESLint
 
 ### Accelerometer not working on iOS
 
-- **Solution**: Use HTTPS (ngrok or mkcert)
-- iOS 13+ requires HTTPS for DeviceMotionEvent
+- **Requires HTTPS**: iOS 13+ requires HTTPS for DeviceMotionEvent. Make sure you have SSL certificates in the `certs/` folder (see server README).
+- **Requires production mode**: In development (`npm run dev`), motion permission is auto-granted for browser testing. On a real iOS device, you need to use production mode to see the "TAP TO ENABLE MOTION" button:
+  ```
+  https://YOUR_IP:5173/join?mode=production
+  ```
+  Or access the dashboard with `?mode=production` and the QR code will include it automatically:
+  ```
+  https://YOUR_IP:5173/dashboard?mode=production
+  ```
 
 ### Screen keeps turning off
 

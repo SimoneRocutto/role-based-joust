@@ -1,4 +1,20 @@
 import { defineConfig, devices } from '@playwright/test';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Check if SSL certificates exist (same logic as vite.config.js and server.ts)
+const certsDir = path.resolve(__dirname, '../certs');
+const certsExist =
+  (fs.existsSync(path.join(certsDir, 'server.crt')) &&
+    fs.existsSync(path.join(certsDir, 'server.key'))) ||
+  (fs.existsSync(path.join(certsDir, 'cert.pem')) &&
+    fs.existsSync(path.join(certsDir, 'key.pem')));
+
+const protocol = certsExist ? 'https' : 'http';
 
 /**
  * Playwright Configuration for Extended Joust E2E Tests
@@ -34,8 +50,11 @@ export default defineConfig({
 
   // Shared settings for all projects
   use: {
-    // Base URL for the client
-    baseURL: 'http://localhost:5173',
+    // Base URL for the client (HTTP or HTTPS based on cert presence)
+    baseURL: `${protocol}://localhost:5173`,
+
+    // Ignore HTTPS errors (self-signed certs)
+    ignoreHTTPSErrors: true,
 
     // Collect trace on failure for debugging
     trace: 'on-first-retry',
