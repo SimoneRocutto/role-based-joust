@@ -15,6 +15,8 @@ export interface PersistedSettings {
   gameMode: string;
   /** Default role theme (e.g., "standard", "halloween") */
   theme: string;
+  /** Number of rounds per game (1-10) */
+  roundCount: number;
 }
 
 class SettingsStore {

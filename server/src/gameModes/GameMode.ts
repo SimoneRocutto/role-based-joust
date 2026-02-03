@@ -6,6 +6,13 @@ import { Logger } from "@/utils/Logger";
 const logger = Logger.getInstance();
 
 /**
+ * Options for creating a game mode instance.
+ */
+export interface GameModeOptions {
+  roundCount?: number;
+}
+
+/**
  * GameMode - Abstract base class for all game modes
  *
  * Game modes control:
@@ -29,6 +36,16 @@ export abstract class GameMode {
   multiRound: boolean = false;
   roundCount: number = 1;
   roundDuration: number | null = null; // null = no time limit
+
+  constructor(options?: GameModeOptions) {
+    if (options?.roundCount !== undefined) {
+      this.roundCount = options.roundCount;
+      // Enable multiRound if roundCount > 1
+      if (this.roundCount > 1) {
+        this.multiRound = true;
+      }
+    }
+  }
 
   // ========================================================================
   // ABSTRACT METHODS - Must implement in subclasses

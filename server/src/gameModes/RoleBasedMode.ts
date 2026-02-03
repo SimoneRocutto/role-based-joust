@@ -1,4 +1,4 @@
-import { GameMode } from "./GameMode";
+import { GameMode, type GameModeOptions } from "./GameMode";
 import type { GameEngine } from "@/managers/GameEngine";
 import type { BasePlayer } from "@/models/BasePlayer";
 import type { WinCondition, ScoreEntry, ModeInfo } from "@/types/index";
@@ -8,11 +8,18 @@ import { Logger } from "@/utils/Logger";
 const logger = Logger.getInstance();
 
 /**
+ * Options for RoleBasedMode
+ */
+export interface RoleBasedModeOptions extends GameModeOptions {
+  theme?: string;
+}
+
+/**
  * RoleBasedMode - Roles with unique abilities
  *
  * Rules:
  * - Players assigned roles with special abilities
- * - Multi-round (default 3 rounds)
+ * - Multi-round (configurable, default from settings)
  * - Points accumulate across rounds
  * - Last standing player each round gets bonus points
  */
@@ -24,15 +31,28 @@ export class RoleBasedMode extends GameMode {
   override maxPlayers = 20;
   override useRoles = true;
   override multiRound = true;
-  override roundCount = 3;
 
   protected roleTheme: string;
   protected lastStandingBonus: number = 5;
 
-  constructor(roleTheme: string = "standard") {
-    super();
-    this.roleTheme = roleTheme;
-    this.description = `${this.description} Using ${roleTheme} roles.`;
+  constructor(options?: RoleBasedModeOptions | string) {
+    // Handle legacy string argument (theme only)
+    const opts: RoleBasedModeOptions = typeof options === "string"
+      ? { theme: options }
+      : options || {};
+
+    // Default roundCount to 3 for role-based mode if not specified
+    if (opts.roundCount === undefined) {
+      opts.roundCount = 3;
+    }
+
+    super(opts);
+
+    this.roleTheme = opts.theme || "standard";
+    this.description = `${this.description} Using ${this.roleTheme} roles.`;
+
+    // Default to multiRound for role-based mode
+    this.multiRound = true;
   }
 
   /**

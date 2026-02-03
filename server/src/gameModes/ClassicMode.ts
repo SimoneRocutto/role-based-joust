@@ -1,4 +1,4 @@
-import { GameMode } from "./GameMode";
+import { GameMode, type GameModeOptions } from "./GameMode";
 import type { GameEngine } from "@/managers/GameEngine";
 import type { BasePlayer } from "@/models/BasePlayer";
 import type { WinCondition, ScoreEntry } from "@/types/index";
@@ -17,8 +17,8 @@ const logger = Logger.getInstance();
  *
  * Rules:
  * - No roles (everyone is BasePlayer)
- * - Single round
- * - Last player standing wins
+ * - Configurable round count (default 1)
+ * - Last player standing wins each round
  * - Simple scoring (alive = 1 point, dead = 0)
  */
 export class ClassicMode extends GameMode {
@@ -27,10 +27,17 @@ export class ClassicMode extends GameMode {
   override minPlayers = 2;
   override maxPlayers = 20;
   override useRoles = false;
-  override multiRound = false;
-  override roundCount = 1;
 
   private eventManager = new GameEventManager();
+
+  constructor(options?: GameModeOptions) {
+    super(options);
+    // Default to 1 round if not specified
+    if (options?.roundCount === undefined) {
+      this.roundCount = 1;
+      this.multiRound = false;
+    }
+  }
 
   /**
    * Configure classic mode: 3s countdown + oneshot damage
@@ -86,41 +93,46 @@ export class ClassicMode extends GameMode {
   }
 
   /**
-   * Game ends when 1 or 0 players remain effectively alive
+   * Round ends when 1 or 0 players remain effectively alive
    * (considers disconnection grace period)
+   * Game ends after configured number of rounds
    */
   checkWinCondition(engine: GameEngine): WinCondition {
     // Use effectively alive to handle disconnections
     const effectivelyAlive = this.getEffectivelyAlivePlayers(engine);
 
-    // One player remains - they win
-    if (effectivelyAlive.length === 1) {
-      const [winner] = effectivelyAlive;
-      logger.info("MODE", `${winner.name} wins Classic mode!`);
+    // Multiple players alive - continue round
+    if (effectivelyAlive.length > 1) {
       return {
-        roundEnded: true,
-        gameEnded: true,
-        winner: winner,
-      };
-    }
-
-    // No players remain - draw
-    if (effectivelyAlive.length === 0) {
-      logger.info(
-        "MODE",
-        "Classic mode ended in a draw - all players eliminated or disconnected"
-      );
-      return {
-        roundEnded: true,
-        gameEnded: true,
+        roundEnded: false,
+        gameEnded: false,
         winner: null,
       };
     }
 
-    // Multiple players alive - continue
+    // Round is over (0 or 1 players effectively alive)
+    const roundEnded = true;
+    const gameEnded = engine.currentRound >= this.roundCount;
+
+    // One player remains - they win the round
+    if (effectivelyAlive.length === 1) {
+      const [winner] = effectivelyAlive;
+      logger.info("MODE", `${winner.name} wins${gameEnded ? " Classic mode" : " the round"}!`);
+      return {
+        roundEnded,
+        gameEnded,
+        winner: gameEnded ? winner : null,
+      };
+    }
+
+    // No players remain - draw
+    logger.info(
+      "MODE",
+      "Classic mode round ended in a draw - all players eliminated or disconnected"
+    );
     return {
-      roundEnded: false,
-      gameEnded: false,
+      roundEnded,
+      gameEnded,
       winner: null,
     };
   }

@@ -46,6 +46,7 @@ function createTestSettings(overrides?: Partial<PersistedSettings>): PersistedSe
     sensitivity: "medium",
     gameMode: "role-based",
     theme: "standard",
+    roundCount: 3,
     ...overrides,
   };
 }
@@ -91,6 +92,7 @@ runner.test("Settings load on init with new format", () => {
       sensitivity: "custom",
       gameMode: "classic",
       theme: "halloween",
+      roundCount: 5,
     };
     writeFileSync(filePath, JSON.stringify(settings), "utf-8");
 
@@ -99,6 +101,7 @@ runner.test("Settings load on init with new format", () => {
     assertEqual(loaded!.movement?.damageMultiplier, 99, "Should load the written damageMultiplier");
     assertEqual(loaded!.gameMode, "classic", "Should load the written gameMode");
     assertEqual(loaded!.theme, "halloween", "Should load the written theme");
+    assertEqual(loaded!.roundCount, 5, "Should load the written roundCount");
   } finally {
     cleanup(dir);
   }
@@ -198,6 +201,7 @@ runner.test("Saved settings include all preferences", () => {
       gameMode: "classic",
       theme: "fantasy",
       sensitivity: "extreme",
+      roundCount: 7,
     });
     store.save(settings);
 
@@ -207,9 +211,11 @@ runner.test("Saved settings include all preferences", () => {
     assert("sensitivity" in raw, "Saved file should have sensitivity");
     assert("gameMode" in raw, "Saved file should have gameMode");
     assert("theme" in raw, "Saved file should have theme");
+    assert("roundCount" in raw, "Saved file should have roundCount");
     assertEqual(raw.gameMode, "classic", "Saved gameMode should match");
     assertEqual(raw.theme, "fantasy", "Saved theme should match");
     assertEqual(raw.sensitivity, "extreme", "Saved sensitivity should match");
+    assertEqual(raw.roundCount, 7, "Saved roundCount should match");
   } finally {
     cleanup(dir);
   }

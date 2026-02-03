@@ -11,6 +11,7 @@ import {
   setSensitivityPreset,
   setGameModePreference,
   setThemePreference,
+  setRoundCountPreference,
   userPreferences,
 } from "@/config/gameConfig";
 import { getAvailableThemes, themeExists } from "@/config/roleThemes";
@@ -220,10 +221,14 @@ router.post(
     // Use persisted preferences as defaults
     const effectiveMode = mode || userPreferences.gameMode;
     const effectiveTheme = theme || userPreferences.theme;
+    const effectiveRoundCount = userPreferences.roundCount;
 
-    // Create mode instance
+    // Create mode instance with options
     const factory = GameModeFactory.getInstance();
-    const gameMode = factory.createMode(effectiveMode, effectiveTheme);
+    const modeOptions = effectiveMode === "role-based"
+      ? { theme: effectiveTheme, roundCount: effectiveRoundCount }
+      : { roundCount: effectiveRoundCount };
+    const gameMode = factory.createMode(effectiveMode, modeOptions);
 
     // Set mode on engine
     gameEngine.setGameMode(gameMode);
@@ -336,7 +341,7 @@ router.post(
 
 /**
  * GET /api/game/settings
- * Get current settings including sensitivity, mode, theme, and available presets
+ * Get current settings including sensitivity, mode, theme, roundCount, and available presets
  */
 router.get(
   "/settings",
@@ -349,6 +354,7 @@ router.get(
       sensitivity: userPreferences.sensitivity,
       gameMode: userPreferences.gameMode,
       theme: userPreferences.theme,
+      roundCount: userPreferences.roundCount,
       // Movement details
       movement: {
         dangerThreshold: gameConfig.movement.dangerThreshold,
@@ -365,11 +371,12 @@ router.get(
 
 /**
  * POST /api/game/settings
- * Update game settings (sensitivity, mode, theme)
+ * Update game settings (sensitivity, mode, theme, roundCount)
  * Body:
  * - sensitivity: string (preset name like "low", "medium", "high", "extreme", "oneshot")
  * - gameMode: string (e.g., "classic", "role-based")
  * - theme: string (e.g., "standard", "halloween")
+ * - roundCount: number (1-10)
  * - dangerThreshold, damageMultiplier: numbers (for custom sensitivity)
  *
  * All fields are optional. Only provided fields are updated.
@@ -378,7 +385,7 @@ router.post(
   "/settings",
   validate("gameSettings"),
   asyncHandler(async (req: Request, res: Response) => {
-    const { sensitivity, gameMode, theme, dangerThreshold, damageMultiplier } =
+    const { sensitivity, gameMode, theme, roundCount, dangerThreshold, damageMultiplier } =
       req.body;
     const updates: string[] = [];
 
@@ -425,6 +432,19 @@ router.post(
       updates.push(`theme=${theme}`);
     }
 
+    // Update round count preference
+    if (roundCount !== undefined) {
+      if (typeof roundCount !== "number" || roundCount < 1 || roundCount > 10) {
+        res.status(400).json({
+          success: false,
+          error: "roundCount must be a number between 1 and 10",
+        });
+        return;
+      }
+      setRoundCountPreference(roundCount);
+      updates.push(`roundCount=${roundCount}`);
+    }
+
     // Custom sensitivity values (overrides preset)
     if (dangerThreshold !== undefined || damageMultiplier !== undefined) {
       const update: Partial<{
@@ -443,7 +463,7 @@ router.post(
       res.status(400).json({
         success: false,
         error:
-          "Provide at least one setting to update: sensitivity, gameMode, theme, or custom values (dangerThreshold/damageMultiplier)",
+          "Provide at least one setting to update: sensitivity, gameMode, theme, roundCount, or custom values (dangerThreshold/damageMultiplier)",
       });
       return;
     }
@@ -455,6 +475,7 @@ router.post(
       sensitivity: userPreferences.sensitivity,
       gameMode: userPreferences.gameMode,
       theme: userPreferences.theme,
+      roundCount: userPreferences.roundCount,
       movement: {
         dangerThreshold: gameConfig.movement.dangerThreshold,
         damageMultiplier: gameConfig.movement.damageMultiplier,

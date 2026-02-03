@@ -66,11 +66,27 @@ runner.test("Classic mode: Last player standing wins", (engine) => {
 });
 
 runner.test("Role-based mode: Multi-round game", (engine) => {
-  const mode = GameModeFactory.getInstance().createMode("role-based");
+  const mode = GameModeFactory.getInstance().createMode("role-based", { roundCount: 3 });
   engine.setGameMode(mode);
 
   assertEqual(mode.multiRound, true, "Should be multi-round");
-  assertEqual(mode.roundCount, 3, "Should have 3 rounds");
+  assertEqual(mode.roundCount, 3, "Should have 3 rounds when configured with 3");
+});
+
+runner.test("Role-based mode: Accepts custom round count", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based", { roundCount: 5 });
+  engine.setGameMode(mode);
+
+  assertEqual(mode.multiRound, true, "Should be multi-round");
+  assertEqual(mode.roundCount, 5, "Should have 5 rounds when configured with 5");
+});
+
+runner.test("Classic mode: Accepts custom round count", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("classic", { roundCount: 3 });
+  engine.setGameMode(mode);
+
+  assertEqual(mode.multiRound, true, "Should be multi-round when roundCount > 1");
+  assertEqual(mode.roundCount, 3, "Should have 3 rounds when configured with 3");
 });
 
 runner.test("Player damage resets between rounds", (engine) => {

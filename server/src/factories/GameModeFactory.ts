@@ -117,8 +117,12 @@ export class GameModeFactory {
 
   /**
    * Create a mode instance with optional arguments
+   *
+   * For role-based mode: createMode("role-based", { theme: "standard", roundCount: 3 })
+   * For classic mode: createMode("classic", { roundCount: 1 })
+   * Legacy support: createMode("role-based", "standard") still works
    */
-  createMode(modeName: string, ...args: any[]): GameMode {
+  createMode(modeName: string, options?: any): GameMode {
     const key = this.normalizeModeName(modeName);
     const ModeClass = this.modeRegistry.get(key);
 
@@ -129,8 +133,8 @@ export class GameModeFactory {
       );
     }
 
-    logger.info("FACTORY", `Creating mode: ${modeName}`, { args });
-    return new ModeClass(...args);
+    logger.info("FACTORY", `Creating mode: ${modeName}`, { options });
+    return new ModeClass(options);
   }
 
   /**

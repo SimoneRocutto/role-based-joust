@@ -31,6 +31,7 @@ export interface UserPreferences {
   sensitivity: string; // Preset key or "custom"
   gameMode: string; // e.g., "classic", "role-based"
   theme: string; // e.g., "standard", "halloween"
+  roundCount: number; // Number of rounds per game (1-10)
 }
 
 export interface SensitivityPreset {
@@ -87,6 +88,7 @@ const defaultPreferences: UserPreferences = {
   sensitivity: "medium",
   gameMode: "role-based",
   theme: "standard",
+  roundCount: 3,
 };
 
 export const gameConfig: GameConfig = {
@@ -116,6 +118,7 @@ function persistSettings(): void {
     sensitivity: userPreferences.sensitivity,
     gameMode: userPreferences.gameMode,
     theme: userPreferences.theme,
+    roundCount: userPreferences.roundCount,
   };
   settingsStore.save(settings);
 }
@@ -199,6 +202,14 @@ export function setThemePreference(theme: string): void {
   persistSettings();
 }
 
+/**
+ * Update round count preference.
+ */
+export function setRoundCountPreference(count: number): void {
+  userPreferences.roundCount = Math.max(1, Math.min(10, count));
+  persistSettings();
+}
+
 export function resetMovementConfig(): void {
   Object.assign(gameConfig.movement, defaultMovement);
   Object.assign(userPreferences, defaultPreferences);
@@ -222,6 +233,9 @@ export function initSettings(): void {
     }
     if (saved.theme) {
       userPreferences.theme = saved.theme;
+    }
+    if (saved.roundCount !== undefined) {
+      userPreferences.roundCount = saved.roundCount;
     }
   }
 }

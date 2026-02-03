@@ -4,6 +4,8 @@ import {
   sensitivityPresets,
   updateMovementConfig,
   resetMovementConfig,
+  userPreferences,
+  setRoundCountPreference,
 } from "@/config/gameConfig";
 
 const runner = new TestRunner();
@@ -167,6 +169,50 @@ runner.test("Applying oneshot preset sets oneshotMode", (engine) => {
     false,
     "oneshotMode should be reset to false"
   );
+});
+
+// ============================================================================
+// ROUND COUNT TESTS
+// ============================================================================
+
+runner.test("Default roundCount is 3", (engine) => {
+  resetMovementConfig();
+  assertEqual(
+    userPreferences.roundCount,
+    3,
+    "Default roundCount should be 3"
+  );
+});
+
+runner.test("setRoundCountPreference updates roundCount", (engine) => {
+  resetMovementConfig();
+  setRoundCountPreference(5);
+  assertEqual(
+    userPreferences.roundCount,
+    5,
+    "roundCount should be updated to 5"
+  );
+  resetMovementConfig();
+});
+
+runner.test("setRoundCountPreference clamps value to 1-10 range", (engine) => {
+  resetMovementConfig();
+
+  setRoundCountPreference(0);
+  assertEqual(
+    userPreferences.roundCount,
+    1,
+    "roundCount should be clamped to minimum 1"
+  );
+
+  setRoundCountPreference(15);
+  assertEqual(
+    userPreferences.roundCount,
+    10,
+    "roundCount should be clamped to maximum 10"
+  );
+
+  resetMovementConfig();
 });
 
 // Export for test runner

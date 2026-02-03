@@ -16,6 +16,7 @@ function AdminControls() {
     Array<{ key: string; label: string; description: string }>
   >([])
   const [dangerThreshold, setDangerThreshold] = useState(0.10)
+  const [roundCount, setRoundCount] = useState(3)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
@@ -57,6 +58,9 @@ function AdminControls() {
           }
           if (data.theme) {
             setSelectedTheme(data.theme)
+          }
+          if (data.roundCount) {
+            setRoundCount(data.roundCount)
           }
         }
       })
@@ -125,6 +129,15 @@ function AdminControls() {
     } catch (err) {
       console.error('Failed to update threshold:', err)
       setError('Failed to update threshold')
+    }
+  }
+
+  const handleRoundCountChange = async (count: number) => {
+    setRoundCount(count)
+    try {
+      await apiService.updateSettings({ roundCount: count })
+    } catch (err) {
+      console.error('Failed to update round count:', err)
     }
   }
 
@@ -203,6 +216,30 @@ function AdminControls() {
             </select>
           </div>
         )}
+      </div>
+
+      {/* Round Count Selection */}
+      <div className="mb-4">
+        <label className="block text-sm text-gray-400 mb-2">Number of Rounds</label>
+        <div className="flex gap-2">
+          {[1, 2, 3, 4, 5].map((count) => (
+            <button
+              key={count}
+              onClick={() => handleRoundCountChange(count)}
+              disabled={loading}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                roundCount === count
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              {count}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-gray-500 mt-1">
+          {roundCount === 1 ? 'Single round — winner takes all' : `${roundCount} rounds — points accumulate`}
+        </p>
       </div>
 
       {/* Sensitivity Selection */}
