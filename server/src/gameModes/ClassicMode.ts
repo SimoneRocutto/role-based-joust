@@ -18,8 +18,8 @@ const logger = Logger.getInstance();
  * Rules:
  * - No roles (everyone is BasePlayer)
  * - Configurable round count (default 1)
- * - Last player standing wins each round
- * - Simple scoring (alive = 1 point, dead = 0)
+ * - Last player standing wins each round and earns points
+ * - Points accumulate across rounds (if multi-round)
  */
 export class ClassicMode extends GameMode {
   override name = "Classic";
@@ -29,6 +29,7 @@ export class ClassicMode extends GameMode {
   override useRoles = false;
 
   private eventManager = new GameEventManager();
+  protected lastStandingBonus: number = 5;
 
   constructor(options?: GameModeOptions) {
     super(options);
@@ -69,11 +70,24 @@ export class ClassicMode extends GameMode {
   }
 
   /**
-   * Clean up events on round end
+   * Clean up events and accumulate points on round end
    */
   override onRoundEnd(engine: GameEngine): void {
     this.eventManager.cleanup(engine, engine.gameTime);
     super.onRoundEnd(engine);
+
+    // Transfer round points to total points
+    engine.players.forEach((player) => {
+      player.totalPoints += player.points;
+    });
+
+    // Log round scores
+    const roundScores = [...engine.players]
+      .sort((a, b) => b.points - a.points)
+      .map((p) => `${p.name}: ${p.points}pts (total: ${p.totalPoints})`)
+      .join(", ");
+
+    logger.info("MODE", `Round ${engine.currentRound} scores: ${roundScores}`);
   }
 
   /**
@@ -114,38 +128,43 @@ export class ClassicMode extends GameMode {
     const roundEnded = true;
     const gameEnded = engine.currentRound >= this.roundCount;
 
-    // One player remains - they win the round
+    // Award last standing bonus if there's a survivor
     if (effectivelyAlive.length === 1) {
       const [winner] = effectivelyAlive;
-      logger.info("MODE", `${winner.name} wins${gameEnded ? " Classic mode" : " the round"}!`);
-      return {
-        roundEnded,
-        gameEnded,
-        winner: gameEnded ? winner : null,
-      };
+      winner.addPoints(this.lastStandingBonus, "last_standing");
+      logger.info(
+        "MODE",
+        `${winner.name} is last standing! +${this.lastStandingBonus} points`
+      );
+    } else {
+      // No players remain - draw
+      logger.info(
+        "MODE",
+        "Classic mode round ended in a draw - all players eliminated or disconnected"
+      );
     }
 
-    // No players remain - draw
-    logger.info(
-      "MODE",
-      "Classic mode round ended in a draw - all players eliminated or disconnected"
-    );
     return {
       roundEnded,
       gameEnded,
-      winner: null,
+      winner: null, // Winner determined by total points at game end
     };
   }
 
   /**
-   * Simple scoring - winner gets 1 point
+   * Sort by total points across all rounds
    */
   calculateFinalScores(engine: GameEngine): ScoreEntry[] {
-    return engine.players.map((player) => ({
+    // Sort by total points (descending)
+    const sorted = [...engine.players].sort(
+      (a, b) => b.totalPoints - a.totalPoints
+    );
+
+    return sorted.map((player, index) => ({
       player,
-      score: player.isAlive ? 1 : 0,
-      rank: player.isAlive ? 1 : 2,
-      status: player.isAlive ? "Winner" : "Eliminated",
+      score: player.totalPoints,
+      rank: index + 1,
+      status: index === 0 ? "Winner" : `Rank ${index + 1}`,
     }));
   }
 

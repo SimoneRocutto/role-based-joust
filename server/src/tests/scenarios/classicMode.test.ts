@@ -297,6 +297,123 @@ runner.test("Ready state resets when round ends (role-based)", (engine) => {
 });
 
 // ============================================================================
+// POINT ACCUMULATION TESTS
+// ============================================================================
+
+runner.test("Classic mode awards points to last standing player", (engine) => {
+  resetMovementConfig();
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+
+  const player1 = engine.getPlayerById("p1")!;
+  const player2 = engine.getPlayerById("p2")!;
+
+  assertEqual(player1.points, 0, "Player 1 should start with 0 points");
+  assertEqual(player2.points, 0, "Player 2 should start with 0 points");
+
+  // Kill player 2 to end the round
+  player2.die(engine.gameTime);
+
+  // Fast-forward to let game detect win
+  engine.fastForward(200);
+
+  // Player 1 should have earned the last standing bonus (5 points)
+  assertEqual(player1.points, 5, "Last standing player should earn 5 points");
+  assertEqual(player2.points, 0, "Dead player should have 0 points");
+
+  resetMovementConfig();
+});
+
+runner.test("Classic mode accumulates points across rounds", (engine) => {
+  resetMovementConfig();
+  // Create classic mode with 3 rounds
+  const mode = GameModeFactory.getInstance().createMode("classic", { roundCount: 3 });
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+
+  // Round 1: Kill player 2
+  let player2 = engine.getPlayerById("p2")!;
+  player2.die(engine.gameTime);
+  engine.fastForward(200);
+
+  assertEqual(engine.currentRound, 2, "Should be on round 2");
+
+  // After round 1, player 1 should have 5 total points
+  let player1 = engine.getPlayerById("p1")!;
+  assertEqual(player1.totalPoints, 5, "Player 1 should have 5 total points after round 1");
+
+  // Round 2: Kill player 1 this time
+  player1 = engine.getPlayerById("p1")!;
+  player1.die(engine.gameTime);
+  engine.fastForward(200);
+
+  assertEqual(engine.currentRound, 3, "Should be on round 3");
+
+  // After round 2, player 2 should have 5 total points
+  player2 = engine.getPlayerById("p2")!;
+  assertEqual(player2.totalPoints, 5, "Player 2 should have 5 total points after round 2");
+
+  // Player 1 should still have 5 total points
+  player1 = engine.getPlayerById("p1")!;
+  assertEqual(player1.totalPoints, 5, "Player 1 should still have 5 total points");
+
+  resetMovementConfig();
+});
+
+runner.test("Classic mode final scores use total points", (engine) => {
+  resetMovementConfig();
+  // Create classic mode with 2 rounds for quicker test
+  const mode = GameModeFactory.getInstance().createMode("classic", { roundCount: 2 });
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+
+  // Round 1: Player 1 wins
+  let player2 = engine.getPlayerById("p2")!;
+  player2.die(engine.gameTime);
+  engine.fastForward(200);
+
+  // Round 2: Player 2 wins
+  let player1 = engine.getPlayerById("p1")!;
+  player1.die(engine.gameTime);
+  engine.fastForward(200);
+
+  assertEqual(engine.gameState, "finished", "Game should be finished after 2 rounds");
+
+  // Both players should have 5 total points (tie)
+  player1 = engine.getPlayerById("p1")!;
+  player2 = engine.getPlayerById("p2")!;
+  assertEqual(player1.totalPoints, 5, "Player 1 should have 5 total points");
+  assertEqual(player2.totalPoints, 5, "Player 2 should have 5 total points");
+
+  // Final scores should reflect total points
+  const scores = mode.calculateFinalScores(engine);
+  assertEqual(scores.length, 2, "Should have 2 score entries");
+  assertEqual(scores[0].score, 5, "First player's score should be 5");
+  assertEqual(scores[1].score, 5, "Second player's score should be 5");
+
+  resetMovementConfig();
+});
+
+// ============================================================================
 // RUN TESTS
 // ============================================================================
 
