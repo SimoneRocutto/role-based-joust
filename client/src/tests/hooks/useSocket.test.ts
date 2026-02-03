@@ -476,22 +476,6 @@ describe("useSocket", () => {
       expect(state.gameState).toBe("finished");
       expect(state.latestEvent).toBe("Winner is the champion!");
     });
-
-    it("plays victory music", () => {
-      renderHook(() => useSocket());
-
-      act(() => {
-        triggerSocketEvent("game:end", {
-          scores: [],
-          winner: null,
-        });
-      });
-
-      expect(audioPlayMusicCalls).toContainEqual({
-        track: "victory",
-        options: { loop: false, volume: 0.6 },
-      });
-    });
   });
 
   describe("game:countdown event", () => {

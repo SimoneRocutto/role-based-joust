@@ -129,7 +129,6 @@ export function useSocket() {
       // Now set scores and game state
       setScores(scores);
       setGameState("finished");
-      audioManager.playMusic("victory", { loop: false, volume: 0.6 });
 
       if (winner) {
         setLatestEvent(`${winner.name} is the champion!`);
@@ -202,33 +201,35 @@ export function useSocket() {
     });
 
     // Countdown events
-    socketService.onCountdown(({ secondsRemaining, phase, roundNumber, totalRounds }) => {
-      setCountdown(secondsRemaining, phase);
-      setGameState("countdown");
-      setRound(roundNumber, totalRounds);
+    socketService.onCountdown(
+      ({ secondsRemaining, phase, roundNumber, totalRounds }) => {
+        setCountdown(secondsRemaining, phase);
+        setGameState("countdown");
+        setRound(roundNumber, totalRounds);
 
-      // Reset ready state for all players when countdown starts
-      // This clears the checkmarks from the previous round
-      if (phase === "countdown") {
-        const existingPlayers = useGameStore.getState().players;
-        const resetPlayers = existingPlayers.map((p) => ({
-          ...p,
-          isReady: false,
-        }));
-        updatePlayers(resetPlayers);
-      }
+        // Reset ready state for all players when countdown starts
+        // This clears the checkmarks from the previous round
+        if (phase === "countdown") {
+          const existingPlayers = useGameStore.getState().players;
+          const resetPlayers = existingPlayers.map((p) => ({
+            ...p,
+            isReady: false,
+          }));
+          updatePlayers(resetPlayers);
+        }
 
-      // Play countdown sounds
-      if (
-        phase === "countdown" &&
-        secondsRemaining <= 3 &&
-        secondsRemaining > 0
-      ) {
-        audioManager.play("effects/countdown-beep", { volume: 0.5 });
-      } else if (phase === "go") {
-        audioManager.play("effects/countdown-go", { volume: 0.7 });
+        // Play countdown sounds
+        if (
+          phase === "countdown" &&
+          secondsRemaining <= 3 &&
+          secondsRemaining > 0
+        ) {
+          audioManager.play("effects/countdown-beep", { volume: 0.5 });
+        } else if (phase === "go") {
+          audioManager.play("effects/countdown-go", { volume: 0.7 });
+        }
       }
-    });
+    );
 
     // Mode events (game events like speed-shift)
     socketService.onModeEvent(({ eventType }) => {

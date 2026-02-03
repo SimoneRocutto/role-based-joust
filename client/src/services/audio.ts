@@ -11,6 +11,8 @@ class AudioManager {
   private isSpeaking = false;
   private _isUnlocked = false;
   private unlockCallbacks: Array<() => void> = [];
+  private pendingMusicTimeout: ReturnType<typeof setTimeout> | null = null;
+  private pendingMusicTrack: string | null = null;
 
   async preload(soundFiles: string[]): Promise<void> {
     const promises = soundFiles.map(
@@ -41,35 +43,60 @@ class AudioManager {
   }
 
   // Music management
+  // Uses debouncing to prevent multiple tracks playing when rapid state changes occur
   playMusic(track: string, options: { loop?: boolean; volume?: number } = {}) {
-    if (track === this.currentTrack) return;
+    // If same track is already playing or pending, skip
+    if (track === this.currentTrack && !this.pendingMusicTimeout) return;
+    if (track === this.pendingMusicTrack) return;
 
     const { loop = true, volume = AUDIO_VOLUMES.MUSIC } = options;
 
-    // Stop current music
-    if (this.currentMusic) {
-      const currentMusic = this.currentMusic;
-      currentMusic.fade(currentMusic.volume(), 0, 500);
-      currentMusic.once("fade", () => currentMusic?.stop());
+    // Clear any pending music change
+    if (this.pendingMusicTimeout) {
+      clearTimeout(this.pendingMusicTimeout);
+      this.pendingMusicTimeout = null;
     }
 
-    // Get or create sound
-    let sound = this.sounds.get(track);
-    if (!sound) {
-      sound = new Howl({
-        src: [`/sounds/${track}.mp3`],
-        loop,
-        html5: true,
-        volume: 0,
-      });
-      this.sounds.set(track, sound);
-    }
+    // Store the pending track
+    this.pendingMusicTrack = track;
 
-    this.originalMusicVolume = volume;
-    this.currentTrack = track;
-    this.currentMusic = sound;
+    // Debounce: wait a short time before actually changing music
+    // This allows rapid state changes to settle on the final track
+    this.pendingMusicTimeout = setTimeout(() => {
+      this.pendingMusicTimeout = null;
+      this.pendingMusicTrack = null;
 
-    sound.play();
+      // Double-check we still need to change (might have been superseded)
+      if (track === this.currentTrack) return;
+
+      // Stop current music immediately
+      if (this.currentMusic) {
+        this.currentMusic.stop();
+      }
+
+      // Get or create sound
+      let sound = this.sounds.get(track);
+
+      if (!sound) {
+        sound = new Howl({
+          src: [`/sounds/${track}.mp3`],
+          loop,
+          html5: true,
+          volume,
+        });
+        this.sounds.set(track, sound);
+      } else {
+        // Ensure correct settings for existing sound
+        sound.loop(loop);
+        sound.volume(this.isMuted ? 0 : volume);
+      }
+
+      this.originalMusicVolume = volume;
+      this.currentTrack = track;
+      this.currentMusic = sound;
+
+      sound.play();
+    }, 50); // 50ms debounce - enough to catch rapid state changes
   }
 
   stopMusic() {
