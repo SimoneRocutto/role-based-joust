@@ -1,2 +1,5 @@
 # SSL certificates (self-signed for development)
 certs/
+
+# Persisted settings (auto-generated)
+server/data/settings.json

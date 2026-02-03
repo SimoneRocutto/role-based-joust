@@ -1,5 +1,6 @@
 import { GameEngine } from "@/managers/GameEngine";
 import { Logger } from "@/utils/Logger";
+import { settingsStore } from "@/config/settingsStore";
 import type { TestCase, TestResult } from "@/types/test.types";
 
 const logger = Logger.getInstance();
@@ -38,6 +39,9 @@ export class TestRunner {
     console.log("========================================\n");
 
     this.results = { passed: 0, failed: 0, total: this.tests.length };
+
+    // Disable disk persistence so tests don't write to data/settings.json
+    settingsStore.disable();
 
     for (const test of this.tests) {
       await this.runTest(test);

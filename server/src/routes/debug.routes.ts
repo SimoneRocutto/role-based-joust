@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from "express";
 import { asyncHandler } from "@/middleware/errorHandler";
 import { Logger } from "@/utils/Logger";
 import { ConnectionManager } from "@/managers/ConnectionManager";
+import { resetMovementConfig } from "@/config/gameConfig";
 import type { BotAction } from "@/types/bot.types";
 
 const router = Router();
@@ -280,6 +281,9 @@ router.post(
       // Reset countdown duration to default (10 seconds)
       gameEngine.setCountdownDuration(10);
     }
+
+    // Reset movement settings to defaults (and flush persisted overrides)
+    resetMovementConfig();
 
     // Clear all connections
     connectionManager.clearAll();

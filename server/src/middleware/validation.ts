@@ -45,10 +45,12 @@ const schemas = {
   },
 
   /**
-   * Game settings (sensitivity) validation
+   * Game settings (sensitivity, mode, theme) validation
    */
   gameSettings: {
     sensitivity: { type: "string", required: false },
+    gameMode: { type: "string", required: false },
+    theme: { type: "string", required: false },
     dangerThreshold: { type: "number", required: false, min: 0.001, max: 1 },
     damageMultiplier: { type: "number", required: false, min: 1, max: 500 },
   },

@@ -4,7 +4,7 @@
 
 import { GameEvent } from "./GameEvent";
 import type { GameEngine } from "@/managers/GameEngine";
-import { updateMovementConfig, gameConfig } from "@/config/gameConfig";
+import { applyTemporaryMovementConfig, gameConfig } from "@/config/gameConfig";
 import { GameEvents } from "@/utils/GameEvents";
 import { Logger } from "@/utils/Logger";
 
@@ -65,7 +65,7 @@ export class SpeedShift extends GameEvent {
   onEnd(engine: GameEngine, gameTime: number): void {
     // Restore threshold when round ends
     if (this.phase === "fast") {
-      updateMovementConfig({ dangerThreshold: this.savedThreshold });
+      applyTemporaryMovementConfig({ dangerThreshold: this.savedThreshold });
       gameEvents.emitModeEvent({
         modeName: engine.currentMode?.name || "Classic",
         eventType: "speed-shift:end",
@@ -100,7 +100,7 @@ export class SpeedShift extends GameEvent {
       this.phase = "fast";
       const fastThreshold =
         this.savedThreshold * SpeedShift.FAST_THRESHOLD_MULTIPLIER;
-      updateMovementConfig({ dangerThreshold: fastThreshold });
+      applyTemporaryMovementConfig({ dangerThreshold: fastThreshold });
       gameEvents.emitModeEvent({
         modeName,
         eventType: "speed-shift:start",
@@ -111,7 +111,7 @@ export class SpeedShift extends GameEvent {
       });
     } else {
       this.phase = "slow";
-      updateMovementConfig({ dangerThreshold: this.savedThreshold });
+      applyTemporaryMovementConfig({ dangerThreshold: this.savedThreshold });
       gameEvents.emitModeEvent({
         modeName,
         eventType: "speed-shift:end",

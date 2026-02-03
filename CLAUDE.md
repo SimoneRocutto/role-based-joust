@@ -160,6 +160,8 @@ Full payloads and details: see `docs/communication.md`.
 - `GET /api/game/lobby` — Connected players in lobby
 - `GET /api/game/config` — Dev mode status
 - `GET /api/game/modes` — Available game modes
+- `GET /api/game/settings` — Get current settings (sensitivity, mode, theme)
+- `POST /api/game/settings` — Update settings (persisted to disk)
 
 **Deprecated:** `POST /api/game/create` and `POST /api/game/start` (use `/api/game/launch` instead)
 
@@ -201,5 +203,6 @@ All docs live in the top-level `docs/` folder.
 | **Testing guide** | `docs/testing.md` | Server unit tests, client unit tests, e2e tests, how to write new tests, assertion helpers, test patterns |
 | **Server directory structure** | `docs/server-structure.txt` | Annotated tree of every file in `server/src/` with purpose descriptions |
 | **Extending the game (code examples)** | `docs/extending-the-game.ts` | How to add new roles, status effects, and game modes with full code examples |
+| **Settings persistence** | `docs/settings.md` | How settings are stored, settings.json format, API endpoints, presets, backwards compatibility |
 | **Client README** | `client/README.md` | Quick start, mobile access (ngrok), troubleshooting |
 | **Pending work** | `TODO.md` | Priority-ordered list of missing features |

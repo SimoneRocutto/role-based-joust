@@ -135,23 +135,35 @@ class ApiService {
   async getSettings(): Promise<{
     success: boolean;
     sensitivity: string;
-    movement: { dangerThreshold: number; damageMultiplier: number };
+    gameMode: string;
+    theme: string;
+    movement: { dangerThreshold: number; damageMultiplier: number; oneshotMode: boolean };
     presets: Array<{
       key: string;
       label: string;
       description: string;
-      dangerThreshold: number;
       damageMultiplier: number;
+      oneshotMode?: boolean;
     }>;
+    modes: Array<{ key: string; name: string; description: string }>;
+    themes: string[];
   }> {
     return this.request("/game/settings");
   }
 
   // POST /api/game/settings
-  async updateSettings(payload: { sensitivity?: string; dangerThreshold?: number }): Promise<{
+  async updateSettings(payload: {
+    sensitivity?: string;
+    gameMode?: string;
+    theme?: string;
+    dangerThreshold?: number;
+    damageMultiplier?: number;
+  }): Promise<{
     success: boolean;
     sensitivity: string;
-    movement: { dangerThreshold: number; damageMultiplier: number };
+    gameMode: string;
+    theme: string;
+    movement: { dangerThreshold: number; damageMultiplier: number; oneshotMode: boolean };
   }> {
     return this.request("/game/settings", {
       method: "POST",

@@ -46,6 +46,13 @@ function AdminControls() {
           setSensitivityPresets(data.presets)
           setSelectedSensitivity(data.sensitivity)
           setDangerThreshold(data.movement.dangerThreshold)
+          // Load persisted mode and theme preferences
+          if (data.gameMode) {
+            setSelectedMode(data.gameMode)
+          }
+          if (data.theme) {
+            setSelectedTheme(data.theme)
+          }
         }
       })
       .catch((err) => {
@@ -64,12 +71,42 @@ function AdminControls() {
       .catch((err) => console.error('Failed to generate QR code:', err))
   }, [joinUrl])
 
-  const handleModeChange = (mode: string) => {
+  const handleModeChange = async (mode: string) => {
     setSelectedMode(mode)
     // Auto-switch sensitivity based on mode
     const targetSensitivity = mode === 'classic' ? 'oneshot' : 'medium'
-    if (targetSensitivity !== selectedSensitivity) {
+    const sensitivityChanged = targetSensitivity !== selectedSensitivity
+    if (sensitivityChanged) {
       setSelectedSensitivity(targetSensitivity)
+    }
+    // Persist mode (and sensitivity if it changed) to backend
+    try {
+      await apiService.updateSettings({
+        gameMode: mode,
+        ...(sensitivityChanged ? { sensitivity: targetSensitivity } : {}),
+      })
+    } catch (err) {
+      console.error('Failed to update mode:', err)
+    }
+  }
+
+  const handleThemeChange = async (theme: string) => {
+    setSelectedTheme(theme)
+    // Persist theme to backend
+    try {
+      await apiService.updateSettings({ theme })
+    } catch (err) {
+      console.error('Failed to update theme:', err)
+    }
+  }
+
+  const handleSensitivityChange = async (sensitivity: string) => {
+    setSelectedSensitivity(sensitivity)
+    // Persist sensitivity to backend
+    try {
+      await apiService.updateSettings({ sensitivity })
+    } catch (err) {
+      console.error('Failed to update sensitivity:', err)
     }
   }
 
@@ -149,7 +186,7 @@ function AdminControls() {
             <label className="block text-sm text-gray-400 mb-2">Theme</label>
             <select
               value={selectedTheme}
-              onChange={(e) => setSelectedTheme(e.target.value)}
+              onChange={(e) => handleThemeChange(e.target.value)}
               className="w-full px-4 py-2 bg-gray-700 rounded-lg text-white"
               disabled={loading}
             >
@@ -170,7 +207,7 @@ function AdminControls() {
           {sensitivityPresets.map((preset) => (
             <button
               key={preset.key}
-              onClick={() => setSelectedSensitivity(preset.key)}
+              onClick={() => handleSensitivityChange(preset.key)}
               disabled={loading}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 selectedSensitivity === preset.key

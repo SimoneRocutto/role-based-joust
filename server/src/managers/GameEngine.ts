@@ -5,7 +5,7 @@ import type { GameState, WinCondition } from "@/types/game.types";
 import { RoleFactory } from "@/factories/RoleFactory";
 import { GameEvents } from "@/utils/GameEvents";
 import { Logger } from "@/utils/Logger";
-import { gameConfig, resetMovementConfig } from "@/config/gameConfig";
+import { gameConfig, restoreMovementConfig, saveMovementConfig } from "@/config/gameConfig";
 
 const logger = Logger.getInstance();
 const gameEvents = GameEvents.getInstance();
@@ -80,6 +80,9 @@ export class GameEngine {
    * Must be called before starting the game
    */
   setGameMode(mode: GameMode): void {
+    // Save current movement config before mode can modify it
+    saveMovementConfig();
+
     this.currentMode = mode;
     this.currentMode.onModeSelected(this);
 
@@ -563,8 +566,8 @@ export class GameEngine {
     this.gameTime = 0;
     this.resetReadyState();
 
-    // Reset movement config and countdown to defaults
-    resetMovementConfig();
+    // Restore movement config to what user had before game started
+    restoreMovementConfig();
     this.countdownDuration = 10;
 
     // Notify clients that game was stopped

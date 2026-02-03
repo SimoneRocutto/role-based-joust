@@ -534,24 +534,34 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
 
 ### `GET /api/game/settings`
 
-**Purpose**: Get current movement sensitivity settings and available presets
+**Purpose**: Get current settings including sensitivity, game mode, theme, and available options. Settings are persisted to disk and survive server restarts.
 
 **Response**:
 
 ```typescript
 {
   success: boolean,
-  sensitivity: string,       // Current preset key ("low" | "medium" | "high" | "extreme" | "custom")
+  sensitivity: string,       // Current preset key ("low" | "medium" | "high" | "extreme" | "oneshot" | "custom")
+  gameMode: string,          // Current default game mode (e.g., "role-based", "classic")
+  theme: string,             // Current default theme (e.g., "standard", "halloween")
   movement: {
-    damageMultiplier: number // Multiplier for excess movement damage
+    dangerThreshold: number, // 0-1, intensity above which damage occurs
+    damageMultiplier: number,// Multiplier for excess movement damage
+    oneshotMode: boolean     // Any movement above threshold = instant death
   },
-  presets: Array<{
+  presets: Array<{           // Available sensitivity presets
     key: string,
     label: string,
     description: string,
-    dangerThreshold: number,
-    damageMultiplier: number
-  }>
+    damageMultiplier: number,
+    oneshotMode?: boolean
+  }>,
+  modes: Array<{             // Available game modes
+    key: string,
+    name: string,
+    description: string
+  }>,
+  themes: string[]           // Available role themes
 }
 ```
 
@@ -559,22 +569,17 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
 
 ### `POST /api/game/settings`
 
-**Purpose**: Update movement sensitivity settings via preset name or custom values
+**Purpose**: Update game settings. All fields are optional — only provided fields are updated. Settings are persisted to `server/data/settings.json`.
 
-**Request** (option A — preset):
-
-```typescript
-{
-  sensitivity: string  // "low" | "medium" | "high" | "extreme"
-}
-```
-
-**Request** (option B — custom):
+**Request** (can combine multiple):
 
 ```typescript
 {
-  dangerThreshold?: number,  // 0.001-1
-  damageMultiplier?: number  // 1-500
+  sensitivity?: string,       // Preset key: "low" | "medium" | "high" | "extreme" | "oneshot"
+  gameMode?: string,          // Game mode key: "classic" | "role-based"
+  theme?: string,             // Theme name: "standard" | "halloween" | etc.
+  dangerThreshold?: number,   // 0.001-1 (custom sensitivity)
+  damageMultiplier?: number   // 1-500 (custom sensitivity)
 }
 ```
 
@@ -583,12 +588,18 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
 ```typescript
 {
   success: boolean,
-  sensitivity: string,       // Matched preset key or "custom"
+  sensitivity: string,       // Current preset key or "custom"
+  gameMode: string,          // Current game mode preference
+  theme: string,             // Current theme preference
   movement: {
-    damageMultiplier: number
+    dangerThreshold: number,
+    damageMultiplier: number,
+    oneshotMode: boolean
   }
 }
 ```
+
+**Note**: When `/api/game/launch` is called without `mode` or `theme`, it uses the persisted preferences from settings.
 
 ---
 

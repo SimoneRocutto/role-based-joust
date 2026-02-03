@@ -8,7 +8,12 @@ import {
   gameConfig,
   sensitivityPresets,
   updateMovementConfig,
+  setSensitivityPreset,
+  setGameModePreference,
+  setThemePreference,
+  userPreferences,
 } from "@/config/gameConfig";
+import { getAvailableThemes, themeExists } from "@/config/roleThemes";
 
 const router = Router();
 const logger = Logger.getInstance();
@@ -183,8 +188,8 @@ router.get(
  * Combined create + start: Creates game mode and immediately starts with lobby players
  *
  * Body params:
- * - mode: Game mode ('classic', 'role-based')
- * - theme: Optional theme name
+ * - mode: Game mode ('classic', 'role-based') — defaults to persisted preference
+ * - theme: Theme name — defaults to persisted preference
  * - countdownDuration: Optional countdown duration in seconds (default 10, use 0 to skip)
  */
 router.post(
@@ -212,13 +217,17 @@ router.post(
       return;
     }
 
+    // Use persisted preferences as defaults
+    const effectiveMode = mode || userPreferences.gameMode;
+    const effectiveTheme = theme || userPreferences.theme;
+
     // Create mode instance
     const factory = GameModeFactory.getInstance();
-    const gameMode = factory.createMode(mode || "role-based", theme);
+    const gameMode = factory.createMode(effectiveMode, effectiveTheme);
 
     // Set mode on engine
     gameEngine.setGameMode(gameMode);
-    gameEngine.lastModeKey = mode || "role-based";
+    gameEngine.lastModeKey = effectiveMode;
 
     // Set countdown duration if provided
     if (typeof countdownDuration === "number") {
@@ -240,7 +249,7 @@ router.post(
 
     logger.info("GAME", "Game launched", {
       mode: gameMode.name,
-      theme,
+      theme: effectiveTheme,
       countdownDuration: countdownDuration ?? 10,
       playerCount: playerData.length,
     });
@@ -249,6 +258,7 @@ router.post(
       success: true,
       gameId: "game-1",
       mode: gameMode.getInfo(),
+      theme: effectiveTheme,
       playerCount: playerData.length,
       state: gameEngine.gameState,
     });
@@ -326,43 +336,55 @@ router.post(
 
 /**
  * GET /api/game/settings
- * Get current movement sensitivity settings and available presets
+ * Get current settings including sensitivity, mode, theme, and available presets
  */
 router.get(
   "/settings",
   asyncHandler(async (req: Request, res: Response) => {
-    const currentPreset = sensitivityPresets.find(
-      (p) =>
-        p.damageMultiplier === gameConfig.movement.damageMultiplier &&
-        (p.oneshotMode ?? false) === gameConfig.movement.oneshotMode
-    );
+    const factory = GameModeFactory.getInstance();
 
     res.json({
       success: true,
-      sensitivity: currentPreset?.key || "custom",
+      // Current preferences
+      sensitivity: userPreferences.sensitivity,
+      gameMode: userPreferences.gameMode,
+      theme: userPreferences.theme,
+      // Movement details
       movement: {
         dangerThreshold: gameConfig.movement.dangerThreshold,
         damageMultiplier: gameConfig.movement.damageMultiplier,
+        oneshotMode: gameConfig.movement.oneshotMode,
       },
+      // Available options
       presets: sensitivityPresets,
+      modes: factory.getAvailableModes(),
+      themes: getAvailableThemes(),
     });
   })
 );
 
 /**
  * POST /api/game/settings
- * Update movement sensitivity settings
- * Body: { sensitivity: string } (preset name) or { dangerThreshold, damageMultiplier } (custom)
+ * Update game settings (sensitivity, mode, theme)
+ * Body:
+ * - sensitivity: string (preset name like "low", "medium", "high", "extreme", "oneshot")
+ * - gameMode: string (e.g., "classic", "role-based")
+ * - theme: string (e.g., "standard", "halloween")
+ * - dangerThreshold, damageMultiplier: numbers (for custom sensitivity)
+ *
+ * All fields are optional. Only provided fields are updated.
  */
 router.post(
   "/settings",
   validate("gameSettings"),
   asyncHandler(async (req: Request, res: Response) => {
-    const { sensitivity, dangerThreshold, damageMultiplier } = req.body;
+    const { sensitivity, gameMode, theme, dangerThreshold, damageMultiplier } =
+      req.body;
+    const updates: string[] = [];
 
+    // Update sensitivity preset
     if (sensitivity) {
-      const preset = sensitivityPresets.find((p) => p.key === sensitivity);
-      if (!preset) {
+      if (!setSensitivityPreset(sensitivity)) {
         res.status(400).json({
           success: false,
           error: `Unknown sensitivity preset: ${sensitivity}. Available: ${sensitivityPresets
@@ -371,23 +393,39 @@ router.post(
         });
         return;
       }
-      updateMovementConfig({
-        damageMultiplier: preset.damageMultiplier,
-        oneshotMode: preset.oneshotMode ?? false,
-      });
-
-      logger.info("GAME", "Sensitivity updated", { preset: sensitivity });
-
-      res.json({
-        success: true,
-        sensitivity: preset.key,
-        movement: {
-          damageMultiplier: preset.damageMultiplier,
-        },
-      });
-      return;
+      updates.push(`sensitivity=${sensitivity}`);
     }
 
+    // Update game mode preference
+    if (gameMode) {
+      const factory = GameModeFactory.getInstance();
+      const availableModes = factory.getAvailableModes().map((m) => m.key);
+      if (!availableModes.includes(gameMode)) {
+        res.status(400).json({
+          success: false,
+          error: `Unknown game mode: ${gameMode}. Available: ${availableModes.join(", ")}`,
+        });
+        return;
+      }
+      setGameModePreference(gameMode);
+      updates.push(`gameMode=${gameMode}`);
+    }
+
+    // Update theme preference
+    if (theme) {
+      if (!themeExists(theme)) {
+        const availableThemes = getAvailableThemes();
+        res.status(400).json({
+          success: false,
+          error: `Unknown theme: ${theme}. Available: ${availableThemes.join(", ")}`,
+        });
+        return;
+      }
+      setThemePreference(theme);
+      updates.push(`theme=${theme}`);
+    }
+
+    // Custom sensitivity values (overrides preset)
     if (dangerThreshold !== undefined || damageMultiplier !== undefined) {
       const update: Partial<{
         dangerThreshold: number;
@@ -398,30 +436,30 @@ router.post(
       if (damageMultiplier !== undefined)
         update.damageMultiplier = damageMultiplier;
       updateMovementConfig(update);
+      updates.push(`custom movement values`);
+    }
 
-      logger.info("GAME", "Movement config updated", update);
-
-      const currentPreset = sensitivityPresets.find(
-        (p) =>
-          p.damageMultiplier === gameConfig.movement.damageMultiplier &&
-          (p.oneshotMode ?? false) === gameConfig.movement.oneshotMode
-      );
-
-      res.json({
-        success: true,
-        sensitivity: currentPreset?.key || "custom",
-        movement: {
-          dangerThreshold: gameConfig.movement.dangerThreshold,
-          damageMultiplier: gameConfig.movement.damageMultiplier,
-        },
+    if (updates.length === 0) {
+      res.status(400).json({
+        success: false,
+        error:
+          "Provide at least one setting to update: sensitivity, gameMode, theme, or custom values (dangerThreshold/damageMultiplier)",
       });
       return;
     }
 
-    res.status(400).json({
-      success: false,
-      error:
-        "Provide either 'sensitivity' (preset name) or 'dangerThreshold'/'damageMultiplier' values",
+    logger.info("GAME", "Settings updated", { updates });
+
+    res.json({
+      success: true,
+      sensitivity: userPreferences.sensitivity,
+      gameMode: userPreferences.gameMode,
+      theme: userPreferences.theme,
+      movement: {
+        dangerThreshold: gameConfig.movement.dangerThreshold,
+        damageMultiplier: gameConfig.movement.damageMultiplier,
+        oneshotMode: gameConfig.movement.oneshotMode,
+      },
     });
   })
 );

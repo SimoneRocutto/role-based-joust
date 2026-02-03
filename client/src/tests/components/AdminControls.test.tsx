@@ -163,7 +163,11 @@ describe('AdminControls', () => {
     fireEvent.change(screen.getByDisplayValue('Role Based'), { target: { value: 'classic' } })
 
     await waitFor(() => {
-      expect(apiService.updateSettings).toHaveBeenCalledWith({ sensitivity: 'oneshot' })
+      // Mode change persists both the mode and the auto-switched sensitivity
+      expect(apiService.updateSettings).toHaveBeenCalledWith({
+        gameMode: 'classic',
+        sensitivity: 'oneshot',
+      })
     })
   })
 
@@ -178,7 +182,10 @@ describe('AdminControls', () => {
     fireEvent.change(screen.getByDisplayValue('Role Based'), { target: { value: 'classic' } })
 
     await waitFor(() => {
-      expect(apiService.updateSettings).toHaveBeenCalledWith({ sensitivity: 'oneshot' })
+      expect(apiService.updateSettings).toHaveBeenCalledWith({
+        gameMode: 'classic',
+        sensitivity: 'oneshot',
+      })
     })
 
     vi.clearAllMocks()
@@ -187,7 +194,11 @@ describe('AdminControls', () => {
     fireEvent.change(screen.getByDisplayValue('Classic'), { target: { value: 'role-based' } })
 
     await waitFor(() => {
-      expect(apiService.updateSettings).toHaveBeenCalledWith({ sensitivity: 'medium' })
+      // Mode change persists both the mode and the auto-switched sensitivity
+      expect(apiService.updateSettings).toHaveBeenCalledWith({
+        gameMode: 'role-based',
+        sensitivity: 'medium',
+      })
     })
   })
 

@@ -10,8 +10,12 @@ import { ConnectionManager } from "@/managers/ConnectionManager";
 import { GameModeFactory } from "@/factories/GameModeFactory";
 import { InputAdapter } from "@/utils/InputAdapter";
 import { Logger } from "@/utils/Logger";
+import { initSettings } from "@/config/gameConfig";
 
 const logger = Logger.getInstance();
+
+// Load persisted settings before anything reads gameConfig
+initSettings();
 
 // Configuration
 const PORT = process.env.PORT || 3000;
