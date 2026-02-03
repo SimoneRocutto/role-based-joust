@@ -20,29 +20,42 @@ initSettings();
 // Configuration
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || "development";
-const USE_HTTPS = process.env.USE_HTTPS === "true";
 
-// SSL certificate paths
+// SSL certificate paths - check both naming conventions
 const CERT_PATH = join(__dirname, "../../certs/server.crt");
 const KEY_PATH = join(__dirname, "../../certs/server.key");
+const CERT_PATH_ALT = join(__dirname, "../../certs/cert.pem");
+const KEY_PATH_ALT = join(__dirname, "../../certs/key.pem");
 
-// Create HTTP or HTTPS server based on configuration
-let httpServer;
-if (USE_HTTPS && existsSync(CERT_PATH) && existsSync(KEY_PATH)) {
-  const sslOptions = {
+// Determine which certs to use (if any)
+let sslOptions: { key: Buffer; cert: Buffer } | null = null;
+if (existsSync(CERT_PATH) && existsSync(KEY_PATH)) {
+  sslOptions = {
     key: readFileSync(KEY_PATH),
     cert: readFileSync(CERT_PATH),
   };
+} else if (existsSync(CERT_PATH_ALT) && existsSync(KEY_PATH_ALT)) {
+  sslOptions = {
+    key: readFileSync(KEY_PATH_ALT),
+    cert: readFileSync(CERT_PATH_ALT),
+  };
+}
+
+// Always use HTTPS if certificates exist (required for iOS accelerometer)
+let httpServer;
+if (sslOptions) {
   httpServer = createHttpsServer(sslOptions, app);
   logger.info("SERVER", "HTTPS enabled with self-signed certificate");
 } else {
   httpServer = createHttpServer(app);
-  if (USE_HTTPS) {
-    logger.warn(
-      "SERVER",
-      "HTTPS requested but certificates not found, falling back to HTTP"
-    );
-  }
+  logger.warn(
+    "SERVER",
+    "No SSL certificates found - running HTTP only (iOS accelerometer will NOT work)"
+  );
+  logger.warn(
+    "SERVER",
+    "To enable HTTPS, add certificates to /certs/ (server.crt/server.key or cert.pem/key.pem)"
+  );
 }
 
 // Initialize Socket.IO

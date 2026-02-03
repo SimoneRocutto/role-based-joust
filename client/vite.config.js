@@ -3,21 +3,36 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 import fs from 'fs'
 
-// Check if HTTPS is enabled and certificates exist
+// Check if certificates exist (try both naming conventions)
 const certPath = path.resolve(__dirname, '../certs/server.crt')
 const keyPath = path.resolve(__dirname, '../certs/server.key')
-const certsExist = fs.existsSync(certPath) && fs.existsSync(keyPath)
-const useHttps = process.env.USE_HTTPS === 'true' && certsExist
+const certPathAlt = path.resolve(__dirname, '../certs/cert.pem')
+const keyPathAlt = path.resolve(__dirname, '../certs/key.pem')
 
-// Backend always runs HTTP - Vite proxy bridges HTTPS client to HTTP backend
+let sslCert = null
+let sslKey = null
+if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+    sslCert = certPath
+    sslKey = keyPath
+} else if (fs.existsSync(certPathAlt) && fs.existsSync(keyPathAlt)) {
+    sslCert = certPathAlt
+    sslKey = keyPathAlt
+}
+
+const certsExist = sslCert && sslKey
+
+// Backend runs HTTPS when certs exist (required for iOS)
 // Port 4000 matches server/.env configuration
-const backendTarget = 'http://localhost:4000'
+const backendPort = process.env.VITE_BACKEND_PORT || 4000
+const backendProtocol = certsExist ? 'https' : 'http'
+const backendTarget = `${backendProtocol}://localhost:${backendPort}`
 
-if (useHttps) {
-    console.log('🔒 HTTPS enabled for client - using self-signed certificates')
-    console.log('   Backend runs HTTP, Vite proxy handles the bridge')
-} else if (process.env.USE_HTTPS === 'true' && !certsExist) {
-    console.warn('⚠️  USE_HTTPS=true but certificates not found in ../certs/')
+if (certsExist) {
+    console.log('🔒 HTTPS enabled - both client and backend use SSL certificates')
+    console.log(`   Backend: ${backendTarget}`)
+} else {
+    console.warn('⚠️  No SSL certificates found in ../certs/')
+    console.warn('   iOS accelerometer will NOT work without HTTPS')
 }
 
 // https://vitejs.dev/config/
@@ -31,22 +46,24 @@ export default defineConfig({
     server: {
         port: 5173,
         host: true, // Listen on all addresses for mobile access
-        // Enable HTTPS if certificates exist
-        https: useHttps ? {
-            key: fs.readFileSync(keyPath),
-            cert: fs.readFileSync(certPath),
+        // Enable HTTPS if certificates exist (required for iOS accelerometer)
+        https: certsExist ? {
+            key: fs.readFileSync(sslKey),
+            cert: fs.readFileSync(sslCert),
         } : undefined,
         proxy: {
-            // Proxy API requests to backend (HTTP)
+            // Proxy API requests to backend
             '/api': {
                 target: backendTarget,
                 changeOrigin: true,
+                secure: false, // Allow self-signed certificates
             },
-            // Proxy Socket.IO (HTTP)
+            // Proxy Socket.IO
             '/socket.io': {
                 target: backendTarget,
                 changeOrigin: true,
                 ws: true,
+                secure: false, // Allow self-signed certificates
                 // Suppress expected proxy errors (EPIPE/ECONNRESET) when
                 // sockets close during normal page teardown or reconnection
                 configure: (proxy) => {
