@@ -20,7 +20,12 @@ function AdminControls() {
   const [error, setError] = useState<string | null>(null)
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
 
-  const joinUrl = `${window.location.origin}/join`
+  // Preserve ?mode=production in QR code URL if dashboard was loaded with it
+  const urlParams = new URLSearchParams(window.location.search)
+  const modeParam = urlParams.get('mode')
+  const joinUrl = modeParam === 'production'
+    ? `${window.location.origin}/join?mode=production`
+    : `${window.location.origin}/join`
 
   // Check if all players are ready (for production mode)
   const allPlayersReady = readyCount.total > 0 && readyCount.ready === readyCount.total
