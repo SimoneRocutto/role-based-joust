@@ -14,6 +14,7 @@ export function useSocket() {
     setLatestEvent,
     setScores,
     setCountdown,
+    resetReadyState,
     myPlayerId,
     myPlayerNumber,
   } = useGameStore();
@@ -240,10 +241,12 @@ export function useSocket() {
       }
     });
 
-    // Game stopped (emergency stop)
+    // Game stopped (emergency stop or return to lobby)
     socketService.onGameStopped(() => {
       setGameState("waiting");
       setLatestEvent("Game stopped");
+      // Reset ready state - server resets all ready states, so client must sync
+      resetReadyState();
     });
 
     // Error handling

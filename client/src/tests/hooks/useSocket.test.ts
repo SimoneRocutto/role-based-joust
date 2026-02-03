@@ -652,6 +652,28 @@ describe("useSocket", () => {
       expect(useGameStore.getState().gameState).toBe("waiting");
       expect(useGameStore.getState().latestEvent).toBe("Game stopped");
     });
+
+    it("resets ready state when game is stopped", () => {
+      renderHook(() => useSocket());
+
+      // Set player as ready (simulating being ready on winner screen)
+      act(() => {
+        useGameStore.getState().setGameState("finished");
+        useGameStore.getState().setMyReady(true);
+        useGameStore.getState().setReadyCount({ ready: 1, total: 2 });
+      });
+
+      expect(useGameStore.getState().myIsReady).toBe(true);
+
+      // Admin stops game / returns to lobby
+      act(() => {
+        triggerSocketEvent("game:stopped");
+      });
+
+      // Ready state should be reset
+      expect(useGameStore.getState().myIsReady).toBe(false);
+      expect(useGameStore.getState().readyCount).toEqual({ ready: 0, total: 0 });
+    });
   });
 
   describe("error event", () => {
