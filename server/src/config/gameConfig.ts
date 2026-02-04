@@ -17,10 +17,15 @@ export interface TickConfig {
   rate: number; // Milliseconds per game tick
 }
 
+export interface TimingConfig {
+  readyDelayMs: number; // Delay after round ends before players can ready up
+}
+
 export interface GameConfig {
   movement: MovementConfig;
   damage: DamageConfig;
   tick: TickConfig;
+  timing: TimingConfig;
 }
 
 /**
@@ -101,6 +106,10 @@ export const gameConfig: GameConfig = {
 
   tick: {
     rate: parseInt(process.env.TICK_RATE || "100", 10), // 100ms per tick
+  },
+
+  timing: {
+    readyDelayMs: 3000, // 3 second delay after round ends before players can ready up
   },
 };
 

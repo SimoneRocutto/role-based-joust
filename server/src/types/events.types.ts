@@ -40,6 +40,7 @@ export interface RoundEndEvent {
   roundNumber: number;
   scores: ScoreEntry[];
   gameTime: number;
+  winnerId?: string | null;
 }
 
 export interface GameEndEvent {
@@ -78,4 +79,8 @@ export interface PlayerReadyEvent {
 export interface ReadyCountEvent {
   ready: number;
   total: number;
+}
+
+export interface ReadyEnabledEvent {
+  enabled: boolean;
 }

@@ -261,6 +261,64 @@ router.post(
 );
 
 /**
+ * POST /api/debug/player/:playerId/kill
+ * Kill a player for E2E testing (works on any player, not just bots)
+ */
+router.post(
+  "/player/:playerId/kill",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { playerId } = req.params;
+    const { gameEngine } = global;
+
+    if (!gameEngine) {
+      res.status(503).json({
+        success: false,
+        error: "Game engine not initialized",
+      });
+      return;
+    }
+
+    if (!gameEngine.isActive()) {
+      res.status(400).json({
+        success: false,
+        error: "Game is not active",
+      });
+      return;
+    }
+
+    const player = gameEngine.getPlayerById(playerId);
+
+    if (!player) {
+      res.status(404).json({
+        success: false,
+        error: "Player not found",
+      });
+      return;
+    }
+
+    if (!player.isAlive) {
+      res.status(400).json({
+        success: false,
+        error: "Player is already dead",
+      });
+      return;
+    }
+
+    // Kill the player with massive damage
+    player.takeDamage(10000, gameEngine.gameTime);
+
+    logger.info("DEBUG", `Killed player ${playerId} for E2E testing`);
+
+    res.json({
+      success: true,
+      playerId,
+      playerName: player.name,
+      isAlive: player.isAlive,
+    });
+  })
+);
+
+/**
  * POST /api/debug/reset
  * Reset server state for E2E testing
  * Clears all connections and stops any running game

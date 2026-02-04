@@ -210,6 +210,62 @@ describe('useGameState', () => {
     })
   })
 
+  describe('ready delay computed values', () => {
+    it('isRoundWinner is true when myPlayerId matches roundWinnerId', () => {
+      const { result } = renderHook(() => useGameState())
+
+      act(() => {
+        const store = useGameStore.getState()
+        store.setMyPlayer('p1', 1)
+        store.setRoundWinnerId('p1')
+      })
+
+      expect(result.current.isRoundWinner).toBe(true)
+    })
+
+    it('isRoundWinner is false when myPlayerId does not match roundWinnerId', () => {
+      const { result } = renderHook(() => useGameState())
+
+      act(() => {
+        const store = useGameStore.getState()
+        store.setMyPlayer('p1', 1)
+        store.setRoundWinnerId('p2')
+      })
+
+      expect(result.current.isRoundWinner).toBe(false)
+    })
+
+    it('isRoundWinner is false when roundWinnerId is null', () => {
+      const { result } = renderHook(() => useGameState())
+
+      act(() => {
+        const store = useGameStore.getState()
+        store.setMyPlayer('p1', 1)
+        store.setRoundWinnerId(null)
+      })
+
+      expect(result.current.isRoundWinner).toBe(false)
+    })
+
+    it('readyEnabled reflects store state', () => {
+      const { result } = renderHook(() => useGameState())
+
+      expect(result.current.readyEnabled).toBe(true)
+
+      act(() => {
+        useGameStore.getState().setReadyEnabled(false)
+      })
+
+      expect(result.current.readyEnabled).toBe(false)
+
+      act(() => {
+        useGameStore.getState().setReadyEnabled(true)
+      })
+
+      expect(result.current.readyEnabled).toBe(true)
+    })
+  })
+
   describe('dashboard values', () => {
     it('alivePlayers contains only alive players', () => {
       const { result } = renderHook(() => useGameState())

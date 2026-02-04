@@ -72,6 +72,7 @@ export interface RoundEndPayload {
   roundNumber: number;
   scores: ScoreEntry[];
   gameTime: number;
+  winnerId: string | null;
 }
 
 export interface GameEndPayload {
@@ -114,4 +115,8 @@ export interface ModeEventPayload {
   modeName: string;
   eventType: string;
   data: Record<string, any>;
+}
+
+export interface ReadyEnabledPayload {
+  enabled: boolean;
 }

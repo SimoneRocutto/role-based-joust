@@ -31,6 +31,8 @@ interface GameStore {
   readyCount: { ready: number; total: number };
   isDevMode: boolean;
   myIsReady: boolean;
+  readyEnabled: boolean;
+  roundWinnerId: string | null;
 
   // All players (for dashboard)
   players: PlayerState[];
@@ -58,6 +60,8 @@ interface GameStore {
   setReadyCount: (count: { ready: number; total: number }) => void;
   setDevMode: (isDevMode: boolean) => void;
   setMyReady: (isReady: boolean) => void;
+  setReadyEnabled: (enabled: boolean) => void;
+  setRoundWinnerId: (winnerId: string | null) => void;
   resetReadyState: () => void;
   reset: () => void;
 }
@@ -87,6 +91,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   readyCount: { ready: 0, total: 0 },
   isDevMode: false,
   myIsReady: false,
+  readyEnabled: true,
+  roundWinnerId: null,
 
   players: [],
 
@@ -178,11 +184,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setMyReady: (isReady) => set({ myIsReady: isReady }),
 
+  setReadyEnabled: (enabled) => set({ readyEnabled: enabled }),
+
+  setRoundWinnerId: (winnerId) => set({ roundWinnerId: winnerId }),
+
   resetReadyState: () =>
     set({
       readyPlayers: new Set(),
       readyCount: { ready: 0, total: 0 },
       myIsReady: false,
+      readyEnabled: true,
+      roundWinnerId: null,
     }),
 
   reset: () =>
@@ -202,6 +214,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       readyPlayers: new Set(),
       readyCount: { ready: 0, total: 0 },
       myIsReady: false,
+      readyEnabled: true,
+      roundWinnerId: null,
       players: [],
       latestEvent: null,
       scores: [],

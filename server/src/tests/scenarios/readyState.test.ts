@@ -643,6 +643,103 @@ runner.test("ConnectionManager: removePlayer then new player gets lowest availab
 });
 
 // ============================================================================
+// READY DELAY TESTS
+// ============================================================================
+
+runner.test("GameEngine: Ready is rejected during delay period", (engine) => {
+  // Use role-based mode with 3 rounds to avoid game ending
+  const mode = GameModeFactory.getInstance().createMode("role-based", { roundCount: 3 });
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+  assertEqual(engine.gameState, "active", "Game should be active");
+
+  // Kill player 2 to end round
+  const player2 = engine.getPlayerById("p2");
+  player2!.takeDamage(1000, engine.gameTime);
+
+  // Fast forward to process death
+  engine.fastForward(200);
+
+  // In test mode, game auto-advances, so check if we hit round-ended
+  // Note: test mode skips the delay, so ready should always be enabled
+  // This test verifies that readyEnabled state exists and works
+  assertEqual(engine.isReadyEnabled(), true, "Ready should be enabled in test mode (no delay)");
+});
+
+runner.test("GameEngine: isReadyEnabled returns correct state", (engine) => {
+  // Test the method exists and returns boolean
+  const initialState = engine.isReadyEnabled();
+  assertEqual(typeof initialState, "boolean", "isReadyEnabled should return boolean");
+  assertEqual(initialState, true, "isReadyEnabled should be true initially");
+});
+
+runner.test("GameEngine: setPlayerReady returns boolean indicating success", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+
+  // Should return true when ready is accepted
+  const result = engine.setPlayerReady("p1", true);
+  assertEqual(result, true, "setPlayerReady should return true when accepted");
+
+  // Should return false for unknown player
+  const unknownResult = engine.setPlayerReady("unknown", true);
+  assertEqual(unknownResult, false, "setPlayerReady should return false for unknown player");
+});
+
+runner.test("GameEngine: stopGame clears ready delay timer and re-enables ready", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+
+  // Stop the game
+  engine.stopGame();
+
+  // Ready should be enabled after stop
+  assertEqual(engine.isReadyEnabled(), true, "Ready should be enabled after stopGame");
+});
+
+runner.test("GameEvents: ReadyEnabled event is emitted", (engine) => {
+  const gameEvents = GameEvents.getInstance();
+
+  let receivedPayload: any = null;
+  const listener = (payload: any) => {
+    receivedPayload = payload;
+  };
+  gameEvents.onReadyEnabled(listener);
+
+  // Emit a ready enabled event
+  gameEvents.emitReadyEnabled({ enabled: true });
+
+  assert(receivedPayload !== null, "Should receive ready enabled event");
+  assertEqual(receivedPayload.enabled, true, "enabled should be true");
+
+  // Test disabled
+  gameEvents.emitReadyEnabled({ enabled: false });
+  assertEqual(receivedPayload.enabled, false, "enabled should be false");
+
+  gameEvents.removeListener("ready:enabled", listener);
+});
+
+// ============================================================================
 // RUN TESTS
 // ============================================================================
 

@@ -90,9 +90,13 @@ export function useSocket() {
     });
 
     // Round end
-    socketService.onRoundEnd(({ scores }) => {
+    socketService.onRoundEnd(({ scores, winnerId }) => {
       setScores(scores);
       setGameState("round-ended");
+
+      // Set round winner and disable ready (delay period starts)
+      useGameStore.getState().setRoundWinnerId(winnerId);
+      useGameStore.getState().setReadyEnabled(false);
 
       // Update player points from scores (since game:tick stops during round-ended)
       const existingPlayers = useGameStore.getState().players;
@@ -241,6 +245,11 @@ export function useSocket() {
       }
     });
 
+    // Ready enabled/disabled events (delay after round end)
+    socketService.onReadyEnabled(({ enabled }) => {
+      useGameStore.getState().setReadyEnabled(enabled);
+    });
+
     // Game stopped (emergency stop or return to lobby)
     socketService.onGameStopped(() => {
       setGameState("waiting");
@@ -270,6 +279,7 @@ export function useSocket() {
       socketService.off("lobby:update");
       socketService.off("game:countdown");
       socketService.off("mode:event");
+      socketService.off("ready:enabled");
       socketService.off("game:stopped");
       socketService.off("error");
     };

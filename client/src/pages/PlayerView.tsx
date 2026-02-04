@@ -41,7 +41,9 @@ function PlayerView() {
     isCountdown,
     isRoundEnded,
     isFinished,
-    isMyPlayerDead
+    isMyPlayerDead,
+    isRoundWinner,
+    readyEnabled
   } = useGameState()
 
   const { countdownSeconds, countdownPhase, myIsReady, setMyReady } = useGameStore()
@@ -52,7 +54,8 @@ function PlayerView() {
   const { enter: enterFullscreen } = useFullscreen()
 
   // Shake detection for ready state
-  const shouldDetectShake = (isWaiting || isRoundEnded || isFinished) && !myIsReady && permissionsGranted
+  // Only allow shaking when ready is enabled (after delay period in round-ended state)
+  const shouldDetectShake = (isWaiting || (isRoundEnded && readyEnabled) || isFinished) && !myIsReady && permissionsGranted
 
   const handleShakeDetected = useCallback(() => {
     if (!myPlayerId || myIsReady) return
@@ -280,12 +283,32 @@ function PlayerView() {
         </div>
       )}
 
-      {/* Round Ended State - Shake to ready for next round */}
+      {/* Round Ended State - Show winner/dead screen then shake to ready */}
       {isRoundEnded && !isCountdown && (
-        <div className="fullscreen bg-gray-800 flex flex-col items-center justify-center gap-8 p-8">
+        <div className="fullscreen flex flex-col items-center justify-center gap-6 p-8 bg-gray-800">
           <ConnectionStatus />
           <div className="text-center">
-            <div className="text-4xl text-gray-400 mb-4">ROUND OVER</div>
+            {/* Winner/Dead Header */}
+            {isRoundWinner ? (
+              <>
+                <div className="text-8xl mb-2">🏆</div>
+                <div className="text-5xl text-yellow-400 font-black mb-2 animate-pulse">
+                  WINNER!
+                </div>
+                <div className="text-3xl text-yellow-300 font-bold mb-4">
+                  +5 pts
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-8xl mb-2">💀</div>
+                <div className="text-4xl text-gray-500 font-bold mb-4">
+                  ELIMINATED
+                </div>
+              </>
+            )}
+
+            {/* Player info */}
             <div className="text-8xl font-bold text-white mb-4">
               #{myPlayerNumber}
             </div>
@@ -293,11 +316,15 @@ function PlayerView() {
               {myPlayer?.name || 'Player'}
             </div>
             <div className="text-xl text-gray-400 mb-4">
-              Score: {myPlayer?.points || 0} pts
+              Total: {myPlayer?.totalPoints || myPlayer?.points || 0} pts
             </div>
 
-            {/* Shake to Ready UI */}
-            {!myIsReady ? (
+            {/* Ready UI - shown based on readyEnabled */}
+            {!readyEnabled ? (
+              <div className="mt-8 space-y-2">
+                <div className="text-2xl text-gray-500">Get ready...</div>
+              </div>
+            ) : !myIsReady ? (
               <div className="mt-8 space-y-4">
                 {isDevMode ? (
                   <>

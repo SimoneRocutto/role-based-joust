@@ -54,6 +54,8 @@ export class GameEngine {
   // ========== READY STATE ==========
   private playerReadyState: Map<string, boolean> = new Map();
   readonly isDevMode: boolean = process.env.NODE_ENV === "development";
+  private readyDelayTimer: NodeJS.Timeout | null = null;
+  private readyEnabled: boolean = true;
 
   constructor() {
     this.tickRate = gameConfig.tick.rate;
@@ -445,17 +447,41 @@ export class GameEngine {
     // Reset ready state so between-rounds screen starts at 0/N
     this.resetReadyState();
 
+    // Disable ready state and set up delay timer (skip in test mode)
+    if (!this.testMode) {
+      this.readyEnabled = false;
+      gameEvents.emitReadyEnabled({ enabled: false });
+
+      // Clear any existing timer
+      if (this.readyDelayTimer) {
+        clearTimeout(this.readyDelayTimer);
+      }
+
+      // Start delay timer
+      this.readyDelayTimer = setTimeout(() => {
+        this.readyEnabled = true;
+        this.readyDelayTimer = null;
+        gameEvents.emitReadyEnabled({ enabled: true });
+        logger.info("ENGINE", "Ready state enabled after delay");
+      }, gameConfig.timing.readyDelayMs);
+
+      logger.info("ENGINE", `Ready state disabled for ${gameConfig.timing.readyDelayMs}ms`);
+    }
+
     // Notify mode
     if (this.currentMode) {
       this.currentMode.onRoundEnd(this);
     }
 
-    // Emit round end event
+    // Emit round end event with winner ID
     const scores = this.currentMode?.calculateFinalScores(this) || [];
+    // Winner is the first player in scores (sorted by totalPoints descending)
+    const winnerId = scores.length > 0 ? scores[0].player.id : null;
     gameEvents.emitRoundEnd({
       roundNumber: this.currentRound,
       scores,
       gameTime: this.gameTime,
+      winnerId,
     });
 
     // Check if game is over
@@ -558,6 +584,13 @@ export class GameEngine {
       clearInterval(this.countdownTimer);
       this.countdownTimer = null;
     }
+
+    // Clear ready delay timer and reset readyEnabled
+    if (this.readyDelayTimer) {
+      clearTimeout(this.readyDelayTimer);
+      this.readyDelayTimer = null;
+    }
+    this.readyEnabled = true;
 
     this.gameState = "waiting";
     this.players = [];
@@ -689,19 +722,35 @@ export class GameEngine {
   // ========================================================================
 
   /**
-   * Set player ready state (for between rounds)
+   * Check if ready state is enabled (not in delay period after round end)
    */
-  setPlayerReady(playerId: string, isReady: boolean): void {
+  isReadyEnabled(): boolean {
+    return this.readyEnabled;
+  }
+
+  /**
+   * Set player ready state (for between rounds)
+   * Returns true if ready was accepted, false if rejected (e.g., during delay period)
+   */
+  setPlayerReady(playerId: string, isReady: boolean): boolean {
     const player = this.getPlayerById(playerId);
     if (!player) {
       logger.warn("ENGINE", `Cannot set ready state for unknown player: ${playerId}`);
-      return;
+      return false;
     }
+
+    // Reject ready during delay period (only when trying to set ready, not unready)
+    if (isReady && !this.readyEnabled) {
+      logger.debug("ENGINE", `Rejecting ready for ${player.name} - ready not yet enabled`);
+      return false;
+    }
+
     this.playerReadyState.set(playerId, isReady);
     logger.debug("ENGINE", `Player ${player.name} ready state: ${isReady}`);
 
     // Check if all players ready for auto-start (production mode only)
     this.checkAutoStart();
+    return true;
   }
 
   /**

@@ -11,6 +11,7 @@ import type {
   CountdownEvent,
   PlayerReadyEvent,
   ReadyCountEvent,
+  ReadyEnabledEvent,
 } from "@/types/events.types";
 
 /**
@@ -96,6 +97,10 @@ export class GameEvents extends EventEmitter {
     this.emit("ready:update", payload);
   }
 
+  emitReadyEnabled(payload: ReadyEnabledEvent): void {
+    this.emit("ready:enabled", payload);
+  }
+
   // ========== TYPED EVENT LISTENERS ==========
 
   onGameTick(listener: (payload: GameTickEvent) => void): void {
@@ -152,6 +157,10 @@ export class GameEvents extends EventEmitter {
 
   onReadyCountUpdate(listener: (payload: ReadyCountEvent) => void): void {
     this.on("ready:update", listener);
+  }
+
+  onReadyEnabled(listener: (payload: ReadyEnabledEvent) => void): void {
+    this.on("ready:enabled", listener);
   }
 
   // ========== UTILITY METHODS ==========

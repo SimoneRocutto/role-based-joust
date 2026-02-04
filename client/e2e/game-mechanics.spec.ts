@@ -320,3 +320,159 @@ test.describe('Event Feed', () => {
     ).toBeVisible();
   });
 });
+
+test.describe('Ready Delay After Round', () => {
+  test.beforeEach(async () => {
+    await resetServerState();
+  });
+
+  test('round winner sees ROUND WINNER screen after round ends', async ({ context }) => {
+    const dashboard = await openDashboard(context);
+
+    const player1 = await openPlayerJoin(context);
+    const { playerId: player1Id } = await joinAsPlayer(player1, 'WinnerTest1');
+
+    const player2 = await openPlayerJoin(context);
+    const { playerId: player2Id } = await joinAsPlayer(player2, 'WinnerTest2');
+
+    // Launch role-based mode with 3 rounds (so round ends don't finish game)
+    await fetch(`${API_URL}/api/game/launch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: 'role-based',
+        countdownDuration: 0,
+        roundCount: 3,
+      }),
+    });
+
+    await waitForGameActive(dashboard);
+
+    // Kill player 2 using debug endpoint to end the round
+    await fetch(`${API_URL}/api/debug/player/${player2Id}/kill`, {
+      method: 'POST',
+    });
+
+    // Wait for round to end and state to propagate
+    await player1.waitForTimeout(1000);
+
+    // Player 1 (winner) should see winner screen with "WINNER!" text and +5 pts
+    // Note: emoji locators can be unreliable, so we check for text content
+    await expect(player1.locator('text=WINNER!')).toBeVisible({
+      timeout: 5000,
+    });
+
+    // Check that +5 pts is shown
+    await expect(player1.locator('text=+5 pts')).toBeVisible({ timeout: 3000 });
+  });
+
+  test('eliminated player sees skull/ELIMINATED screen after round ends', async ({ context }) => {
+    const dashboard = await openDashboard(context);
+
+    const player1 = await openPlayerJoin(context);
+    await joinAsPlayer(player1, 'DeadTest1');
+
+    const player2 = await openPlayerJoin(context);
+    const { playerId: player2Id } = await joinAsPlayer(player2, 'DeadTest2');
+
+    // Launch role-based mode with 3 rounds
+    await fetch(`${API_URL}/api/game/launch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: 'role-based',
+        countdownDuration: 0,
+        roundCount: 3,
+      }),
+    });
+
+    await waitForGameActive(dashboard);
+
+    // Kill player 2 using debug endpoint
+    await fetch(`${API_URL}/api/debug/player/${player2Id}/kill`, {
+      method: 'POST',
+    });
+
+    // Wait for round to end
+    await dashboard.waitForTimeout(500);
+
+    // Player 2 (eliminated) should see skull and "ELIMINATED" text
+    await expect(player2.locator('text=💀')).toBeVisible({ timeout: 5000 });
+    await expect(player2.locator('text=ELIMINATED')).toBeVisible();
+  });
+
+  test('players see "Get ready..." during delay period', async ({ context }) => {
+    const dashboard = await openDashboard(context);
+
+    const player1 = await openPlayerJoin(context);
+    await joinAsPlayer(player1, 'DelayTest1');
+
+    const player2 = await openPlayerJoin(context);
+    const { playerId: player2Id } = await joinAsPlayer(player2, 'DelayTest2');
+
+    // Launch role-based mode with 3 rounds
+    await fetch(`${API_URL}/api/game/launch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: 'role-based',
+        countdownDuration: 0,
+        roundCount: 3,
+      }),
+    });
+
+    await waitForGameActive(dashboard);
+
+    // Kill player 2 to end the round
+    await fetch(`${API_URL}/api/debug/player/${player2Id}/kill`, {
+      method: 'POST',
+    });
+
+    // Immediately after round ends, players should see "Get ready..." (during delay)
+    await dashboard.waitForTimeout(200);
+
+    // During the 3-second delay, both players should see "Get ready..."
+    await expect(player1.locator('text=Get ready...')).toBeVisible({
+      timeout: 2000,
+    });
+    await expect(player2.locator('text=Get ready...')).toBeVisible({
+      timeout: 2000,
+    });
+  });
+
+  test('players can shake to ready after delay expires', async ({ context }) => {
+    const dashboard = await openDashboard(context);
+
+    const player1 = await openPlayerJoin(context);
+    await joinAsPlayer(player1, 'ReadyAfterDelay1');
+
+    const player2 = await openPlayerJoin(context);
+    const { playerId: player2Id } = await joinAsPlayer(player2, 'ReadyAfterDelay2');
+
+    // Launch role-based mode with 3 rounds
+    await fetch(`${API_URL}/api/game/launch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: 'role-based',
+        countdownDuration: 0,
+        roundCount: 3,
+      }),
+    });
+
+    await waitForGameActive(dashboard);
+
+    // Kill player 2 to end the round
+    await fetch(`${API_URL}/api/debug/player/${player2Id}/kill`, {
+      method: 'POST',
+    });
+
+    // Wait for the 3-second delay to expire (with buffer)
+    await dashboard.waitForTimeout(3500);
+
+    // After delay, players should see "SHAKE FOR NEXT ROUND" or "CLICK FOR NEXT ROUND" (dev mode)
+    await expect(
+      player1.locator('text=/SHAKE FOR NEXT ROUND|CLICK FOR NEXT ROUND/i')
+    ).toBeVisible({ timeout: 2000 });
+  });
+});

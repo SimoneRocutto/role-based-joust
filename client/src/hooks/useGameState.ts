@@ -25,6 +25,10 @@ export function useGameState() {
   const isRoundEnded = store.gameState === "round-ended";
   const isFinished = store.gameState === "finished";
 
+  // Ready delay computed values
+  const isRoundWinner = store.myPlayerId === store.roundWinnerId;
+  const readyEnabled = store.readyEnabled;
+
   // Dashboard-specific computed values
   const alivePlayers = store.players.filter((p) => p.isAlive);
   const aliveCount = alivePlayers.length;
@@ -52,6 +56,10 @@ export function useGameState() {
     isActive,
     isRoundEnded,
     isFinished,
+
+    // Ready delay computed values
+    isRoundWinner,
+    readyEnabled,
 
     // Dashboard values
     alivePlayers,

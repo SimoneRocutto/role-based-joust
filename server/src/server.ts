@@ -258,7 +258,16 @@ io.on("connection", (socket) => {
       });
     } else if (gameEngine.gameState === "round-ended") {
       // Between rounds - use GameEngine
-      gameEngine.setPlayerReady(data.playerId, true);
+      const accepted = gameEngine.setPlayerReady(data.playerId, true);
+
+      // If ready was rejected (during delay period), don't emit events
+      if (!accepted) {
+        logger.debug("SOCKET", "Ready rejected during delay period", {
+          playerId: data.playerId,
+        });
+        return;
+      }
+
       const readyCount = gameEngine.getReadyCount();
 
       // Emit ready events
@@ -414,6 +423,7 @@ gameEvents.onRoundEnd((payload) => {
       status: s.status,
     })),
     gameTime: payload.gameTime,
+    winnerId: payload.winnerId || null,
   });
 });
 
@@ -479,6 +489,11 @@ gameEvents.onPlayerReady((payload) => {
 // Broadcast ready count updates
 gameEvents.onReadyCountUpdate((payload) => {
   io.emit("ready:update", payload);
+});
+
+// Broadcast ready enabled/disabled events
+gameEvents.onReadyEnabled((payload) => {
+  io.emit("ready:enabled", payload);
 });
 
 // Broadcast mode events (game events like speed-shift)
