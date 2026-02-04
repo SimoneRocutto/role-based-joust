@@ -10,7 +10,7 @@ import { ConnectionManager } from "@/managers/ConnectionManager";
 import { GameModeFactory } from "@/factories/GameModeFactory";
 import { InputAdapter } from "@/utils/InputAdapter";
 import { Logger } from "@/utils/Logger";
-import { initSettings } from "@/config/gameConfig";
+import { initSettings, userPreferences } from "@/config/gameConfig";
 
 const logger = Logger.getInstance();
 
@@ -285,8 +285,11 @@ io.on("connection", (socket) => {
 
       // Check if all connected players are ready for auto-relaunch
       if (readyCount.ready >= readyCount.total && readyCount.total >= 2) {
-        logger.info("SOCKET", "All players ready at game end - auto-launching new game");
-
+        logger.info(
+          "SOCKET",
+          "All players ready at game end - auto-launching new game"
+        );
+        const roundCount = userPreferences.roundCount;
         const modeKey = gameEngine.lastModeKey;
 
         // Stop old game and reset ready state
@@ -295,7 +298,7 @@ io.on("connection", (socket) => {
 
         // Launch new game with same mode
         const factory = GameModeFactory.getInstance();
-        const gameMode = factory.createMode(modeKey);
+        const gameMode = factory.createMode(modeKey, { roundCount });
         gameEngine.setGameMode(gameMode);
         gameEngine.lastModeKey = modeKey;
 
