@@ -330,6 +330,59 @@ io.on("connection", (socket) => {
   });
 
   /**
+   * Player tap (ability use) event
+   */
+  socket.on("player:tap", (data: { playerId: string }) => {
+    connectionManager.updateActivity(socket.id);
+
+    // Validate game is active
+    if (gameEngine.gameState !== "active") {
+      socket.emit("player:tap:result", {
+        success: false,
+        reason: "game_not_active",
+        charges: null,
+      });
+      return;
+    }
+
+    // Get player
+    const player = gameEngine.getPlayerById(data.playerId);
+    if (!player) {
+      socket.emit("player:tap:result", {
+        success: false,
+        reason: "player_not_found",
+        charges: null,
+      });
+      return;
+    }
+
+    // Check if player is alive
+    if (!player.isAlive) {
+      socket.emit("player:tap:result", {
+        success: false,
+        reason: "player_dead",
+        charges: player.getChargeInfo(),
+      });
+      return;
+    }
+
+    // Attempt to use ability
+    const result = player.useAbility(gameEngine.gameTime);
+
+    socket.emit("player:tap:result", {
+      success: result.success,
+      reason: result.reason,
+      charges: result.charges,
+    });
+
+    logger.debug("SOCKET", "Player tap processed", {
+      playerId: data.playerId,
+      success: result.success,
+      reason: result.reason,
+    });
+  });
+
+  /**
    * Heartbeat/ping event
    */
   socket.on("ping", () => {

@@ -164,8 +164,8 @@ export function useSocket() {
         targetName: roleData.targetName,
       });
 
-      // Play intro sound
-      audioManager.play("role-reveal", { volume: 0.7 });
+      // TODO: understand if we'll ever want a sound together with the explanation
+      // audioManager.play("voice/role-reveal", { volume: 0.7 });
 
       // Wait for intro to finish, then speak
       setTimeout(() => {

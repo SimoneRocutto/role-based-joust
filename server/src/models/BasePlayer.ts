@@ -62,6 +62,13 @@ export class BasePlayer {
   readonly behavior: BotBehavior;
   private autoPlayEnabled: boolean = false;
 
+  // ========== ABILITY CHARGES ==========
+  maxCharges: number = 0;
+  currentCharges: number = 0;
+  cooldownDuration: number = 0; // ms to regain 1 charge (0 = no regen)
+  cooldownSpeedMultiplier: number = 1.0;
+  private cooldownRemaining: number = 0;
+
   constructor(data: PlayerData) {
     this.id = data.id;
     this.name = data.name;
@@ -388,6 +395,7 @@ export class BasePlayer {
    */
   onInit(gameTime: number): void {
     logger.logPlayerAction(this, "INIT", { role: this.constructor.name });
+    this.initializeCharges();
   }
 
   /**
@@ -407,6 +415,9 @@ export class BasePlayer {
         this.removeStatusEffect(effect.id, gameTime);
       }
     }
+
+    // Process ability cooldown
+    this.processCooldown(gameTime, deltaTime);
 
     // Execute bot behavior if this is a bot
     if (this.isBot && this.autoPlayEnabled && this.isAlive) {
@@ -496,6 +507,156 @@ export class BasePlayer {
       total: this.points,
       reason,
     });
+  }
+
+  // ========================================================================
+  // ABILITY SYSTEM
+  // ========================================================================
+
+  /**
+   * Initialize or reset charges to max
+   * Called in onInit() at round start
+   */
+  initializeCharges(): void {
+    this.currentCharges = this.maxCharges;
+    this.cooldownRemaining = 0;
+
+    if (this.maxCharges > 0) {
+      logger.debug("ABILITY", `${this.name} charges initialized`, {
+        current: this.currentCharges,
+        max: this.maxCharges,
+      });
+    }
+  }
+
+  /**
+   * Attempt to use the player's ability
+   * Returns result with success status and reason
+   */
+  useAbility(gameTime: number): {
+    success: boolean;
+    reason?: string;
+    charges: { current: number; max: number; cooldownRemaining: number };
+  } {
+    const chargeInfo = this.getChargeInfo();
+
+    // Check if player has an ability
+    if (this.maxCharges <= 0) {
+      logger.debug("ABILITY", `${this.name} has no ability`, {
+        current: this.currentCharges,
+        max: this.maxCharges,
+      });
+      return {
+        success: false,
+        reason: "no_ability",
+        charges: chargeInfo,
+      };
+    }
+
+    // Check if player has charges
+    if (this.currentCharges <= 0) {
+      logger.debug("ABILITY", `${this.name} ability failed - no charges`, {
+        current: this.currentCharges,
+        max: this.maxCharges,
+      });
+      return {
+        success: false,
+        reason: "no_charges",
+        charges: chargeInfo,
+      };
+    }
+
+    // Consume a charge
+    this.currentCharges--;
+
+    // Start cooldown if applicable
+    if (this.cooldownDuration > 0 && this.currentCharges < this.maxCharges) {
+      this.cooldownRemaining = this.cooldownDuration;
+    }
+
+    logger.logPlayerAction(this, "ABILITY_USED", {
+      chargesRemaining: this.currentCharges,
+      maxCharges: this.maxCharges,
+    });
+
+    // Call the role's ability implementation
+    const abilityResult = this.onAbilityUse(gameTime);
+
+    if (!abilityResult) {
+      // Refund the charge if ability failed
+      this.currentCharges++;
+      this.cooldownRemaining = 0;
+      return {
+        success: false,
+        reason: "ability_failed",
+        charges: this.getChargeInfo(),
+      };
+    }
+
+    return {
+      success: true,
+      charges: this.getChargeInfo(),
+    };
+  }
+
+  /**
+   * Hook for roles to implement their ability
+   * Override in role classes
+   * Return true if ability was used successfully, false otherwise
+   */
+  onAbilityUse(gameTime: number): boolean {
+    // Default: no ability
+    return false;
+  }
+
+  /**
+   * Process cooldown each tick
+   * Regenerates charges when cooldownDuration > 0
+   * Uses tickRate (100ms) instead of deltaTime for consistent behavior in tests
+   */
+  processCooldown(gameTime: number, deltaTime: number): void {
+    // Skip if no cooldown system or already at max charges
+    if (this.cooldownDuration <= 0 || this.currentCharges >= this.maxCharges) {
+      return;
+    }
+
+    // Skip if not on cooldown
+    if (this.cooldownRemaining <= 0) {
+      return;
+    }
+
+    // Reduce cooldown using tick rate (100ms) for consistent behavior
+    // This ensures fast-forward works correctly in tests
+    const tickRate = 100; // Standard tick rate
+    const effectiveDelta = tickRate * this.cooldownSpeedMultiplier;
+    this.cooldownRemaining -= effectiveDelta;
+
+    // Check if cooldown completed
+    if (this.cooldownRemaining <= 0) {
+      this.currentCharges++;
+      this.cooldownRemaining = 0;
+
+      logger.debug("ABILITY", `${this.name} charge regenerated`, {
+        current: this.currentCharges,
+        max: this.maxCharges,
+      });
+
+      // If still not at max, start new cooldown
+      if (this.currentCharges < this.maxCharges) {
+        this.cooldownRemaining = this.cooldownDuration;
+      }
+    }
+  }
+
+  /**
+   * Get current charge info for client
+   */
+  getChargeInfo(): { current: number; max: number; cooldownRemaining: number } {
+    return {
+      current: this.currentCharges,
+      max: this.maxCharges,
+      cooldownRemaining: Math.max(0, this.cooldownRemaining),
+    };
   }
 
   // ========================================================================

@@ -57,6 +57,8 @@ export const SOUND_FILES = {
   DEATH: "effects/death",
   LOW_HEALTH_HEARTBEAT: "effects/low-health-heartbeat",
   PLAYER_READY: "effects/ready",
+  NO_CHARGES: "effects/no-charges",
+  POWER_ACTIVATION: "effects/power-activation",
 
   // Voice
   ROLE_REVEAL: "voice/role-reveal",

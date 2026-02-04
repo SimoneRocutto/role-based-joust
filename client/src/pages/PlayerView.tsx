@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameState } from '@/hooks/useGameState'
 import { useGameStore } from '@/store/gameStore'
@@ -15,6 +15,7 @@ import StatusEffects from '@/components/player/StatusEffects'
 import TargetDisplay from '@/components/player/TargetDisplay'
 import ConnectionStatus from '@/components/player/ConnectionStatus'
 import PortraitLock from '@/components/player/PortraitLock'
+import type { ChargeInfo } from '@/types/socket.types'
 
 // In development mode, allow button click instead of shake
 // Use ?mode=production URL param to test production behavior in dev
@@ -31,6 +32,8 @@ function PlayerView() {
   const navigate = useNavigate()
   const [permissionsGranted, setPermissionsGranted] = useState(false)
   const [showPortraitLock, setShowPortraitLock] = useState(false)
+  const [chargeInfo, setChargeInfo] = useState<ChargeInfo | null>(null)
+  const lastTapTime = useRef<number>(0)
 
   const {
     myPlayerId,
@@ -69,6 +72,19 @@ function PlayerView() {
     // Play a feedback sound (optional)
     play('effects/ready', { volume: 0.5 })
   }, [myPlayerId, myIsReady, setMyReady, play])
+
+  // Handle tap for ability use during active game
+  const handleTap = useCallback(() => {
+    if (!myPlayerId) return
+
+    // Debounce taps (300ms minimum between taps)
+    const now = Date.now()
+    if (now - lastTapTime.current < 300) return
+    lastTapTime.current = now
+
+    // Send tap event to server
+    socketService.sendTap(myPlayerId)
+  }, [myPlayerId])
 
   const { isShaking, shakeProgress } = useShakeDetection({
     threshold: 0.25,  // Lowered from 0.5 - more sensitive
@@ -173,6 +189,29 @@ function PlayerView() {
       setMyReady(false)
     }
   }, [isCountdown, setMyReady])
+
+  // Listen for tap results (ability use)
+  useEffect(() => {
+    const handleTapResult = (data: { success: boolean; reason?: string; charges: ChargeInfo | null }) => {
+      // Update charge info
+      if (data.charges) {
+        setChargeInfo(data.charges)
+      }
+
+      // Play appropriate sound
+      if (data.success) {
+        play('effects/power-activation', { volume: 0.6 })
+      } else if (data.reason === 'no_charges') {
+        play('effects/no-charges', { volume: 0.4 })
+      }
+    }
+
+    socketService.onTapResult(handleTapResult)
+
+    return () => {
+      socketService.off('player:tap:result', handleTapResult)
+    }
+  }, [play])
 
   if (!myPlayerNumber || !myPlayerId) {
     return (
@@ -370,11 +409,17 @@ function PlayerView() {
 
       {/* Active Game State */}
       {!isWaiting && !isRoundEnded && !isMyPlayerDead && myPlayer && (
-        <div className="fullscreen flex flex-col">
+        <div className="fullscreen flex flex-col" onClick={handleTap}>
           {/* Status Bar (5%) */}
           <div className="h-[5%] flex items-center justify-between px-4 bg-black/50">
             <ConnectionStatus />
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-gray-400 flex items-center gap-2">
+              {/* Charge indicator */}
+              {chargeInfo && chargeInfo.max > 0 && (
+                <span className="text-yellow-400">
+                  {chargeInfo.current}/{chargeInfo.max}
+                </span>
+              )}
               {Math.round((1 - myPlayer.accumulatedDamage / 100) * 100)}%
             </div>
           </div>

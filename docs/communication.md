@@ -82,6 +82,22 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
 
 ---
 
+#### `player:tap`
+
+**When**: Player taps their phone screen to use an ability during active gameplay
+
+**Payload**:
+
+```typescript
+{
+  playerId: string
+}
+```
+
+**Server Response**: `player:tap:result` event
+
+---
+
 #### `ping`
 
 **When**: Every 5 seconds to maintain connection
@@ -368,6 +384,26 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
 **When**: Response to `ping` heartbeat
 
 **Payload**: None
+
+---
+
+#### `player:tap:result`
+
+**When**: Response to `player:tap` ability use attempt
+
+**Payload**:
+
+```typescript
+{
+  success: boolean,
+  reason?: string,           // If !success: 'no_charges' | 'game_not_active' | 'player_dead' | 'player_not_found' | 'ability_failed'
+  charges: {
+    current: number,         // Current charges remaining
+    max: number,             // Maximum charges for this role
+    cooldownRemaining: number // ms until next charge regenerates (0 if no cooldown)
+  } | null
+}
+```
 
 ---
 

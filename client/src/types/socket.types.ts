@@ -120,3 +120,15 @@ export interface ModeEventPayload {
 export interface ReadyEnabledPayload {
   enabled: boolean;
 }
+
+export interface ChargeInfo {
+  current: number;
+  max: number;
+  cooldownRemaining: number;
+}
+
+export interface TapResultPayload {
+  success: boolean;
+  reason?: string;
+  charges: ChargeInfo | null;
+}

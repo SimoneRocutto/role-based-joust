@@ -34,6 +34,13 @@ export interface AssassinConfig {
   targetKillPoints: number; // Points for killing assigned target
 }
 
+export interface IroncladConfig {
+  maxCharges: number; // Number of ability uses
+  cooldownDuration: number; // ms to regain 1 charge (0 = no regen)
+  toughnessValue: number; // Toughness value when ability active
+  abilityDuration: number; // Duration of toughened effect
+}
+
 export interface RoleConfigs {
   vampire: VampireConfig;
   beast: BeastConfig;
@@ -42,6 +49,7 @@ export interface RoleConfigs {
   berserker: BerserkerConfig;
   medic: MedicConfig;
   assassin: AssassinConfig;
+  ironclad: IroncladConfig;
 }
 
 export const roleConfigs: RoleConfigs = {
@@ -79,5 +87,12 @@ export const roleConfigs: RoleConfigs = {
 
   assassin: {
     targetKillPoints: 10,
+  },
+
+  ironclad: {
+    maxCharges: 1, // Single use per round
+    cooldownDuration: 0, // No regen
+    toughnessValue: 2.0, // Double damage resistance
+    abilityDuration: 5000, // 5 seconds
   },
 };

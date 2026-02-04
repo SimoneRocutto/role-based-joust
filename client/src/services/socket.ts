@@ -17,6 +17,7 @@ import type {
   ReadyCountPayload,
   ModeEventPayload,
   ReadyEnabledPayload,
+  TapResultPayload,
 } from "@/types/socket.types";
 
 // In development, use empty string to connect via Vite proxy (same origin)
@@ -95,6 +96,10 @@ class SocketService {
 
   sendReady(playerId: string) {
     this.socket?.emit("player:ready", { playerId });
+  }
+
+  sendTap(playerId: string) {
+    this.socket?.emit("player:tap", { playerId });
   }
 
   // Server → Client event listeners
@@ -180,6 +185,10 @@ class SocketService {
 
   onReadyEnabled(callback: (data: ReadyEnabledPayload) => void) {
     this.on("ready:enabled", callback);
+  }
+
+  onTapResult(callback: (data: TapResultPayload) => void) {
+    this.on("player:tap:result", callback);
   }
 
   // Generic event listener management
