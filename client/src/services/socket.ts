@@ -18,6 +18,7 @@ import type {
   ModeEventPayload,
   ReadyEnabledPayload,
   TapResultPayload,
+  GameStartPayload,
 } from "@/types/socket.types";
 
 // In development, use empty string to connect via Vite proxy (same origin)
@@ -127,6 +128,10 @@ class SocketService {
     this.on("round:end", callback);
   }
 
+  onGameStart(callback: (data: GameStartPayload) => void) {
+    this.on("game:start", callback);
+  }
+
   onGameEnd(callback: (data: GameEndPayload) => void) {
     this.on("game:end", callback);
   }
@@ -153,7 +158,13 @@ class SocketService {
 
   onLobbyUpdate(
     callback: (data: {
-      players: Array<{ id: string; name: string; number: number; isAlive: boolean; isReady: boolean }>;
+      players: Array<{
+        id: string;
+        name: string;
+        number: number;
+        isAlive: boolean;
+        isReady: boolean;
+      }>;
     }) => void
   ) {
     this.on("lobby:update", callback);
@@ -239,6 +250,6 @@ class SocketService {
 export const socketService = new SocketService();
 
 // Expose for e2e test cleanup (graceful disconnect prevents Vite proxy EPIPE errors)
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   (window as any).__socketService = socketService;
 }

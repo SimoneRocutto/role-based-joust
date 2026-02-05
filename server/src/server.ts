@@ -480,6 +480,14 @@ gameEvents.onRoundEnd((payload) => {
   });
 });
 
+// Broadcast game start
+gameEvents.onGameStart((payload) => {
+  io.emit("game:start", {
+    mode: gameEngine.lastModeKey,
+    totalRounds: payload.totalRounds,
+  });
+});
+
 // Broadcast game end
 gameEvents.onGameEnd((payload) => {
   // Reset ready state so winner screen starts at 0/N

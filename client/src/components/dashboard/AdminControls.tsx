@@ -165,9 +165,6 @@ function AdminControls() {
         throw new Error("Failed to launch game");
       }
 
-      // TODO: maybe add onGameStart in useSocket and move this there
-      setMode(selectedMode);
-
       console.log("Game launched:", result);
     } catch (err) {
       console.error("Failed to launch game:", err);

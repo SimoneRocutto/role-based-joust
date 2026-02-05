@@ -75,6 +75,11 @@ export interface RoundEndPayload {
   winnerId: string | null;
 }
 
+export interface GameStartPayload {
+  mode: string;
+  totalRounds: number;
+}
+
 export interface GameEndPayload {
   winner: {
     id: string;

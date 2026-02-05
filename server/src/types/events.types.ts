@@ -43,6 +43,11 @@ export interface RoundEndEvent {
   winnerId?: string | null;
 }
 
+export interface GameStartEvent {
+  mode: string;
+  totalRounds: number;
+}
+
 export interface GameEndEvent {
   scores: ScoreEntry[];
   winner: import("../models/BasePlayer").BasePlayer | null;

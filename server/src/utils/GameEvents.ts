@@ -12,6 +12,7 @@ import type {
   PlayerReadyEvent,
   ReadyCountEvent,
   ReadyEnabledEvent,
+  GameStartEvent,
 } from "@/types/events.types";
 
 /**
@@ -23,6 +24,7 @@ import type {
  * - player:eliminated - After death processing complete
  * - round:start - When round starts
  * - round:end - When round ends
+ * - game:start - When entire game starts
  * - game:end - When entire game ends
  * - vampire:bloodlust:start - When vampire enters bloodlust
  * - vampire:bloodlust:end - When vampire exits bloodlust
@@ -63,6 +65,10 @@ export class GameEvents extends EventEmitter {
 
   emitRoundEnd(payload: RoundEndEvent): void {
     this.emit("round:end", payload);
+  }
+
+  emitGameStart(payload: GameStartEvent): void {
+    this.emit("game:start", payload);
   }
 
   emitGameEnd(payload: GameEndEvent): void {
@@ -121,6 +127,10 @@ export class GameEvents extends EventEmitter {
 
   onRoundEnd(listener: (payload: RoundEndEvent) => void): void {
     this.on("round:end", listener);
+  }
+
+  onGameStart(listener: (payload: GameStartEvent) => void): void {
+    this.on("game:start", listener);
   }
 
   onGameEnd(listener: (payload: GameEndEvent) => void): void {

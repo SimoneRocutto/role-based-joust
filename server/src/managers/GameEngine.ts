@@ -5,7 +5,11 @@ import type { GameState, WinCondition } from "@/types/game.types";
 import { RoleFactory } from "@/factories/RoleFactory";
 import { GameEvents } from "@/utils/GameEvents";
 import { Logger } from "@/utils/Logger";
-import { gameConfig, restoreMovementConfig, saveMovementConfig } from "@/config/gameConfig";
+import {
+  gameConfig,
+  restoreMovementConfig,
+  saveMovementConfig,
+} from "@/config/gameConfig";
 
 const logger = Logger.getInstance();
 const gameEvents = GameEvents.getInstance();
@@ -74,7 +78,10 @@ export class GameEngine {
    */
   setCountdownDuration(seconds: number): void {
     this.countdownDuration = Math.max(0, seconds);
-    logger.info("ENGINE", `Countdown duration set to ${this.countdownDuration}s`);
+    logger.info(
+      "ENGINE",
+      `Countdown duration set to ${this.countdownDuration}s`
+    );
   }
 
   /**
@@ -133,6 +140,12 @@ export class GameEngine {
     // Set first round
     this.currentRound = 1;
 
+    // Emit round start event
+    gameEvents.emitGameStart({
+      mode: this.lastModeKey,
+      totalRounds: this.currentMode?.roundCount || 1,
+    });
+
     // In test mode, skip countdown and start immediately
     if (this.testMode) {
       this.startRound();
@@ -155,13 +168,18 @@ export class GameEngine {
     }
 
     // Get role pool from override or mode
-    const rolePool = overrideRolePool ?? this.currentMode.getRolePool(this.playerDataCache.length);
+    const rolePool =
+      overrideRolePool ??
+      this.currentMode.getRolePool(this.playerDataCache.length);
 
     // Create players with roles (or BasePlayer if no roles)
     if (rolePool.length > 0) {
-      this.players = RoleFactory.getInstance().assignRoles(this.playerDataCache, {
-        pool: rolePool,
-      });
+      this.players = RoleFactory.getInstance().assignRoles(
+        this.playerDataCache,
+        {
+          pool: rolePool,
+        }
+      );
     } else {
       // No roles - use BasePlayer
       this.players = this.playerDataCache.map((data) => new BasePlayer(data));
@@ -305,12 +323,17 @@ export class GameEngine {
       const roleInfo = {
         playerId: player.id,
         name: player.constructor.name.toLowerCase(),
-        displayName: (player.constructor as any).displayName || player.constructor.name,
+        displayName:
+          (player.constructor as any).displayName || player.constructor.name,
         description: (player.constructor as any).description || "",
         difficulty: (player.constructor as any).difficulty || "normal",
       };
 
-      logger.debug("ENGINE", `Emitting role assignment to ${player.name}`, roleInfo);
+      logger.debug(
+        "ENGINE",
+        `Emitting role assignment to ${player.name}`,
+        roleInfo
+      );
 
       // Emit role:assigned event (will be broadcast via server.ts)
       gameEvents.emit("role:assigned", {
@@ -465,7 +488,10 @@ export class GameEngine {
         logger.info("ENGINE", "Ready state enabled after delay");
       }, gameConfig.timing.readyDelayMs);
 
-      logger.info("ENGINE", `Ready state disabled for ${gameConfig.timing.readyDelayMs}ms`);
+      logger.info(
+        "ENGINE",
+        `Ready state disabled for ${gameConfig.timing.readyDelayMs}ms`
+      );
     }
 
     // Notify mode
@@ -735,13 +761,19 @@ export class GameEngine {
   setPlayerReady(playerId: string, isReady: boolean): boolean {
     const player = this.getPlayerById(playerId);
     if (!player) {
-      logger.warn("ENGINE", `Cannot set ready state for unknown player: ${playerId}`);
+      logger.warn(
+        "ENGINE",
+        `Cannot set ready state for unknown player: ${playerId}`
+      );
       return false;
     }
 
     // Reject ready during delay period (only when trying to set ready, not unready)
     if (isReady && !this.readyEnabled) {
-      logger.debug("ENGINE", `Rejecting ready for ${player.name} - ready not yet enabled`);
+      logger.debug(
+        "ENGINE",
+        `Rejecting ready for ${player.name} - ready not yet enabled`
+      );
       return false;
     }
 

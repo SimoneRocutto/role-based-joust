@@ -84,6 +84,10 @@ export function useSocket() {
       }
     });
 
+    socketService.onGameStart(({ mode, totalRounds }) => {
+      setMode(mode);
+    });
+
     // Round start
     socketService.onRoundStart(({ roundNumber, totalRounds }) => {
       setRound(roundNumber, totalRounds);
@@ -273,6 +277,7 @@ export function useSocket() {
       socketService.off("player:death");
       socketService.off("round:start");
       socketService.off("round:end");
+      socketService.off("game:start");
       socketService.off("game:end");
       socketService.off("vampire:bloodlust");
       socketService.off("role:assigned");
