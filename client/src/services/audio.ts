@@ -1,5 +1,6 @@
 import { Howl, Howler } from "howler";
-import { AUDIO_VOLUMES } from "@/utils/constants";
+import { AUDIO_VOLUMES, PATHS } from "@/utils/constants";
+import { useGameStore } from "@/store/gameStore";
 
 class AudioManager {
   private sounds: Map<string, Howl> = new Map();
@@ -14,20 +15,20 @@ class AudioManager {
   private pendingMusicTimeout: ReturnType<typeof setTimeout> | null = null;
   private pendingMusicTrack: string | null = null;
 
-  async preload(soundFiles: string[]): Promise<void> {
-    const promises = soundFiles.map(
-      (file) =>
+  async preload(soundPaths: string[]): Promise<void> {
+    const promises = soundPaths.map(
+      (path) =>
         new Promise<void>((resolve, reject) => {
           const sound = new Howl({
-            src: [`/sounds/${file}.mp3`],
+            src: [path],
             preload: true,
-            html5: file.includes("music/"), // Stream music files
+            html5: path.includes("music/"), // Stream music files
             onload: () => {
-              this.sounds.set(file, sound);
+              this.sounds.set(path, sound);
               resolve();
             },
             onloaderror: (_id, error) => {
-              console.error(`Failed to load sound: ${file}`, error);
+              console.error(`Failed to load sound: ${path}`, error);
               reject(error);
             },
           });
@@ -36,7 +37,7 @@ class AudioManager {
 
     try {
       await Promise.all(promises);
-      console.log(`Preloaded ${soundFiles.length} sounds`);
+      console.log(`Preloaded ${soundPaths.length} sounds`);
     } catch (error) {
       console.error("Error preloading sounds:", error);
     }
@@ -74,16 +75,12 @@ class AudioManager {
         this.currentMusic.stop();
       }
 
+      const fullPath = this.getSoundPath(`music/${track}`);
       // Get or create sound
-      let sound = this.sounds.get(track);
+      let sound = this.sounds.get(fullPath);
 
       if (!sound) {
-        sound = new Howl({
-          src: [`/sounds/${track}.mp3`],
-          loop,
-          html5: true,
-          volume,
-        });
+        sound = this.getHowl(fullPath, options);
         this.sounds.set(track, sound);
       } else {
         // Ensure correct settings for existing sound
@@ -95,8 +92,37 @@ class AudioManager {
       this.currentTrack = track;
       this.currentMusic = sound;
 
+      this.setMusicRate(1.0);
       sound.play();
     }, 50); // 50ms debounce - enough to catch rapid state changes
+  }
+
+  /**
+   * Gets howl sound based on trackPath. Uses mode-specific sounds, otherwise falls back to general directory.
+   * @param trackPath Something like "music/lobby"
+   * @param options
+   * @returns
+   */
+  private getHowl(
+    fullPath: string,
+    options: { loop?: boolean; volume?: number } = {}
+  ) {
+    const { loop = false, volume = AUDIO_VOLUMES.MUSIC } = options;
+    const sound = new Howl({
+      src: [fullPath],
+      loop: loop ?? false,
+      html5: true,
+      volume: volume ?? 1.0,
+    });
+    return sound;
+  }
+
+  private getSoundPath(trackPath: string) {
+    const mode = useGameStore.getState().mode;
+    const musicDir = mode ?? "general";
+    const mainPath = `${PATHS.AUDIO}/${musicDir}/${trackPath}.mp3`;
+    const fallbackPath = `${PATHS.AUDIO}/general/${trackPath}.mp3`;
+    return this.sounds.has(mainPath) ? mainPath : fallbackPath;
   }
 
   stopMusic() {
@@ -126,11 +152,13 @@ class AudioManager {
   }
 
   // Sound effects
-  play(
+  playSfx(
     soundName: string,
     options: { volume?: number; noRepeatFor?: number } = {}
   ) {
-    const sound = this.sounds.get(soundName);
+    const volume = options.volume ?? AUDIO_VOLUMES.SFX;
+    const fullPath = this.getSoundPath(`effects/${soundName}`);
+    const sound = this.getHowl(fullPath, { volume });
     if (!sound) {
       console.warn(`Sound '${soundName}' not preloaded`);
       return;
@@ -138,7 +166,6 @@ class AudioManager {
 
     if (this.bannedSoundList.has(soundName)) return;
 
-    const volume = options.volume ?? AUDIO_VOLUMES.SFX;
     sound.volume(this.isMuted ? 0 : volume);
     sound.play();
 

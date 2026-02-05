@@ -1,39 +1,39 @@
-import { useEffect, useState, useCallback, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useGameState } from '@/hooks/useGameState'
-import { useGameStore } from '@/store/gameStore'
-import { useAccelerometer } from '@/hooks/useAccelerometer'
-import { useWakeLock } from '@/hooks/useWakeLock'
-import { useFullscreen } from '@/hooks/useFullscreen'
-import { useAudio } from '@/hooks/useAudio'
-import { useShakeDetection } from '@/hooks/useShakeDetection'
-import { socketService } from '@/services/socket'
-import { requestMotionPermission } from '@/utils/permissions'
-import PlayerNumber from '@/components/player/PlayerNumber'
-import HealthBackground from '@/components/player/HealthBackground'
-import StatusEffects from '@/components/player/StatusEffects'
-import TargetDisplay from '@/components/player/TargetDisplay'
-import ConnectionStatus from '@/components/player/ConnectionStatus'
-import PortraitLock from '@/components/player/PortraitLock'
-import type { ChargeInfo } from '@/types/socket.types'
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useGameState } from "@/hooks/useGameState";
+import { useGameStore } from "@/store/gameStore";
+import { useAccelerometer } from "@/hooks/useAccelerometer";
+import { useWakeLock } from "@/hooks/useWakeLock";
+import { useFullscreen } from "@/hooks/useFullscreen";
+import { useAudio } from "@/hooks/useAudio";
+import { useShakeDetection } from "@/hooks/useShakeDetection";
+import { socketService } from "@/services/socket";
+import { requestMotionPermission } from "@/utils/permissions";
+import PlayerNumber from "@/components/player/PlayerNumber";
+import HealthBackground from "@/components/player/HealthBackground";
+import StatusEffects from "@/components/player/StatusEffects";
+import TargetDisplay from "@/components/player/TargetDisplay";
+import ConnectionStatus from "@/components/player/ConnectionStatus";
+import PortraitLock from "@/components/player/PortraitLock";
+import type { ChargeInfo } from "@/types/socket.types";
 
 // In development mode, allow button click instead of shake
 // Use ?mode=production URL param to test production behavior in dev
 const getEffectiveDevMode = () => {
   const urlParams = new URLSearchParams(window.location.search);
-  const modeOverride = urlParams.get('mode');
-  if (modeOverride === 'production') return false;
+  const modeOverride = urlParams.get("mode");
+  if (modeOverride === "production") return false;
   return import.meta.env.DEV;
 };
 
 const isDevMode = getEffectiveDevMode();
 
 function PlayerView() {
-  const navigate = useNavigate()
-  const [permissionsGranted, setPermissionsGranted] = useState(false)
-  const [showPortraitLock, setShowPortraitLock] = useState(false)
-  const [chargeInfo, setChargeInfo] = useState<ChargeInfo | null>(null)
-  const lastTapTime = useRef<number>(0)
+  const navigate = useNavigate();
+  const [permissionsGranted, setPermissionsGranted] = useState(false);
+  const [showPortraitLock, setShowPortraitLock] = useState(false);
+  const [chargeInfo, setChargeInfo] = useState<ChargeInfo | null>(null);
+  const lastTapTime = useRef<number>(0);
 
   const {
     myPlayerId,
@@ -46,64 +46,68 @@ function PlayerView() {
     isFinished,
     isMyPlayerDead,
     isRoundWinner,
-    readyEnabled
-  } = useGameState()
+    readyEnabled,
+  } = useGameState();
 
-  const { countdownSeconds, countdownPhase, myIsReady, setMyReady } = useGameStore()
+  const { countdownSeconds, countdownPhase, myIsReady, setMyReady } =
+    useGameStore();
 
-  const { play } = useAudio()
-  const { start: startAccelerometer, lastData } = useAccelerometer()
-  const { enable: enableWakeLock } = useWakeLock(true)
-  const { enter: enterFullscreen } = useFullscreen()
+  const { playSfx } = useAudio();
+  const { start: startAccelerometer, lastData } = useAccelerometer();
+  const { enable: enableWakeLock } = useWakeLock(true);
+  const { enter: enterFullscreen } = useFullscreen();
 
   // Shake detection for ready state
   // Only allow shaking when ready is enabled (after delay period in round-ended state)
-  const shouldDetectShake = (isWaiting || (isRoundEnded && readyEnabled) || isFinished) && !myIsReady && permissionsGranted
+  const shouldDetectShake =
+    (isWaiting || (isRoundEnded && readyEnabled) || isFinished) &&
+    !myIsReady &&
+    permissionsGranted;
 
   const handleShakeDetected = useCallback(() => {
-    if (!myPlayerId || myIsReady) return
+    if (!myPlayerId || myIsReady) return;
 
     // Mark as ready locally
-    setMyReady(true)
+    setMyReady(true);
 
     // Send ready event to server
-    socketService.sendReady(myPlayerId)
+    socketService.sendReady(myPlayerId);
 
     // Play a feedback sound (optional)
-    play('effects/ready', { volume: 0.5 })
-  }, [myPlayerId, myIsReady, setMyReady, play])
+    playSfx("ready", { volume: 0.5 });
+  }, [myPlayerId, myIsReady, setMyReady, playSfx]);
 
   // Handle tap for ability use during active game
   const handleTap = useCallback(() => {
-    if (!myPlayerId) return
+    if (!myPlayerId) return;
 
     // Debounce taps (300ms minimum between taps)
-    const now = Date.now()
-    if (now - lastTapTime.current < 300) return
-    lastTapTime.current = now
+    const now = Date.now();
+    if (now - lastTapTime.current < 300) return;
+    lastTapTime.current = now;
 
     // Send tap event to server
-    socketService.sendTap(myPlayerId)
-  }, [myPlayerId])
+    socketService.sendTap(myPlayerId);
+  }, [myPlayerId]);
 
   const { isShaking, shakeProgress } = useShakeDetection({
-    threshold: 0.25,  // Lowered from 0.5 - more sensitive
-    requiredDuration: 300,  // Lowered from 500ms - faster detection
+    threshold: 0.25, // Lowered from 0.5 - more sensitive
+    requiredDuration: 300, // Lowered from 500ms - faster detection
     cooldown: 1000,
     onShake: handleShakeDetected,
     enabled: shouldDetectShake,
-  })
+  });
 
   // Check if player has joined
   useEffect(() => {
-    const playerId = localStorage.getItem('playerId')
-    const playerNumber = localStorage.getItem('playerNumber')
+    const playerId = localStorage.getItem("playerId");
+    const playerNumber = localStorage.getItem("playerNumber");
 
     if (!playerId || !playerNumber) {
       // Not joined, redirect to join page
-      navigate('/join')
+      navigate("/join");
     }
-  }, [navigate])
+  }, [navigate]);
 
   // Request permissions on mount
   useEffect(() => {
@@ -115,36 +119,40 @@ function PlayerView() {
 
       try {
         // Try to request permission (will succeed on Android, may fail on iOS outside user gesture)
-        const motionGranted = await requestMotionPermission()
+        const motionGranted = await requestMotionPermission();
         if (!motionGranted && !isDevMode) {
           // Only show alert in production mode if permission explicitly denied
-          alert('Motion permission denied. Game cannot function without accelerometer access.')
-          return
+          alert(
+            "Motion permission denied. Game cannot function without accelerometer access."
+          );
+          return;
         }
       } catch (error) {
         // iOS throws when requestPermission is called outside user gesture
         // This is expected - permission was already granted in JoinView
-        console.log('Motion permission request skipped (likely already granted)')
+        console.log(
+          "Motion permission request skipped (likely already granted)"
+        );
       }
 
       // Enable wake lock
-      await enableWakeLock()
+      await enableWakeLock();
 
       // Try to enter fullscreen
-      await enterFullscreen()
+      await enterFullscreen();
 
-      setPermissionsGranted(true)
+      setPermissionsGranted(true);
 
       // Start accelerometer
-      startAccelerometer()
-    }
+      startAccelerometer();
+    };
 
-    requestPermissions()
-  }, [])
+    requestPermissions();
+  }, []);
 
   // Send accelerometer data
   useEffect(() => {
-    if (!lastData || !myPlayerId || !permissionsGranted) return
+    if (!lastData || !myPlayerId || !permissionsGranted) return;
 
     socketService.sendMovement({
       playerId: myPlayerId,
@@ -152,73 +160,77 @@ function PlayerView() {
       y: lastData.y,
       z: lastData.z,
       timestamp: lastData.timestamp,
-      deviceType: 'phone'
-    })
-  }, [lastData, myPlayerId, permissionsGranted])
+      deviceType: "phone",
+    });
+  }, [lastData, myPlayerId, permissionsGranted]);
 
   // Detect orientation for portrait lock
   useEffect(() => {
     const checkOrientation = () => {
-      const isLandscape = window.innerWidth > window.innerHeight
-      setShowPortraitLock(isLandscape && window.innerWidth < 1024)
-    }
+      const isLandscape = window.innerWidth > window.innerHeight;
+      setShowPortraitLock(isLandscape && window.innerWidth < 1024);
+    };
 
-    checkOrientation()
-    window.addEventListener('resize', checkOrientation)
-    window.addEventListener('orientationchange', checkOrientation)
+    checkOrientation();
+    window.addEventListener("resize", checkOrientation);
+    window.addEventListener("orientationchange", checkOrientation);
 
     return () => {
-      window.removeEventListener('resize', checkOrientation)
-      window.removeEventListener('orientationchange', checkOrientation)
-    }
-  }, [])
+      window.removeEventListener("resize", checkOrientation);
+      window.removeEventListener("orientationchange", checkOrientation);
+    };
+  }, []);
 
   // Play damage sound when taking damage
   useEffect(() => {
-    if (!myPlayer) return
+    if (!myPlayer) return;
 
     // Check if player took damage (simplified - in real app track previous damage)
     if (myPlayer.accumulatedDamage > 0) {
-      play('effects/damage', { volume: 0.3, noRepeatFor: 1000 })
+      playSfx("damage", { volume: 0.3, noRepeatFor: 1000 });
     }
-  }, [myPlayer?.accumulatedDamage])
+  }, [myPlayer?.accumulatedDamage]);
 
   // Reset ready state when countdown starts (new round)
   useEffect(() => {
     if (isCountdown) {
-      setMyReady(false)
+      setMyReady(false);
     }
-  }, [isCountdown, setMyReady])
+  }, [isCountdown, setMyReady]);
 
   // Listen for tap results (ability use)
   useEffect(() => {
-    const handleTapResult = (data: { success: boolean; reason?: string; charges: ChargeInfo | null }) => {
+    const handleTapResult = (data: {
+      success: boolean;
+      reason?: string;
+      charges: ChargeInfo | null;
+    }) => {
       // Update charge info
       if (data.charges) {
-        setChargeInfo(data.charges)
+        setChargeInfo(data.charges);
       }
 
       // Play appropriate sound
       if (data.success) {
-        play('effects/power-activation', { volume: 0.6 })
-      } else if (data.reason === 'no_charges') {
-        play('effects/no-charges', { volume: 0.4 })
+        playSfx("power-activation", { volume: 0.6 });
+      } else if (data.reason === "no_charges") {
+        playSfx("no-charges", { volume: 0.4 });
       }
-    }
+    };
 
-    socketService.onTapResult(handleTapResult)
+    socketService.onTapResult(handleTapResult);
 
     return () => {
-      socketService.off('player:tap:result', handleTapResult)
-    }
-  }, [play])
+      socketService.off("player:tap:result", handleTapResult);
+    };
+  }, [playSfx]);
 
   if (!myPlayerNumber || !myPlayerId) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-white text-xl">Loading...</div>
       </div>
-    )
+    );
   }
 
   return (
@@ -235,7 +247,7 @@ function PlayerView() {
               #{myPlayerNumber}
             </div>
             <div className="text-3xl text-gray-300 mb-2">
-              {myPlayer?.name || 'Player'}
+              {myPlayer?.name || "Player"}
             </div>
 
             {/* Shake to Ready UI */}
@@ -249,12 +261,18 @@ function PlayerView() {
                     >
                       CLICK TO READY
                     </button>
-                    <div className="text-sm text-yellow-600 font-mono">[DEV MODE]</div>
+                    <div className="text-sm text-yellow-600 font-mono">
+                      [DEV MODE]
+                    </div>
                   </>
                 ) : (
                   <>
-                    <div className={`text-2xl font-bold ${isShaking ? 'text-yellow-400' : 'text-gray-400'}`}>
-                      {isShaking ? 'SHAKING...' : 'SHAKE TO READY'}
+                    <div
+                      className={`text-2xl font-bold ${
+                        isShaking ? "text-yellow-400" : "text-gray-400"
+                      }`}
+                    >
+                      {isShaking ? "SHAKING..." : "SHAKE TO READY"}
                     </div>
 
                     {/* Progress bar */}
@@ -268,7 +286,6 @@ function PlayerView() {
                     <div className="text-sm text-gray-500">
                       Shake your device to ready up
                     </div>
-
                   </>
                 )}
               </div>
@@ -276,7 +293,9 @@ function PlayerView() {
               <div className="mt-8 space-y-2">
                 <div className="text-6xl">✓</div>
                 <div className="text-2xl text-green-400 font-bold">READY!</div>
-                <div className="text-gray-500">Waiting for other players...</div>
+                <div className="text-gray-500">
+                  Waiting for other players...
+                </div>
               </div>
             )}
           </div>
@@ -294,26 +313,26 @@ function PlayerView() {
               #{myPlayerNumber}
             </div>
             <div className="text-3xl text-gray-300 mb-2">
-              {myPlayer?.name || 'Player'}
+              {myPlayer?.name || "Player"}
             </div>
-            <div className="text-xl text-gray-500 mb-8">
-              Get ready...
-            </div>
+            <div className="text-xl text-gray-500 mb-8">Get ready...</div>
           </div>
 
           {/* Countdown display */}
           <div className="text-center">
-            {countdownPhase === 'countdown' && countdownSeconds > 3 && (
+            {countdownPhase === "countdown" && countdownSeconds > 3 && (
               <div className="text-6xl font-bold text-white">
                 {countdownSeconds}
               </div>
             )}
-            {countdownPhase === 'countdown' && countdownSeconds <= 3 && countdownSeconds > 0 && (
-              <div className="text-9xl font-black text-yellow-400 animate-bounce">
-                {countdownSeconds}
-              </div>
-            )}
-            {countdownPhase === 'go' && (
+            {countdownPhase === "countdown" &&
+              countdownSeconds <= 3 &&
+              countdownSeconds > 0 && (
+                <div className="text-9xl font-black text-yellow-400 animate-bounce">
+                  {countdownSeconds}
+                </div>
+              )}
+            {countdownPhase === "go" && (
               <div className="text-9xl font-black text-green-400 animate-pulse">
                 GO!
               </div>
@@ -352,7 +371,7 @@ function PlayerView() {
               #{myPlayerNumber}
             </div>
             <div className="text-3xl text-gray-300 mb-2">
-              {myPlayer?.name || 'Player'}
+              {myPlayer?.name || "Player"}
             </div>
             <div className="text-xl text-gray-400 mb-4">
               Total: {myPlayer?.totalPoints || myPlayer?.points || 0} pts
@@ -373,12 +392,18 @@ function PlayerView() {
                     >
                       CLICK FOR NEXT ROUND
                     </button>
-                    <div className="text-sm text-yellow-600 font-mono">[DEV MODE]</div>
+                    <div className="text-sm text-yellow-600 font-mono">
+                      [DEV MODE]
+                    </div>
                   </>
                 ) : (
                   <>
-                    <div className={`text-2xl font-bold ${isShaking ? 'text-yellow-400' : 'text-gray-400'}`}>
-                      {isShaking ? 'SHAKING...' : 'SHAKE FOR NEXT ROUND'}
+                    <div
+                      className={`text-2xl font-bold ${
+                        isShaking ? "text-yellow-400" : "text-gray-400"
+                      }`}
+                    >
+                      {isShaking ? "SHAKING..." : "SHAKE FOR NEXT ROUND"}
                     </div>
 
                     {/* Progress bar */}
@@ -392,7 +417,6 @@ function PlayerView() {
                     <div className="text-sm text-gray-500">
                       Shake your device to ready up
                     </div>
-
                   </>
                 )}
               </div>
@@ -400,7 +424,9 @@ function PlayerView() {
               <div className="mt-8 space-y-2">
                 <div className="text-6xl">✓</div>
                 <div className="text-2xl text-green-400 font-bold">READY!</div>
-                <div className="text-gray-500">Waiting for other players...</div>
+                <div className="text-gray-500">
+                  Waiting for other players...
+                </div>
               </div>
             )}
           </div>
@@ -442,15 +468,19 @@ function PlayerView() {
       )}
 
       {/* Dead State - only show during active round */}
-      {isMyPlayerDead && !isCountdown && !isRoundEnded && !isWaiting && !isFinished && (
-        <div className="fullscreen bg-health-dead flex flex-col items-center justify-center gap-8 dead-screen">
-          <div className="text-9xl">💀</div>
-          <div className="text-5xl font-bold text-gray-500">ELIMINATED</div>
-          <div className="text-xl text-gray-600">
-            Final Score: {myPlayer?.points || 0} pts
+      {isMyPlayerDead &&
+        !isCountdown &&
+        !isRoundEnded &&
+        !isWaiting &&
+        !isFinished && (
+          <div className="fullscreen bg-health-dead flex flex-col items-center justify-center gap-8 dead-screen">
+            <div className="text-9xl">💀</div>
+            <div className="text-5xl font-bold text-gray-500">ELIMINATED</div>
+            <div className="text-xl text-gray-600">
+              Final Score: {myPlayer?.points || 0} pts
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Game Finished State */}
       {isFinished && (
@@ -462,7 +492,7 @@ function PlayerView() {
               #{myPlayerNumber}
             </div>
             <div className="text-3xl text-gray-300 mb-2">
-              {myPlayer?.name || 'Player'}
+              {myPlayer?.name || "Player"}
             </div>
             <div className="text-2xl text-gray-400 mb-4">
               Final Score: {myPlayer?.totalPoints || myPlayer?.points || 0} pts
@@ -485,12 +515,18 @@ function PlayerView() {
                     >
                       CLICK WHEN READY
                     </button>
-                    <div className="text-sm text-yellow-600 font-mono">[DEV MODE]</div>
+                    <div className="text-sm text-yellow-600 font-mono">
+                      [DEV MODE]
+                    </div>
                   </>
                 ) : (
                   <>
-                    <div className={`text-2xl font-bold ${isShaking ? 'text-yellow-400' : 'text-gray-400'}`}>
-                      {isShaking ? 'SHAKING...' : 'SHAKE WHEN READY'}
+                    <div
+                      className={`text-2xl font-bold ${
+                        isShaking ? "text-yellow-400" : "text-gray-400"
+                      }`}
+                    >
+                      {isShaking ? "SHAKING..." : "SHAKE WHEN READY"}
                     </div>
                     <div className="w-48 h-3 bg-gray-700 rounded-full overflow-hidden mx-auto">
                       <div
@@ -509,7 +545,7 @@ function PlayerView() {
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default PlayerView
+export default PlayerView;

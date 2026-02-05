@@ -10,6 +10,7 @@ export function useSocket() {
     updatePlayers,
     setGameTime,
     setGameState,
+    setMode,
     setRound,
     setLatestEvent,
     setScores,
@@ -79,7 +80,7 @@ export function useSocket() {
 
       // If it's me
       if (victimId === myPlayerId) {
-        audioManager.play("effects/death", { volume: 0.5 });
+        audioManager.playSfx("death", { volume: 0.5 });
       }
     });
 
@@ -134,6 +135,7 @@ export function useSocket() {
       // Now set scores and game state
       setScores(scores);
       setGameState("finished");
+      setMode(null);
 
       if (winner) {
         setLatestEvent(`${winner.name} is the champion!`);
@@ -163,9 +165,6 @@ export function useSocket() {
         targetNumber: roleData.targetNumber,
         targetName: roleData.targetName,
       });
-
-      // TODO: understand if we'll ever want a sound together with the explanation
-      // audioManager.play("voice/role-reveal", { volume: 0.7 });
 
       // Wait for intro to finish, then speak
       setTimeout(() => {
@@ -229,9 +228,9 @@ export function useSocket() {
           secondsRemaining <= 3 &&
           secondsRemaining > 0
         ) {
-          audioManager.play("effects/countdown-beep", { volume: 0.5 });
+          audioManager.playSfx("countdown-beep", { volume: 0.5 });
         } else if (phase === "go") {
-          audioManager.play("effects/countdown-go", { volume: 0.7 });
+          audioManager.playSfx("countdown-go", { volume: 0.7 });
         }
       }
     );
@@ -253,6 +252,7 @@ export function useSocket() {
     // Game stopped (emergency stop or return to lobby)
     socketService.onGameStopped(() => {
       setGameState("waiting");
+      setMode(null);
       setLatestEvent("Game stopped");
       // Reset ready state - server resets all ready states, so client must sync
       resetReadyState();

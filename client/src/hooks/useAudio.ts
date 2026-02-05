@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { audioManager } from "@/services/audio";
-import { SOUND_FILES } from "@/utils/constants";
 
 export function useAudio() {
   const [isPreloaded, setIsPreloaded] = useState(false);
@@ -13,8 +12,17 @@ export function useAudio() {
 
   useEffect(() => {
     // Preload all sounds
-    const soundFiles = Object.values(SOUND_FILES);
-    audioManager.preload(soundFiles).then(() => {
+    const soundModules: Record<string, { default: string }> = import.meta.glob(
+      "/public/sounds/**/*.mp3",
+      {
+        eager: true,
+        query: "?url",
+      }
+    );
+
+    const soundPaths = Object.values(soundModules).map((item) => item?.default);
+
+    audioManager.preload(soundPaths).then(() => {
       setIsPreloaded(true);
       console.log("All sounds preloaded");
     });
@@ -37,11 +45,11 @@ export function useAudio() {
     };
   }, []);
 
-  const play = (
+  const playSfx = (
     soundName: string,
     options?: { volume?: number; noRepeatFor?: number }
   ) => {
-    audioManager.play(soundName, options);
+    audioManager.playSfx(soundName, options);
   };
 
   const loop = (soundName: string, options?: { volume?: number }) => {
@@ -95,7 +103,7 @@ export function useAudio() {
     isSpeaking,
     isPlayingMusic,
     isAudioUnlocked,
-    play,
+    playSfx,
     loop,
     stop,
     playMusic,

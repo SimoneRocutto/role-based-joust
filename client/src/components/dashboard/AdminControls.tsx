@@ -1,35 +1,37 @@
-import { useState, useEffect } from 'react'
-import QRCode from 'qrcode'
-import { useGameState } from '@/hooks/useGameState'
-import { useGameStore } from '@/store/gameStore'
-import { apiService } from '@/services/api'
-import type { GameMode } from '@/types/game.types'
+import { useState, useEffect } from "react";
+import QRCode from "qrcode";
+import { useGameState } from "@/hooks/useGameState";
+import { useGameStore } from "@/store/gameStore";
+import { apiService } from "@/services/api";
+import type { GameMode } from "@/types/game.types";
 
 function AdminControls() {
-  const { players } = useGameState()
-  const { isDevMode, readyCount } = useGameStore()
-  const [modes, setModes] = useState<GameMode[]>([])
-  const [selectedMode, setSelectedMode] = useState('role-based')
-  const [selectedTheme, setSelectedTheme] = useState('standard')
-  const [selectedSensitivity, setSelectedSensitivity] = useState('medium')
+  const { players } = useGameState();
+  const { isDevMode, readyCount, setMode } = useGameStore();
+  const [modes, setModes] = useState<GameMode[]>([]);
+  const [selectedMode, setSelectedMode] = useState("role-based");
+  const [selectedTheme, setSelectedTheme] = useState("standard");
+  const [selectedSensitivity, setSelectedSensitivity] = useState("medium");
   const [sensitivityPresets, setSensitivityPresets] = useState<
     Array<{ key: string; label: string; description: string }>
-  >([])
-  const [dangerThreshold, setDangerThreshold] = useState(0.10)
-  const [roundCount, setRoundCount] = useState(3)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
+  >([]);
+  const [dangerThreshold, setDangerThreshold] = useState(0.1);
+  const [roundCount, setRoundCount] = useState(3);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
   // Preserve ?mode=production in QR code URL if dashboard was loaded with it
-  const urlParams = new URLSearchParams(window.location.search)
-  const modeParam = urlParams.get('mode')
-  const joinUrl = modeParam === 'production'
-    ? `${window.location.origin}/join?mode=production`
-    : `${window.location.origin}/join`
+  const urlParams = new URLSearchParams(window.location.search);
+  const modeParam = urlParams.get("mode");
+  const joinUrl =
+    modeParam === "production"
+      ? `${window.location.origin}/join?mode=production`
+      : `${window.location.origin}/join`;
 
   // Check if all players are ready (for production mode)
-  const allPlayersReady = readyCount.total > 0 && readyCount.ready === readyCount.total
+  const allPlayersReady =
+    readyCount.total > 0 && readyCount.ready === readyCount.total;
 
   // Fetch available game modes and settings
   useEffect(() => {
@@ -37,138 +39,143 @@ function AdminControls() {
       .getGameModes()
       .then((data) => {
         if (data.success) {
-          setModes(data.modes)
+          setModes(data.modes);
         }
       })
       .catch((err) => {
-        console.error('Failed to fetch game modes:', err)
-        setError('Failed to load game modes')
-      })
+        console.error("Failed to fetch game modes:", err);
+        setError("Failed to load game modes");
+      });
 
     apiService
       .getSettings()
       .then((data) => {
         if (data.success) {
-          setSensitivityPresets(data.presets)
-          setSelectedSensitivity(data.sensitivity)
-          setDangerThreshold(data.movement.dangerThreshold)
+          setSensitivityPresets(data.presets);
+          setSelectedSensitivity(data.sensitivity);
+          setDangerThreshold(data.movement.dangerThreshold);
           // Load persisted mode and theme preferences
           if (data.gameMode) {
-            setSelectedMode(data.gameMode)
+            setSelectedMode(data.gameMode);
           }
           if (data.theme) {
-            setSelectedTheme(data.theme)
+            setSelectedTheme(data.theme);
           }
           if (data.roundCount) {
-            setRoundCount(data.roundCount)
+            setRoundCount(data.roundCount);
           }
         }
       })
       .catch((err) => {
-        console.error('Failed to fetch settings:', err)
-      })
-  }, [])
+        console.error("Failed to fetch settings:", err);
+      });
+  }, []);
 
   // Generate QR code for join URL
   useEffect(() => {
     QRCode.toDataURL(joinUrl, {
       width: 120,
       margin: 1,
-      color: { dark: '#ffffffff', light: '#00000000' },
+      color: { dark: "#ffffffff", light: "#00000000" },
     })
       .then(setQrDataUrl)
-      .catch((err) => console.error('Failed to generate QR code:', err))
-  }, [joinUrl])
+      .catch((err) => console.error("Failed to generate QR code:", err));
+  }, [joinUrl]);
 
   const handleModeChange = async (mode: string) => {
-    setSelectedMode(mode)
+    setSelectedMode(mode);
     // Auto-switch sensitivity based on mode
-    const targetSensitivity = mode === 'classic' ? 'oneshot' : 'medium'
-    const sensitivityChanged = targetSensitivity !== selectedSensitivity
+    const targetSensitivity = mode === "classic" ? "oneshot" : "medium";
+    const sensitivityChanged = targetSensitivity !== selectedSensitivity;
     if (sensitivityChanged) {
-      setSelectedSensitivity(targetSensitivity)
+      setSelectedSensitivity(targetSensitivity);
     }
     // Persist mode (and sensitivity if it changed) to backend
     try {
       await apiService.updateSettings({
         gameMode: mode,
         ...(sensitivityChanged ? { sensitivity: targetSensitivity } : {}),
-      })
+      });
     } catch (err) {
-      console.error('Failed to update mode:', err)
+      console.error("Failed to update mode:", err);
     }
-  }
+  };
 
   const handleThemeChange = async (theme: string) => {
-    setSelectedTheme(theme)
+    setSelectedTheme(theme);
     // Persist theme to backend
     try {
-      await apiService.updateSettings({ theme })
+      await apiService.updateSettings({ theme });
     } catch (err) {
-      console.error('Failed to update theme:', err)
+      console.error("Failed to update theme:", err);
     }
-  }
+  };
 
   const handleSensitivityChange = async (sensitivity: string) => {
-    setSelectedSensitivity(sensitivity)
+    setSelectedSensitivity(sensitivity);
     // Persist sensitivity to backend
     try {
-      await apiService.updateSettings({ sensitivity })
+      await apiService.updateSettings({ sensitivity });
     } catch (err) {
-      console.error('Failed to update sensitivity:', err)
+      console.error("Failed to update sensitivity:", err);
     }
-  }
+  };
 
   const handleThresholdChange = async (value: number) => {
-    setDangerThreshold(value)
+    setDangerThreshold(value);
     try {
-      const result = await apiService.updateSettings({ dangerThreshold: value })
+      const result = await apiService.updateSettings({
+        dangerThreshold: value,
+      });
       if (result.success) {
-        setSelectedSensitivity(result.sensitivity)
+        setSelectedSensitivity(result.sensitivity);
       }
     } catch (err) {
-      console.error('Failed to update threshold:', err)
-      setError('Failed to update threshold')
+      console.error("Failed to update threshold:", err);
+      setError("Failed to update threshold");
     }
-  }
+  };
 
   const handleRoundCountChange = async (count: number) => {
-    setRoundCount(count)
+    setRoundCount(count);
     try {
-      await apiService.updateSettings({ roundCount: count })
+      await apiService.updateSettings({ roundCount: count });
     } catch (err) {
-      console.error('Failed to update round count:', err)
+      console.error("Failed to update round count:", err);
     }
-  }
+  };
 
   const handleLaunchGame = async () => {
     if (players.length < 2) {
-      setError('Need at least 2 players to start')
-      return
+      setError("Need at least 2 players to start");
+      return;
     }
 
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
 
     try {
       // Launch game (create + start with countdown)
       const result = await apiService.launchGame({
         mode: selectedMode,
-        theme: selectedMode === 'role-based' ? selectedTheme : undefined
-      })
+        theme: selectedMode === "role-based" ? selectedTheme : undefined,
+      });
 
       if (!result.success) {
-        throw new Error('Failed to launch game')
+        throw new Error("Failed to launch game");
       }
 
-      console.log('Game launched:', result)
+      // TODO: maybe add onGameStart in useSocket and move this there
+      setMode(selectedMode);
+
+      console.log("Game launched:", result);
     } catch (err) {
-      console.error('Failed to launch game:', err)
-      setError((err as Error).message)
+      console.error("Failed to launch game:", err);
+      setError((err as Error).message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
@@ -199,7 +206,7 @@ function AdminControls() {
           </select>
         </div>
 
-        {selectedMode === 'role-based' && (
+        {selectedMode === "role-based" && (
           <div>
             <label className="block text-sm text-gray-400 mb-2">Theme</label>
             <select
@@ -220,7 +227,9 @@ function AdminControls() {
 
       {/* Round Count Selection */}
       <div className="mb-4">
-        <label className="block text-sm text-gray-400 mb-2">Number of Rounds</label>
+        <label className="block text-sm text-gray-400 mb-2">
+          Number of Rounds
+        </label>
         <div className="flex gap-2">
           {[1, 2, 3, 4, 5].map((count) => (
             <button
@@ -229,8 +238,8 @@ function AdminControls() {
               disabled={loading}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 roundCount === count
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-700 text-gray-300 hover:bg-gray-600"
               }`}
             >
               {count}
@@ -238,13 +247,17 @@ function AdminControls() {
           ))}
         </div>
         <p className="text-xs text-gray-500 mt-1">
-          {roundCount === 1 ? 'Single round — winner takes all' : `${roundCount} rounds — points accumulate`}
+          {roundCount === 1
+            ? "Single round — winner takes all"
+            : `${roundCount} rounds — points accumulate`}
         </p>
       </div>
 
       {/* Sensitivity Selection */}
       <div className="mb-4">
-        <label className="block text-sm text-gray-400 mb-2">Movement Sensitivity</label>
+        <label className="block text-sm text-gray-400 mb-2">
+          Movement Sensitivity
+        </label>
         <div className="flex gap-2">
           {sensitivityPresets.map((preset) => (
             <button
@@ -253,8 +266,8 @@ function AdminControls() {
               disabled={loading}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 selectedSensitivity === preset.key
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-700 text-gray-300 hover:bg-gray-600"
               }`}
               title={preset.description}
             >
@@ -263,7 +276,10 @@ function AdminControls() {
           ))}
         </div>
         <p className="text-xs text-gray-500 mt-1">
-          {sensitivityPresets.find((p) => p.key === selectedSensitivity)?.description}
+          {
+            sensitivityPresets.find((p) => p.key === selectedSensitivity)
+              ?.description
+          }
         </p>
       </div>
 
@@ -279,7 +295,9 @@ function AdminControls() {
             min="1"
             max="50"
             value={Math.round(dangerThreshold * 100)}
-            onChange={(e) => handleThresholdChange(parseInt(e.target.value) / 100)}
+            onChange={(e) =>
+              handleThresholdChange(parseInt(e.target.value) / 100)
+            }
             disabled={loading}
             className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
           />
@@ -298,10 +316,7 @@ function AdminControls() {
         {players.length > 0 ? (
           <div className="grid grid-cols-4 gap-2">
             {players.map((p) => (
-              <div
-                key={p.id}
-                className="px-3 py-2 bg-gray-700 rounded text-sm"
-              >
+              <div key={p.id} className="px-3 py-2 bg-gray-700 rounded text-sm">
                 #{p.number} {p.name}
               </div>
             ))}
@@ -327,7 +342,9 @@ function AdminControls() {
             disabled={loading || players.length < 2}
             className="px-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg font-bold text-xl transition-colors"
           >
-            {loading ? 'Starting...' : `🎮 Start Game (${players.length} players)`}
+            {loading
+              ? "Starting..."
+              : `🎮 Start Game (${players.length} players)`}
           </button>
         )}
 
@@ -340,11 +357,12 @@ function AdminControls() {
                 disabled={loading || players.length < 2}
                 className="px-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg font-bold text-xl transition-colors animate-pulse"
               >
-                {loading ? 'Starting...' : `🎮 All Ready! Start Game`}
+                {loading ? "Starting..." : `🎮 All Ready! Start Game`}
               </button>
             ) : (
               <div className="px-8 py-4 bg-gray-700 rounded-lg text-gray-400 text-xl">
-                Waiting for all players to shake ready... ({readyCount.ready}/{readyCount.total})
+                Waiting for all players to shake ready... ({readyCount.ready}/
+                {readyCount.total})
               </div>
             )}
           </>
@@ -359,7 +377,7 @@ function AdminControls() {
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export default AdminControls
+export default AdminControls;

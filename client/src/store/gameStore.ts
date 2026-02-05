@@ -52,7 +52,7 @@ interface GameStore {
   setGameState: (state: GameStateType) => void;
   setGameTime: (time: number) => void;
   setRound: (current: number, total: number) => void;
-  setMode: (mode: string) => void;
+  setMode: (mode: string | null) => void;
   setLatestEvent: (event: string) => void;
   setScores: (scores: ScoreEntry[]) => void;
   setCountdown: (seconds: number, phase: "countdown" | "go" | null) => void;
@@ -168,7 +168,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       );
 
       // Update myIsReady if it's my player
-      const myIsReady = state.myPlayerId === playerId ? isReady : state.myIsReady;
+      const myIsReady =
+        state.myPlayerId === playerId ? isReady : state.myIsReady;
 
       return {
         readyPlayers: newReadyPlayers,

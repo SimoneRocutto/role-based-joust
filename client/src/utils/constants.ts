@@ -1,5 +1,9 @@
 // src/utils/constants.ts
 
+export const PATHS = {
+  AUDIO: "/public/sounds",
+} as const;
+
 export const HEALTH_COLORS = {
   HEALTHY: { from: "#065f46", to: "#047857" },
   DAMAGED: { from: "#92400e", to: "#d97706" },
@@ -41,27 +45,6 @@ export const AUDIO_VOLUMES = {
   HEARTBEAT: 0.4,
   ROLE_REVEAL: 0.7,
   TTS: 1.0,
-} as const;
-
-export const SOUND_FILES = {
-  // Music
-  LOBBY_MUSIC: "music/lobby-music",
-  TENSION_MEDIUM: "music/tension-medium",
-  TENSION_HIGH: "music/tension-high",
-  VICTORY: "music/victory",
-
-  // Effects
-  COUNTDOWN_BEEP: "effects/countdown-beep",
-  COUNTDOWN_GO: "effects/countdown-go",
-  DAMAGE: "effects/damage",
-  DEATH: "effects/death",
-  LOW_HEALTH_HEARTBEAT: "effects/low-health-heartbeat",
-  PLAYER_READY: "effects/ready",
-  NO_CHARGES: "effects/no-charges",
-  POWER_ACTIVATION: "effects/power-activation",
-
-  // Voice
-  ROLE_REVEAL: "voice/role-reveal",
 } as const;
 
 export const STATUS_ICONS = {
