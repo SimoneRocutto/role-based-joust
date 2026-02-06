@@ -15,6 +15,7 @@ import StatusEffects from "@/components/player/StatusEffects";
 import TargetDisplay from "@/components/player/TargetDisplay";
 import ConnectionStatus from "@/components/player/ConnectionStatus";
 import PortraitLock from "@/components/player/PortraitLock";
+import DamageFlash from "@/components/player/DamageFlash";
 import type { ChargeInfo } from "@/types/socket.types";
 
 // In development mode, allow button click instead of shake
@@ -464,6 +465,9 @@ function PlayerView() {
               Pts: {myPlayer.points}
             </div>
           </div>
+
+          {/* Damage flash overlay */}
+          <DamageFlash accumulatedDamage={myPlayer.accumulatedDamage} />
         </div>
       )}
 
