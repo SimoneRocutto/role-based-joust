@@ -28,6 +28,7 @@ export interface WinCondition {
 export interface ScoreEntry {
   player: import("../models/BasePlayer").BasePlayer;
   score: number;
+  roundPoints: number;
   rank: number;
   status: string;
 }

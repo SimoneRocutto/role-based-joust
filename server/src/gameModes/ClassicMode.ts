@@ -163,6 +163,7 @@ export class ClassicMode extends GameMode {
     return sorted.map((player, index) => ({
       player,
       score: player.totalPoints,
+      roundPoints: player.points,
       rank: index + 1,
       status: index === 0 ? "Winner" : `Rank ${index + 1}`,
     }));

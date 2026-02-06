@@ -133,7 +133,7 @@ function Scoreboard() {
                 </div>
                 {isRoundEnded && (
                   <div className="text-sm text-gray-400">
-                    (+{entry.score} this round)
+                    (+{entry.roundPoints} this round)
                   </div>
                 )}
               </div>

@@ -35,6 +35,7 @@ export interface ScoreEntry {
   playerName: string;
   playerNumber: number;
   score: number;
+  roundPoints: number;
   rank: number;
   status: string;
 }

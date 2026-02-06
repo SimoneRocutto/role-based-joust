@@ -413,6 +413,56 @@ runner.test("Classic mode final scores use total points", (engine) => {
   resetMovementConfig();
 });
 
+runner.test("calculateFinalScores returns roundPoints distinct from total score", (engine) => {
+  resetMovementConfig();
+  // 3 rounds so the game doesn't end after round 2
+  const mode = GameModeFactory.getInstance().createMode("classic", { roundCount: 3 });
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+
+  // Round 1: Player 1 wins (5 round points, 5 total)
+  let player2 = engine.getPlayerById("p2")!;
+  player2.die(engine.gameTime);
+  engine.fastForward(200);
+
+  assertEqual(engine.currentRound, 2, "Should be on round 2");
+
+  // Round 2: Player 1 wins again (5 round points, 10 total)
+  player2 = engine.getPlayerById("p2")!;
+  player2.die(engine.gameTime);
+  engine.fastForward(200);
+
+  assertEqual(engine.currentRound, 3, "Should be on round 3");
+
+  // Round 3: Player 2 wins (5 round points, 5 total)
+  let player1 = engine.getPlayerById("p1")!;
+  player1.die(engine.gameTime);
+  engine.fastForward(200);
+
+  assertEqual(engine.gameState, "finished", "Game should be finished after 3 rounds");
+
+  const scores = mode.calculateFinalScores(engine);
+  assertEqual(scores.length, 2, "Should have 2 score entries");
+
+  // Player 1 won rounds 1 and 2 (10 total), lost round 3 (0 round points)
+  const p1Score = scores.find((s) => s.player.id === "p1")!;
+  assertEqual(p1Score.score, 10, "Player 1 total score should be 10");
+  assertEqual(p1Score.roundPoints, 0, "Player 1 round points should be 0 (lost last round)");
+
+  // Player 2 lost rounds 1 and 2 (0 total from those), won round 3 (5 round points, 5 total)
+  const p2Score = scores.find((s) => s.player.id === "p2")!;
+  assertEqual(p2Score.score, 5, "Player 2 total score should be 5");
+  assertEqual(p2Score.roundPoints, 5, "Player 2 round points should be 5 (won last round)");
+
+  resetMovementConfig();
+});
+
 // ============================================================================
 // RUN TESTS
 // ============================================================================
