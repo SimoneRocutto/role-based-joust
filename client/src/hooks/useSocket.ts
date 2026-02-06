@@ -239,7 +239,6 @@ export function useSocket() {
       }
     );
 
-    // Mode events (game events like speed-shift)
     socketService.onModeEvent(({ eventType }) => {
       if (eventType === "speed-shift:start") {
         audioManager.setMusicRate(2.0);

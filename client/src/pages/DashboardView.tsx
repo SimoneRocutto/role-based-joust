@@ -141,9 +141,18 @@ function DashboardView() {
       setReadyCount(data);
     });
 
+    socketService.onModeEvent(({ eventType }) => {
+      if (eventType === "speed-shift:start") {
+        playSfx("speed-up");
+      } else if (eventType === "speed-shift:end") {
+        playSfx("speed-down");
+      }
+    });
+
     return () => {
       socketService.off("player:ready");
       socketService.off("ready:update");
+      socketService.off("mode:event");
     };
   }, [setPlayerReady, setReadyCount, playSfx]);
 
