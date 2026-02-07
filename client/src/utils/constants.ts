@@ -47,6 +47,30 @@ export const AUDIO_VOLUMES = {
   TTS: 1.0,
 } as const;
 
+// Default dashboard background per game mode (applied when game is active)
+export const DASHBOARD_MODE_BACKGROUNDS: Record<string, { background: string }> = {
+  "classic": { background: "linear-gradient(135deg, #1e3a5f 0%, #1e40af 50%, #1e3a5f 100%)" },
+};
+
+// Effects triggered by mode events (background, sfx, music rate).
+// Adding a new event = one entry here.
+export const MODE_EVENT_EFFECTS: Record<string, {
+  background?: string;
+  sfx?: string;
+  musicRate?: number;
+}> = {
+  "speed-shift:start": {
+    background: "linear-gradient(135deg, #7f1d1d 0%, #991b1b 50%, #7f1d1d 100%)",
+    sfx: "speed-up",
+    musicRate: 2.0,
+  },
+  "speed-shift:end": {
+    background: "linear-gradient(135deg, #1e3a5f 0%, #1e40af 50%, #1e3a5f 100%)",
+    sfx: "speed-down",
+    musicRate: 1.0,
+  },
+};
+
 export const STATUS_ICONS = {
   INVULNERABLE: "🛡️",
   BLOODLUST: "🧛",

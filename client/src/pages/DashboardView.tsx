@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useGameState } from "@/hooks/useGameState";
 import { useAudio } from "@/hooks/useAudio";
+import { useModeEvents } from "@/hooks/useModeEvents";
 import { useGameStore } from "@/store/gameStore";
 import { apiService } from "@/services/api";
 import { socketService } from "@/services/socket";
@@ -30,6 +31,7 @@ function DashboardView() {
     setReadyCount,
   } = useGameStore();
   const { playMusic, playSfx, isAudioUnlocked } = useAudio();
+  const { background } = useModeEvents();
   const lastReadyPlayerRef = useRef<string | null>(null);
   const [isStopping, setIsStopping] = useState(false);
 
@@ -141,18 +143,9 @@ function DashboardView() {
       setReadyCount(data);
     });
 
-    socketService.onModeEvent(({ eventType }) => {
-      if (eventType === "speed-shift:start") {
-        playSfx("speed-up");
-      } else if (eventType === "speed-shift:end") {
-        playSfx("speed-down");
-      }
-    });
-
     return () => {
       socketService.off("player:ready");
       socketService.off("ready:update");
-      socketService.off("mode:event");
     };
   }, [setPlayerReady, setReadyCount, playSfx]);
 
@@ -192,7 +185,10 @@ function DashboardView() {
   ]);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white overflow-hidden">
+    <div
+      className="min-h-screen text-white overflow-hidden"
+      style={{ background, transition: "background 0.5s ease-in-out" }}
+    >
       {/* Header */}
       <GameState />
 

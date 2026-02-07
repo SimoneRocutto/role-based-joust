@@ -239,14 +239,6 @@ export function useSocket() {
       }
     );
 
-    socketService.onModeEvent(({ eventType }) => {
-      if (eventType === "speed-shift:start") {
-        audioManager.setMusicRate(2.0);
-      } else if (eventType === "speed-shift:end") {
-        audioManager.setMusicRate(1.0);
-      }
-    });
-
     // Ready enabled/disabled events (delay after round end)
     socketService.onReadyEnabled(({ enabled }) => {
       useGameStore.getState().setReadyEnabled(enabled);
@@ -282,7 +274,6 @@ export function useSocket() {
       socketService.off("role:assigned");
       socketService.off("lobby:update");
       socketService.off("game:countdown");
-      socketService.off("mode:event");
       socketService.off("ready:enabled");
       socketService.off("game:stopped");
       socketService.off("error");

@@ -40,6 +40,7 @@ interface GameStore {
   // UI state
   latestEvent: string | null;
   scores: ScoreEntry[];
+  activeModeEvent: string | null;
 
   // Actions
   setConnected: (connected: boolean) => void;
@@ -62,6 +63,7 @@ interface GameStore {
   setMyReady: (isReady: boolean) => void;
   setReadyEnabled: (enabled: boolean) => void;
   setRoundWinnerId: (winnerId: string | null) => void;
+  setActiveModeEvent: (event: string | null) => void;
   resetReadyState: () => void;
   reset: () => void;
 }
@@ -98,6 +100,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   latestEvent: null,
   scores: [],
+  activeModeEvent: null,
 
   // Actions
   setConnected: (connected) => set({ isConnected: connected }),
@@ -189,6 +192,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setRoundWinnerId: (winnerId) => set({ roundWinnerId: winnerId }),
 
+  setActiveModeEvent: (event) => set({ activeModeEvent: event }),
+
   resetReadyState: () =>
     set({
       readyPlayers: new Set(),
@@ -196,6 +201,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       myIsReady: false,
       readyEnabled: true,
       roundWinnerId: null,
+      activeModeEvent: null,
     }),
 
   reset: () =>
@@ -220,5 +226,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       players: [],
       latestEvent: null,
       scores: [],
+      activeModeEvent: null,
     }),
 }));
