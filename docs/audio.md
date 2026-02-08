@@ -1,10 +1,6 @@
-# Extended Joust - Complete Specification
+# Audio System
 
-## Audio System
-
----
-
-## 🎵 Audio Architecture
+## Architecture
 
 Three independent audio layers running simultaneously:
 
@@ -12,492 +8,303 @@ Three independent audio layers running simultaneously:
 2. **TTS Announcements** - Text-to-speech for events (Dashboard only)
 3. **Sound Effects** - Event-triggered sounds (Players + Dashboard)
 
+All audio is managed by a singleton `AudioManager` class (`client/src/services/audio.ts`), with reactive UI state exposed via a Zustand store (`client/src/store/audioStore.ts`).
+
 ---
 
-## 🎼 Audio Layers
+## Sound Auto-Discovery
 
-### Layer 1: Background Music
+Sounds are auto-discovered at build time using Vite's `import.meta.glob`. On initialization, `AudioManager` scans `/public/sounds/**/*.mp3` and preloads every file found:
 
-**Purpose**: Create atmosphere and tension escalation
+```typescript
+// In AudioManager.initialize()
+const soundModules = import.meta.glob("/public/sounds/**/*.mp3", {
+  eager: true,
+  query: "?url",
+});
+const soundPaths = Object.values(soundModules).map((item) => item?.default);
+await this.preload(soundPaths);
+```
 
-**Files**:
+**To add a new sound**: drop an `.mp3` file anywhere under `client/public/sounds/` and it will be auto-discovered and preloaded. No imports or registration needed.
 
-- `lobby-music.mp3` - Calm, waiting music
-- `tension-medium.mp3` - Active gameplay, standard tension
-- `tension-high.mp3` - High tension, 3 or fewer players remaining
+---
 
-**Playback**:
+## Mode-Specific Sounds with General Fallback
 
-- Continuous loop
-- Crossfade between tracks (1-2s fade)
-- Volume: 40% during gameplay
+Sounds are organized into directories per game mode, with `general/` as the fallback:
 
-**Transitions**:
+```
+client/public/sounds/
+├── classic/
+│   ├── effects/
+│   │   ├── death.mp3           # Classic-specific death sound
+│   │   ├── speed-down.mp3      # Speed shift: fast → slow
+│   │   └── speed-up.mp3        # Speed shift: slow → fast
+│   └── music/
+│       ├── tension-high.mp3
+│       └── tension-medium.mp3
+└── general/
+    ├── effects/
+    │   ├── countdown-beep.mp3
+    │   ├── countdown-go.mp3
+    │   ├── damage.mp3
+    │   ├── death.mp3           # Fallback death sound
+    │   ├── low-health-heartbeat.mp3
+    │   ├── no-charges.mp3
+    │   ├── power-activation.mp3
+    │   └── ready.mp3
+    ├── music/
+    │   ├── lobby-music.mp3
+    │   ├── tension-high.mp3
+    │   ├── tension-medium.mp3
+    │   └── victory.mp3
+    └── voice/
+        └── role-reveal.mp3
+```
+
+When a sound is requested, `AudioManager.getSoundPath()` resolves it:
+
+1. Check for a mode-specific file: `/public/sounds/{currentMode}/effects/{name}.mp3`
+2. If not found, fall back to: `/public/sounds/general/effects/{name}.mp3`
+
+```typescript
+private getSoundPath(trackPath: string) {
+  const mode = useGameStore.getState().mode;        // e.g. "classic"
+  const musicDir = mode ?? "general";
+  const mainPath = `${PATHS.AUDIO}/${musicDir}/${trackPath}.mp3`;
+  const fallbackPath = `${PATHS.AUDIO}/general/${trackPath}.mp3`;
+  return this.sounds.has(mainPath) ? mainPath : fallbackPath;
+}
+```
+
+**To add a mode-specific override**: place a file with the same name in `sounds/{mode}/effects/` or `sounds/{mode}/music/`. For example, adding `sounds/role-based/effects/death.mp3` will override the general death sound when playing in role-based mode.
+
+---
+
+## State Management (Zustand)
+
+Audio state is exposed to React via a Zustand store (`useAudioStore`):
+
+```typescript
+// client/src/store/audioStore.ts
+interface AudioState {
+  isPreloaded: boolean;      // All sounds loaded
+  isMuted: boolean;          // Master mute
+  isSpeaking: boolean;       // TTS currently playing
+  isPlayingMusic: boolean;   // Background music active
+  isAudioUnlocked: boolean;  // Audio context unlocked (mobile)
+}
+```
+
+The `AudioManager` singleton writes to this store internally. Components read from it:
+
+```typescript
+// Example: EventFeed dims while TTS is speaking
+const isSpeaking = useAudioStore((state) => state.isSpeaking);
+```
+
+Components never call `useAudioStore` setters directly — they call `audioManager` methods which update the store as a side effect.
+
+---
+
+## Background Music
+
+### Transitions
 
 | Game State              | Music Track          | Trigger                             |
 | ----------------------- | -------------------- | ----------------------------------- |
-| Lobby/Waiting           | `lobby-music.mp3`    | Players joining, before game starts |
-| Round Active (4+ alive) | `tension-medium.mp3` | Round starts                        |
-| Round Active (≤3 alive) | `tension-high.mp3`   | 4th player dies                     |
-| Round End               | `victory.mp3`        | Round/game ends                     |
-| Between Rounds          | `lobby-music.mp3`    | Leaderboard screen                  |
+| Lobby/Waiting           | `lobby-music`        | Players joining, before game starts |
+| Countdown               | `tension-medium`     | Countdown starts                    |
+| Round Active (4+ alive) | `tension-medium`     | Round starts                        |
+| Round Active (<=3 alive)| `tension-medium`     | 4th player dies (volume increase)   |
+| Round End               | `tension-medium`     | Round ends                          |
+| Game End                | `victory`            | Final round ends                    |
 
-**Code Example**:
-
-```typescript
-// In Dashboard component
-useEffect(() => {
-  const aliveCount = players.filter((p) => p.isAlive).length;
-
-  if (gameState === "waiting") {
-    audioManager.playMusic("lobby-music", { loop: true, volume: 0.4 });
-  } else if (gameState === "active") {
-    if (aliveCount <= 3) {
-      audioManager.playMusic("tension-high", { loop: true, volume: 0.5 });
-    } else {
-      audioManager.playMusic("tension-medium", { loop: true, volume: 0.4 });
-    }
-  } else if (gameState === "round-ended") {
-    audioManager.playMusic("victory", { loop: false, volume: 0.6 });
-  }
-}, [gameState, aliveCount]);
-```
-
----
-
-### Layer 2: TTS Announcements (Dashboard Only)
-
-**Purpose**: Provide live commentary for spectators
-
-**Behavior**:
-
-- Plays on dashboard speakers (not player earbuds)
-- **Audio ducking**: Background music lowers to 20% volume during speech
-- Restores music volume after speech ends
-- Uses Web Speech API: `window.speechSynthesis`
-
-**Events That Trigger TTS**:
-
-| Event        | TTS Text                             | Priority |
-| ------------ | ------------------------------------ | -------- |
-| Player Death | "Player {number} eliminated!"        | High     |
-| Round Start  | "Round {N} starting in 3, 2, 1, GO!" | Critical |
-| Round End    | "{PlayerName} wins round {N}!"       | High     |
-| Game End     | "{PlayerName} is the champion!"      | Critical |
-
-**Events That Do NOT Trigger TTS**:
-
-- ❌ Player count milestones ("3 players remaining")
-- ❌ Bloodlust events (hidden information)
-- ❌ Status effect changes
-- ❌ Damage taken
-
-**Code Example**:
+Music is managed in `DashboardView.tsx`:
 
 ```typescript
-// audioManager.ts
-class AudioManager {
-  private musicVolume = 0.4;
-  private ttsQueue: string[] = [];
-  private isSpeaking = false;
-
-  speak(text: string) {
-    if (!window.speechSynthesis) return;
-
-    // Duck background music
-    this.music?.volume(0.2); // Lower to 20%
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1.1; // Slightly faster
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
-
-    utterance.onend = () => {
-      // Restore music volume
-      this.music?.volume(this.musicVolume);
-      this.isSpeaking = false;
-      this.processQueue();
-    };
-
-    this.isSpeaking = true;
-    window.speechSynthesis.speak(utterance);
-  }
-
-  private processQueue() {
-    if (this.ttsQueue.length > 0 && !this.isSpeaking) {
-      const next = this.ttsQueue.shift();
-      if (next) this.speak(next);
-    }
-  }
-}
-
-// Usage in Dashboard
-socket.on("player:death", ({ victimNumber }) => {
-  audioManager.speak(`Player ${victimNumber} eliminated!`);
-});
-```
-
----
-
-### Layer 3: Sound Effects
-
-**Purpose**: Immediate feedback for specific events
-
-**Playback**:
-
-- Short clips (< 2s)
-- Can overlap (use Howler.js sprite pooling)
-- Play on top of music without ducking
-
-#### Dashboard Sound Effects
-
-| File            | Trigger                                              | Volume |
-| --------------- | ---------------------------------------------------- | ------ |
-| `death.mp3`     | Any player dies                                      | 0.5    |
-| `victory.mp3`   | Round/game ends                                      | 0.6    |
-| `bloodlust.mp3` | Vampire bloodlust starts (visual-only cue, no sound) | N/A    |
-| `wolf-howl.mp3` | Full moon event (Halloween mode)                     | 0.4    |
-
-#### Player Sound Effects (Private, via Earbud)
-
-| File                       | Trigger                        | Volume | Notes                                      |
-| -------------------------- | ------------------------------ | ------ | ------------------------------------------ |
-| `role-reveal.mp3`          | Role assignment                | 0.7    | Plays before TTS                           |
-| `damage.mp3`               | **Every damage tick**          | 0.3    | Short "oof" or thud                        |
-| `low-health-heartbeat.mp3` | Health < 30%                   | 0.4    | Looping heartbeat, stops when health > 30% |
-| `target-update.mp3`        | Target changes (Assassin role) | 0.6    | Future feature                             |
-
-**Removed Sounds**:
-
-- ~~`too-much-movement.mp3`~~ - Not needed (damage sound is enough)
-
-**Code Example**:
-
-```typescript
-// Player View - damage feedback
-socket.on("game:tick", ({ gameTime }) => {
-  const myPlayer = players.find((p) => p.id === myPlayerId);
-
-  // Play damage sound on every tick where we took damage
-  if (myPlayer.lastDamage && myPlayer.lastDamage.gameTime === gameTime) {
-    audioManager.play("damage", { volume: 0.3 });
-  }
-
-  // Start/stop heartbeat based on health
-  const healthPercent = 1 - myPlayer.accumulatedDamage / 100;
-  if (healthPercent < 0.3 && !audioManager.isPlaying("heartbeat")) {
-    audioManager.loop("low-health-heartbeat", { volume: 0.4 });
-  } else if (healthPercent >= 0.3 && audioManager.isPlaying("heartbeat")) {
-    audioManager.stop("low-health-heartbeat");
-  }
-});
-```
-
----
-
-## 🎧 Audio Ducking Implementation
-
-**Ducking** = Lower music volume when speech starts, restore when speech ends
-
-```typescript
-class AudioManager {
-  private currentMusic: Howl | null = null;
-  private originalMusicVolume = 0.4;
-
-  playMusic(trackName: string, options: { loop: boolean; volume: number }) {
-    // Stop current music
-    if (this.currentMusic) {
-      this.currentMusic.fade(this.currentMusic.volume(), 0, 500); // 500ms fade out
-      this.currentMusic.once("fade", () => this.currentMusic?.stop());
-    }
-
-    // Start new music
-    this.originalMusicVolume = options.volume;
-    this.currentMusic = new Howl({
-      src: [`/sounds/${trackName}.mp3`],
-      loop: options.loop,
-      volume: 0,
-      html5: true, // Streaming for large files
-    });
-
-    this.currentMusic.play();
-    this.currentMusic.fade(0, options.volume, 1000); // 1s fade in
-  }
-
-  duck() {
-    // Lower music to 20% for speech
-    if (this.currentMusic) {
-      this.currentMusic.fade(this.currentMusic.volume(), 0.2, 300);
-    }
-  }
-
-  unduck() {
-    // Restore original volume after speech
-    if (this.currentMusic) {
-      this.currentMusic.fade(
-        this.currentMusic.volume(),
-        this.originalMusicVolume,
-        500
-      );
-    }
-  }
+if (isWaiting) {
+  audioManager.playMusic("lobby-music", { loop: true, volume: 0.4 });
+} else if (isCountdown) {
+  audioManager.playMusic("tension-medium", { loop: true, volume: 0.4 });
+} else if (isActive) {
+  audioManager.playMusic("tension-medium", { loop: true, volume: aliveCount <= 3 ? 0.5 : 0.4 });
+} else if (isFinished) {
+  audioManager.playMusic("victory", { loop: false, volume: 0.6 });
 }
 ```
 
+Music has a 50ms debounce to prevent rapid switching during state transitions. Same-track requests are deduplicated.
+
+### Music Rate
+
+Speed shift events change the music playback rate:
+
+- `speed-shift:start` → `audioManager.setMusicRate(2.0)` (double speed)
+- `speed-shift:end` → `audioManager.setMusicRate(1.0)` (normal)
+
+Rate resets to 1.0 on every track change.
+
 ---
 
-## 📢 Role Reveal Sequence (7 seconds)
+## Text-to-Speech (Dashboard Only)
 
-**Timeline**:
+TTS uses the Web Speech API (`window.speechSynthesis`). When speaking:
 
-```
-T=0s:  Game starts
-       → Player hears role-reveal.mp3 (0.5s)
+1. Music ducks to 20% volume (300ms fade)
+2. TTS plays at rate 1.1
+3. On end, music restores to original volume (500ms fade)
 
-T=0.5s: TTS begins
-        → "You are the Vampire."
+State is synced to `useAudioStore.isSpeaking` via `onstart`/`onend` callbacks.
 
-T=2s:   TTS continues
-        → "Your goal is to kill during bloodlust to gain points."
+---
 
-T=4s:   (If has target) TTS continues
-        → "Your target is Player number 3."
+## Sound Effects
 
-T=7s:   Dashboard countdown starts
-        → "3... 2... 1... GO!" (audible to all players via speakers)
+### Player Effects (via Earbud)
 
-T=10s:  Gameplay begins
-```
+| Sound                    | Trigger                          | Volume |
+| ------------------------ | -------------------------------- | ------ |
+| `ready`                  | Player shakes/clicks to ready up | 0.5    |
+| `damage`                 | Taking damage (debounced 1s)     | 0.3    |
+| `death`                  | Player eliminated                | 0.5    |
+| `power-activation`       | Ability used successfully        | 0.6    |
+| `no-charges`             | Ability tap with no charges      | 0.4    |
+| `low-health-heartbeat`   | Vampire bloodlust (looping)      | 0.6    |
+| `countdown-beep`         | Each countdown second            | 0.5    |
+| `countdown-go`           | "GO!" phase                      | 0.7    |
 
-**Implementation**:
+### Dashboard Effects
+
+| Sound        | Trigger                      | Volume |
+| ------------ | ---------------------------- | ------ |
+| `ready`      | Any player readies up        | 0.5    |
+| `speed-up`   | Speed shift: slow → fast     | 0.5    |
+| `speed-down` | Speed shift: fast → slow     | 0.5    |
+
+### Mode Events
+
+Mode-specific audio effects are configured in `MODE_EVENT_EFFECTS` (`client/src/utils/constants.ts`):
 
 ```typescript
-// Player View
-socket.on("role:assigned", ({ role, description, targetNumber }) => {
-  // Play intro sound
-  audioManager.play("role-reveal", { volume: 0.7 });
+export const MODE_EVENT_EFFECTS = {
+  "speed-shift:start": {
+    background: "linear-gradient(135deg, #7f1d1d ...)",
+    sfx: "speed-up",
+    musicRate: 2.0,
+  },
+  "speed-shift:end": {
+    background: "linear-gradient(135deg, #1e3a5f ...)",
+    sfx: "speed-down",
+    musicRate: 1.0,
+  },
+};
+```
 
-  // Wait for intro sound to finish
-  setTimeout(() => {
-    // Speak role assignment
-    let speech = `You are the ${role}. ${description}`;
+The `useModeEvents` hook listens for `mode:event` socket events and applies the configured effects (SFX, music rate, dashboard background).
 
-    if (targetNumber) {
-      speech += ` Your target is Player number ${targetNumber}.`;
-    }
+---
 
-    audioManager.speak(speech);
-  }, 500);
-});
+## Audio Ducking
 
-// Dashboard
-socket.on("round:start", ({ roundNumber }) => {
-  // Wait 7 seconds for role reveals to finish
-  setTimeout(() => {
-    audioManager.speak("3");
-    setTimeout(() => audioManager.speak("2"), 1000);
-    setTimeout(() => audioManager.speak("1"), 2000);
-    setTimeout(() => audioManager.speak("GO!"), 3000);
-  }, 7000);
-});
+Ducking lowers music volume when TTS speaks, then restores it:
+
+- **Duck**: fade current music to `AUDIO_VOLUMES.MUSIC_DUCKED` (0.2) over 300ms
+- **Unduck**: fade back to `originalMusicVolume` over 500ms
+
+Ducking is triggered automatically by `audioManager.speak()` and reversed on speech end.
+
+---
+
+## Mobile Audio
+
+### iOS Restrictions
+
+1. **Autoplay blocked**: Audio context must be unlocked by a user gesture. The `AudioManager` registers `touchstart`/`click` listeners that play a silent sound to unlock the context.
+2. **Silent mode**: Hardware switch may mute all audio — no workaround.
+3. **Background audio**: Safari pauses audio when backgrounded — use Wake Lock + fullscreen.
+
+### Audio Context Unlock Flow
+
+```
+User taps screen
+  → unlockAudio() fires (once)
+  → Plays silent WAV via Howler
+  → useAudioStore.isAudioUnlocked = true
+  → DashboardView calls audioManager.initialize()
+  → All sounds preloaded
+  → useAudioStore.isPreloaded = true
 ```
 
 ---
 
-## 🔊 Audio File Organization
+## AudioManager API
 
-```
-public/sounds/
-├── music/
-│   ├── lobby-music.mp3           # Calm waiting music
-│   ├── tension-medium.mp3        # Standard gameplay
-│   ├── tension-high.mp3          # 3 or fewer players
-│   └── victory.mp3               # Round/game end
-│
-├── effects/
-│   ├── damage.mp3                # Taking damage (short thud)
-│   ├── death.mp3                 # Player elimination
-│   ├── low-health-heartbeat.mp3  # Looping heartbeat when <30% health
-│   └── wolf-howl.mp3             # Halloween event (optional)
-│
-└── voice/
-    └── role-reveal.mp3           # Role assignment intro sound
+```typescript
+// Singleton import
+import { audioManager } from "@/services/audio";
+
+// Initialization (called once in App.tsx)
+audioManager.initialize(): Promise<void>
+
+// Music
+audioManager.playMusic(track: string, options?: { loop?: boolean; volume?: number }): void
+audioManager.stopMusic(): void
+audioManager.fadeMusic(targetVolume: number, duration: number): void
+audioManager.setMusicRate(rate: number): void
+
+// Sound effects
+audioManager.playSfx(name: string, options?: { volume?: number; noRepeatFor?: number }): void
+audioManager.loop(name: string, options?: { volume?: number }): void
+audioManager.stop(name: string): void
+audioManager.isPlaying(name: string): boolean
+
+// Text-to-speech
+audioManager.speak(text: string): void
+audioManager.stopSpeaking(): void
+
+// Master controls
+audioManager.setMasterVolume(volume: number): void
+audioManager.mute(): void
+audioManager.unmute(): void
+audioManager.toggleMute(): void
+
+// Lifecycle
+audioManager.unlockAudio(): void
 ```
 
-**File Requirements**:
+### Volume Constants (`AUDIO_VOLUMES`)
+
+| Key           | Value | Usage                        |
+| ------------- | ----- | ---------------------------- |
+| MUSIC         | 0.4   | Default background music     |
+| MUSIC_DUCKED  | 0.2   | Music during TTS             |
+| SFX           | 0.5   | Default sound effects        |
+| DAMAGE        | 0.3   | Damage feedback              |
+| HEARTBEAT     | 0.4   | Low-health heartbeat loop    |
+| ROLE_REVEAL   | 0.7   | Role reveal intro sound      |
+| TTS           | 1.0   | Text-to-speech               |
+
+---
+
+## Adding New Sounds
+
+1. Drop `.mp3` file in `client/public/sounds/general/effects/` (or `music/` or `voice/`)
+2. Call `audioManager.playSfx("filename-without-extension")` — auto-discovered, no registration needed
+3. For mode-specific overrides, place file in `client/public/sounds/{mode}/effects/`
+
+## Adding Mode Event Effects
+
+1. Add the event entry to `MODE_EVENT_EFFECTS` in `client/src/utils/constants.ts`
+2. The `useModeEvents` hook will automatically apply SFX, music rate, and background changes
+
+---
+
+## File Requirements
 
 - Format: MP3 (best mobile compatibility)
-- Bit rate: 128 kbps (balance quality/size)
-- Music files: ~2-3 minutes each, loopable
-- SFX files: < 2 seconds each
-- Total size budget: < 15 MB for all audio
-
----
-
-## 🎼 Audio Preloading
-
-**Problem**: Audio lag on first play (especially on mobile)
-
-**Solution**: Preload all sounds during lobby phase
-
-```typescript
-// audioManager.ts
-class AudioManager {
-  private sounds: Map<string, Howl> = new Map();
-
-  async preload(soundFiles: string[]) {
-    const promises = soundFiles.map((file) => {
-      return new Promise((resolve, reject) => {
-        const sound = new Howl({
-          src: [`/sounds/${file}.mp3`],
-          preload: true,
-          onload: () => {
-            this.sounds.set(file, sound);
-            resolve(true);
-          },
-          onloaderror: reject,
-        });
-      });
-    });
-
-    await Promise.all(promises);
-  }
-
-  play(soundName: string, options?: { volume?: number }) {
-    const sound = this.sounds.get(soundName);
-    if (!sound) {
-      console.warn(`Sound '${soundName}' not preloaded`);
-      return;
-    }
-
-    sound.volume(options?.volume ?? 0.5);
-    sound.play();
-  }
-}
-
-// In App.tsx or JoinView
-useEffect(() => {
-  audioManager.preload([
-    "damage",
-    "death",
-    "low-health-heartbeat",
-    "role-reveal",
-    "lobby-music",
-    "tension-medium",
-    "tension-high",
-    "victory",
-  ]);
-}, []);
-```
-
----
-
-## 📱 Mobile Audio Gotchas
-
-### iOS Audio Restrictions
-
-1. **Autoplay Blocked**: Audio must be triggered by user gesture
-   - **Solution**: First sound plays on user tap (e.g., "Join Game" button)
-2. **Silent Mode**: Hardware switch may mute all audio
-
-   - **No solution**: Inform players to unmute
-
-3. **Background Audio**: Safari pauses audio when app backgrounded
-   - **Solution**: Use Wake Lock + fullscreen to prevent backgrounding
-
-### Android Audio Restrictions
-
-1. **Autoplay Blocked** (Chrome 66+): Similar to iOS
-
-   - **Solution**: Same as iOS
-
-2. **Audio Context Limit**: Max 6 simultaneous Web Audio sources
-   - **Solution**: Use Howler.js pooling to reuse sources
-
-### Cross-Browser Audio Init
-
-```typescript
-// Unlock audio on first user interaction
-let audioUnlocked = false;
-
-function unlockAudio() {
-  if (audioUnlocked) return;
-
-  // Play and immediately stop a silent sound to unlock audio context
-  const unlockSound = new Howl({
-    src: [
-      "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=",
-    ],
-    volume: 0,
-  });
-
-  unlockSound.play();
-  audioUnlocked = true;
-
-  console.log("Audio context unlocked");
-}
-
-// Attach to first user interaction
-document.addEventListener("touchstart", unlockAudio, { once: true });
-document.addEventListener("click", unlockAudio, { once: true });
-```
-
----
-
-## 🎛️ Audio Manager API
-
-```typescript
-interface AudioManagerAPI {
-  // Music management
-  playMusic(track: string, options: { loop: boolean; volume: number }): void;
-  stopMusic(): void;
-  fadeMusic(targetVolume: number, duration: number): void;
-
-  // Sound effects
-  play(soundName: string, options?: { volume?: number }): void;
-  loop(soundName: string, options?: { volume?: number }): void;
-  stop(soundName: string): void;
-  isPlaying(soundName: string): boolean;
-
-  // Text-to-speech
-  speak(text: string): void;
-  stopSpeaking(): void;
-  isSpeaking(): boolean;
-
-  // Audio ducking
-  duck(): void;
-  unduck(): void;
-
-  // Lifecycle
-  preload(soundFiles: string[]): Promise<void>;
-  setMasterVolume(volume: number): void;
-  mute(): void;
-  unmute(): void;
-}
-```
-
----
-
-## 🔇 Audio Settings (Future Enhancement)
-
-Allow players to adjust audio levels:
-
-```typescript
-interface AudioSettings {
-  masterVolume: number; // 0-1
-  musicVolume: number; // 0-1
-  sfxVolume: number; // 0-1
-  ttsVolume: number; // 0-1
-  ttsRate: number; // 0.5-2.0
-  muteTTS: boolean;
-  muteSFX: boolean;
-  muteMusic: boolean;
-}
-
-// Store in localStorage
-localStorage.setItem("audioSettings", JSON.stringify(settings));
-```
-
----
-
-Next: see `ui-specs.md` →
+- Bit rate: 128 kbps
+- Music files: ~2-3 minutes, loopable
+- SFX files: < 2 seconds
+- Music files use `html5: true` for streaming; SFX use Web Audio for low latency
