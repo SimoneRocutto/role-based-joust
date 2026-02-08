@@ -23,13 +23,14 @@ vi.mock('@/services/socket', () => ({
   },
 }))
 
-vi.mock('@/hooks/useAudio', () => ({
-  useAudio: () => ({
+vi.mock('@/services/audio', () => ({
+  audioManager: {
     playMusic: vi.fn(),
     playSfx: vi.fn(),
     setMusicRate: vi.fn(),
-    isAudioUnlocked: false,
-  }),
+    stopMusic: vi.fn(),
+    initialize: vi.fn(),
+  },
 }))
 
 vi.mock('@/components/dashboard/GameState', () => ({

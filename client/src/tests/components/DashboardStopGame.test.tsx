@@ -31,12 +31,13 @@ vi.mock('@/hooks/useModeEvents', () => ({
   useModeEvents: () => ({ background: '#111827' }),
 }))
 
-vi.mock('@/hooks/useAudio', () => ({
-  useAudio: () => ({
+vi.mock('@/services/audio', () => ({
+  audioManager: {
     playMusic: vi.fn(),
-    play: vi.fn(),
-    isAudioUnlocked: false,
-  }),
+    playSfx: vi.fn(),
+    stopMusic: vi.fn(),
+    initialize: vi.fn(),
+  },
 }))
 
 vi.mock('@/components/dashboard/GameState', () => ({

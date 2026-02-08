@@ -7,8 +7,10 @@ import { MODE_EVENT_EFFECTS, DASHBOARD_MODE_BACKGROUNDS } from '@/utils/constant
 // Capture the callback registered with onModeEvent
 let modeEventCallback: ((data: { eventType: string }) => void) | null = null
 
-const mockPlaySfx = vi.fn()
-const mockSetMusicRate = vi.fn()
+const { mockPlaySfx, mockSetMusicRate } = vi.hoisted(() => ({
+  mockPlaySfx: vi.fn(),
+  mockSetMusicRate: vi.fn(),
+}))
 
 vi.mock('@/services/socket', () => ({
   socketService: {
@@ -19,13 +21,14 @@ vi.mock('@/services/socket', () => ({
   },
 }))
 
-vi.mock('@/hooks/useAudio', () => ({
-  useAudio: () => ({
+vi.mock('@/services/audio', () => ({
+  audioManager: {
     playSfx: mockPlaySfx,
     setMusicRate: mockSetMusicRate,
     playMusic: vi.fn(),
-    isAudioUnlocked: false,
-  }),
+    stopMusic: vi.fn(),
+    initialize: vi.fn(),
+  },
 }))
 
 import { socketService } from '@/services/socket'
