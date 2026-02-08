@@ -537,37 +537,6 @@ describe("useSocket", () => {
       expect(useGameStore.getState().players[0].isReady).toBe(false);
     });
 
-    it("plays countdown beep for seconds 1-3", () => {
-      renderHook(() => useSocket());
-
-      act(() => {
-        triggerSocketEvent("game:countdown", {
-          secondsRemaining: 3,
-          phase: "countdown",
-        });
-      });
-
-      expect(audioPlaySfxCalls).toContainEqual({
-        sound: "countdown-beep",
-        options: { volume: 0.5 },
-      });
-    });
-
-    it("plays go sound on go phase", () => {
-      renderHook(() => useSocket());
-
-      act(() => {
-        triggerSocketEvent("game:countdown", {
-          secondsRemaining: 0,
-          phase: "go",
-        });
-      });
-
-      expect(audioPlaySfxCalls).toContainEqual({
-        sound: "countdown-go",
-        options: { volume: 0.7 },
-      });
-    });
   });
 
   describe("lobby:update event", () => {

@@ -306,7 +306,7 @@ export class GameEngine {
           this.countdownTimer = null;
         }
 
-        this.startRound();
+        setTimeout(() => this.startRound(), 1000);
       }
     }, 1000); // Tick every second
   }

@@ -232,10 +232,6 @@ export function useSocket() {
           updatePlayers(resetPlayers);
         }
 
-        // Play countdown sounds
-        if (phase === "countdown" && secondsRemaining == 3) {
-          audioManager.playSfx("countdown", { volume: 0.5 });
-        }
       }
     );
 

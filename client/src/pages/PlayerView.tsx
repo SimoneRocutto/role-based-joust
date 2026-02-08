@@ -519,9 +519,6 @@ function PlayerView() {
           <div className="h-[25%] bg-gray-900 p-4 flex flex-col justify-between">
             <StatusEffects effects={myPlayer.statusEffects} />
             {myTarget && <TargetDisplay target={myTarget} />}
-            <div className="text-right text-gray-400 text-lg">
-              Pts: {myPlayer.points}
-            </div>
           </div>
 
           {/* Damage flash overlay */}

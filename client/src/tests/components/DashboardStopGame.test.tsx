@@ -23,6 +23,7 @@ vi.mock('@/services/socket', () => ({
   socketService: {
     onPlayerReady: vi.fn(),
     onReadyCountUpdate: vi.fn(),
+    onCountdown: vi.fn(),
     off: vi.fn(),
   },
 }))

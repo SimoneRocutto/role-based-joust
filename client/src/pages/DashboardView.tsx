@@ -133,10 +133,8 @@ function DashboardView() {
     socketService.onPlayerReady((data) => {
       setPlayerReady(data.playerId, data.isReady);
 
-      // Play ready sound (only when becoming ready, not when dashboard first loads)
-      if (data.isReady && lastReadyPlayerRef.current !== data.playerId) {
+      if (data.isReady) {
         lastReadyPlayerRef.current = data.playerId;
-        audioManager.playSfx("ready", { volume: 0.5 });
       }
     });
 
@@ -149,6 +147,19 @@ function DashboardView() {
       socketService.off("ready:update");
     };
   }, [setPlayerReady, setReadyCount]);
+
+  // Play countdown sound on dashboard
+  useEffect(() => {
+    socketService.onCountdown(({ secondsRemaining, phase }) => {
+      if (phase === "countdown" && secondsRemaining == 3) {
+        audioManager.playSfx("countdown", { volume: 0.5 });
+      }
+    });
+
+    return () => {
+      socketService.off("game:countdown");
+    };
+  }, []);
 
   // Background music management
   useEffect(() => {
