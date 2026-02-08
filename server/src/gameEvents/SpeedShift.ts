@@ -33,6 +33,11 @@ export class SpeedShift extends GameEvent {
   private lastCheckTime: number = 0;
   private readonly CHECK_INTERVAL = 5000; // 5 seconds
 
+  // Transition delay: when going fast → slow, keep high threshold for 1s
+  // so players have time to react to the speed-down sound
+  private pendingThresholdRestore: number | null = null;
+  private readonly TRANSITION_DELAY = 1000; // 1 second
+
   // Config
   private readonly SLOW_STAY_BASE = 3 / 4; // 75% chance to stay slow each check
   private readonly FAST_STAY_BASE = 2 / 3; // 67% chance to stay fast each check
@@ -43,6 +48,7 @@ export class SpeedShift extends GameEvent {
     this.phase = "slow";
     this.consecutiveChecks = 0;
     this.lastCheckTime = 0;
+    this.pendingThresholdRestore = null;
   }
 
   // Activate on first tick — stays active for the whole round
@@ -63,19 +69,34 @@ export class SpeedShift extends GameEvent {
   }
 
   onEnd(engine: GameEngine, gameTime: number): void {
-    // Restore threshold when round ends
-    if (this.phase === "fast") {
+    // Restore threshold when round ends (handles both fast phase and pending restore)
+    if (this.phase === "fast" || this.pendingThresholdRestore !== null) {
       applyTemporaryMovementConfig({ dangerThreshold: this.savedThreshold });
-      gameEvents.emitModeEvent({
-        modeName: engine.currentMode?.name || "Classic",
-        eventType: "speed-shift:end",
-        data: { phase: "slow", dangerThreshold: this.savedThreshold },
-      });
+      this.pendingThresholdRestore = null;
+      if (this.phase === "fast") {
+        gameEvents.emitModeEvent({
+          modeName: engine.currentMode?.name || "Classic",
+          eventType: "speed-shift:end",
+          data: { phase: "slow", dangerThreshold: this.savedThreshold },
+        });
+      }
     }
     logger.info("SPEED_SHIFT", "Speed shift event ended");
   }
 
   onTick(engine: GameEngine, gameTime: number, deltaTime: number): void {
+    // Apply pending threshold restore after transition delay
+    if (
+      this.pendingThresholdRestore !== null &&
+      gameTime >= this.pendingThresholdRestore
+    ) {
+      applyTemporaryMovementConfig({ dangerThreshold: this.savedThreshold });
+      logger.info("SPEED_SHIFT", "Threshold restored after transition delay", {
+        threshold: this.savedThreshold,
+      });
+      this.pendingThresholdRestore = null;
+    }
+
     // Check every CHECK_INTERVAL ms
     if (gameTime - this.lastCheckTime < this.CHECK_INTERVAL) return;
     this.lastCheckTime = gameTime;
@@ -111,14 +132,18 @@ export class SpeedShift extends GameEvent {
       });
     } else {
       this.phase = "slow";
-      applyTemporaryMovementConfig({ dangerThreshold: this.savedThreshold });
+      // Emit the event immediately (triggers SFX + music rate change on client)
+      // but delay the actual threshold restore by TRANSITION_DELAY so players
+      // have time to react when they hear the speed-down sound
+      this.pendingThresholdRestore = gameTime + this.TRANSITION_DELAY;
       gameEvents.emitModeEvent({
         modeName,
         eventType: "speed-shift:end",
         data: { phase: "slow", dangerThreshold: this.savedThreshold },
       });
-      logger.info("SPEED_SHIFT", "Shifted to SLOW phase", {
+      logger.info("SPEED_SHIFT", "Shifted to SLOW phase (threshold restores in 1s)", {
         threshold: this.savedThreshold,
+        restoresAt: this.pendingThresholdRestore,
       });
     }
   }

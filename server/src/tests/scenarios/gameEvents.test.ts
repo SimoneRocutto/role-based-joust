@@ -396,6 +396,130 @@ runner.test(
   }
 );
 
+runner.test(
+  "SpeedShift delays threshold restore by 1s when transitioning fast→slow",
+  (engine) => {
+    resetMovementConfig();
+    const originalThreshold = gameConfig.movement.dangerThreshold;
+
+    const gameEvents = GameEvents.getInstance();
+    const modeEvents: any[] = [];
+    const listener = (payload: any) => {
+      modeEvents.push(payload);
+    };
+    gameEvents.on("mode:event", listener);
+
+    const event = new SpeedShift();
+    event.onRoundStart(engine, 0);
+    event.isActive = true;
+    event.startTime = 0;
+    event.onStart(engine, 0);
+
+    const origRandom = Math.random;
+
+    // Force transition to fast at 5s
+    Math.random = () => 0.99;
+    event.onTick(engine, 5000, 100);
+    Math.random = origRandom;
+
+    assertEqual(event.getPhase(), "fast", "Should be in fast phase");
+    const fastThreshold =
+      originalThreshold * SpeedShift.FAST_THRESHOLD_MULTIPLIER;
+    assertEqual(
+      gameConfig.movement.dangerThreshold,
+      fastThreshold,
+      "Threshold should be elevated in fast phase"
+    );
+
+    // Force transition back to slow at 10s
+    Math.random = () => 0.99;
+    event.onTick(engine, 10000, 100);
+    Math.random = origRandom;
+
+    assertEqual(event.getPhase(), "slow", "Should be in slow phase");
+    // The speed-shift:end event should have been emitted immediately
+    const endEvent = modeEvents.find(
+      (e) => e.eventType === "speed-shift:end"
+    );
+    assert(endEvent !== undefined, "speed-shift:end event should be emitted");
+
+    // But the threshold should STILL be elevated (transition delay)
+    assertEqual(
+      gameConfig.movement.dangerThreshold,
+      fastThreshold,
+      "Threshold should still be elevated during 1s transition delay"
+    );
+
+    // Tick at 10.5s (500ms later) — still within delay
+    event.onTick(engine, 10500, 100);
+    assertEqual(
+      gameConfig.movement.dangerThreshold,
+      fastThreshold,
+      "Threshold should still be elevated at 500ms into delay"
+    );
+
+    // Tick at 11s (1000ms later) — delay expired, threshold should restore
+    event.onTick(engine, 11000, 100);
+    assertEqual(
+      gameConfig.movement.dangerThreshold,
+      originalThreshold,
+      "Threshold should be restored after 1s delay"
+    );
+
+    gameEvents.removeListener("mode:event", listener);
+    resetMovementConfig();
+  }
+);
+
+runner.test(
+  "SpeedShift restores threshold on cleanup even during pending transition",
+  (engine) => {
+    resetMovementConfig();
+    const originalThreshold = gameConfig.movement.dangerThreshold;
+
+    const event = new SpeedShift();
+    event.onRoundStart(engine, 0);
+    event.isActive = true;
+    event.startTime = 0;
+    event.onStart(engine, 0);
+
+    const origRandom = Math.random;
+
+    // Force to fast at 5s
+    Math.random = () => 0.99;
+    event.onTick(engine, 5000, 100);
+    Math.random = origRandom;
+    assertEqual(event.getPhase(), "fast", "Should be in fast phase");
+
+    // Force back to slow at 10s (starts 1s delay)
+    Math.random = () => 0.99;
+    event.onTick(engine, 10000, 100);
+    Math.random = origRandom;
+    assertEqual(event.getPhase(), "slow", "Should be in slow phase");
+
+    // Threshold still elevated (pending restore)
+    const fastThreshold =
+      originalThreshold * SpeedShift.FAST_THRESHOLD_MULTIPLIER;
+    assertEqual(
+      gameConfig.movement.dangerThreshold,
+      fastThreshold,
+      "Threshold should still be elevated during pending restore"
+    );
+
+    // Cleanup (round ends) before the 1s delay expires
+    event.onEnd(engine, 10500);
+
+    // Threshold should be restored immediately
+    assertEqual(
+      gameConfig.movement.dangerThreshold,
+      originalThreshold,
+      "Threshold should be restored on cleanup even during pending delay"
+    );
+
+    resetMovementConfig();
+  }
+);
+
 // ============================================================================
 // CLASSIC MODE INTEGRATION TESTS
 // ============================================================================
