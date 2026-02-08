@@ -16,6 +16,13 @@ const certsExist =
 
 const protocol = certsExist ? 'https' : 'http';
 
+// Allow self-signed certs for Node fetch() calls in test helpers (e.g. launchGameFast)
+// This ensures tests work regardless of whether they're run via `npm run test:e2e`
+// (which sets this env var) or directly via `npx playwright test`.
+if (certsExist) {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
+
 /**
  * Playwright Configuration for Extended Joust E2E Tests
  *

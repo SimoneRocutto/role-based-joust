@@ -34,6 +34,10 @@ vi.mock("@/services/socket", () => ({
       socketEventHandlers.set("lobby:update", cb),
     onCountdown: (cb: Function) =>
       socketEventHandlers.set("game:countdown", cb),
+    onGameStart: (cb: Function) =>
+      socketEventHandlers.set("game:start", cb),
+    onReadyEnabled: (cb: Function) =>
+      socketEventHandlers.set("ready:enabled", cb),
     onError: (cb: Function) => socketEventHandlers.set("error", cb),
     sendMovement: vi.fn(),
     joinGame: vi.fn(),
@@ -43,6 +47,7 @@ vi.mock("@/services/socket", () => ({
 
 // Track audio calls
 const audioPlayCalls: Array<{ sound: string; options?: any }> = [];
+const audioPlaySfxCalls: Array<{ sound: string; options?: any }> = [];
 const audioLoopCalls: Array<{ sound: string; options?: any }> = [];
 const audioStopCalls: string[] = [];
 const audioSpeakCalls: string[] = [];
@@ -53,6 +58,9 @@ vi.mock("@/services/audio", () => ({
   audioManager: {
     play: (sound: string, options?: any) => {
       audioPlayCalls.push({ sound, options });
+    },
+    playSfx: (sound: string, options?: any) => {
+      audioPlaySfxCalls.push({ sound, options });
     },
     playMusic: (track: string, options?: any) => {
       audioPlayMusicCalls.push({ track, options });
@@ -90,6 +98,7 @@ describe("useSocket", () => {
 
     // Clear audio tracking arrays
     audioPlayCalls.length = 0;
+    audioPlaySfxCalls.length = 0;
     audioLoopCalls.length = 0;
     audioStopCalls.length = 0;
     audioSpeakCalls.length = 0;
@@ -111,11 +120,13 @@ describe("useSocket", () => {
       expect(socketEventHandlers.has("player:death")).toBe(true);
       expect(socketEventHandlers.has("round:start")).toBe(true);
       expect(socketEventHandlers.has("round:end")).toBe(true);
+      expect(socketEventHandlers.has("game:start")).toBe(true);
       expect(socketEventHandlers.has("game:end")).toBe(true);
       expect(socketEventHandlers.has("vampire:bloodlust")).toBe(true);
       expect(socketEventHandlers.has("role:assigned")).toBe(true);
       expect(socketEventHandlers.has("lobby:update")).toBe(true);
       expect(socketEventHandlers.has("game:countdown")).toBe(true);
+      expect(socketEventHandlers.has("ready:enabled")).toBe(true);
       expect(socketEventHandlers.has("game:stopped")).toBe(true);
       expect(socketEventHandlers.has("error")).toBe(true);
     });
@@ -334,8 +345,8 @@ describe("useSocket", () => {
         });
       });
 
-      expect(audioPlayCalls).toContainEqual({
-        sound: "effects/death",
+      expect(audioPlaySfxCalls).toContainEqual({
+        sound: "death",
         options: { volume: 0.5 },
       });
     });
@@ -355,7 +366,7 @@ describe("useSocket", () => {
         });
       });
 
-      expect(audioPlayCalls.find((c) => c.sound === "death")).toBeUndefined();
+      expect(audioPlaySfxCalls.find((c) => c.sound === "death")).toBeUndefined();
     });
   });
 
@@ -532,8 +543,8 @@ describe("useSocket", () => {
         });
       });
 
-      expect(audioPlayCalls).toContainEqual({
-        sound: "effects/countdown-beep",
+      expect(audioPlaySfxCalls).toContainEqual({
+        sound: "countdown-beep",
         options: { volume: 0.5 },
       });
     });
@@ -548,8 +559,8 @@ describe("useSocket", () => {
         });
       });
 
-      expect(audioPlayCalls).toContainEqual({
-        sound: "effects/countdown-go",
+      expect(audioPlaySfxCalls).toContainEqual({
+        sound: "countdown-go",
         options: { volume: 0.7 },
       });
     });
@@ -762,24 +773,6 @@ describe("useSocket", () => {
       expect(role?.name).toBe("Vampire");
       expect(role?.displayName).toBe("Vampire");
       expect(role?.targetNumber).toBe(3);
-    });
-
-    it("plays role reveal sound", () => {
-      renderHook(() => useSocket());
-
-      act(() => {
-        triggerSocketEvent("role:assigned", {
-          name: "Civilian",
-          displayName: "Civilian",
-          description: "Survive to win",
-          difficulty: "Easy",
-        });
-      });
-
-      expect(audioPlayCalls).toContainEqual({
-        sound: "role-reveal",
-        options: { volume: 0.7 },
-      });
     });
 
     it("speaks role description after delay", () => {

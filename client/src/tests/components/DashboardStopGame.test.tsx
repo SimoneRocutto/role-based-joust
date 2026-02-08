@@ -27,6 +27,10 @@ vi.mock('@/services/socket', () => ({
   },
 }))
 
+vi.mock('@/hooks/useModeEvents', () => ({
+  useModeEvents: () => ({ background: '#111827' }),
+}))
+
 vi.mock('@/hooks/useAudio', () => ({
   useAudio: () => ({
     playMusic: vi.fn(),
