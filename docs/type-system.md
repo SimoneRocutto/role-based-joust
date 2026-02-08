@@ -79,6 +79,113 @@ interface MovementConfig {
 - Null safety with strict null checks
 - Interface contracts enforced
 
+### 1b. Player Abilities and the Tap System
+
+Players can have active abilities triggered by tapping their phone screen. The system is built on a charge-based model in `BasePlayer`.
+
+**Charge Properties (BasePlayer):**
+
+```typescript
+maxCharges: number = 0;           // 0 = no ability (default for BasePlayer)
+currentCharges: number = 0;       // Decremented on use, regenerated via cooldown
+cooldownDuration: number = 0;     // ms to regain 1 charge (0 = no regen)
+cooldownSpeedMultiplier: number = 1.0; // Status effects can speed up/slow down cooldown
+```
+
+Charges are initialized at round start via `initializeCharges()` (sets `currentCharges = maxCharges`).
+
+**Tap Flow (End to End):**
+
+```
+Player taps phone screen
+  → Client debounces (300ms min between taps)
+  → Client emits socket "player:tap" { playerId }
+  → Server validates: game active? player exists? player alive?
+  → Server calls player.useAbility(gameTime)
+    → Checks maxCharges > 0 (has ability?)
+    → Checks currentCharges > 0 (has charges?)
+    → Consumes 1 charge, starts cooldown if applicable
+    → Calls role's onAbilityUse(gameTime) override
+    → If role returns false, refunds the charge
+  → Server emits "player:tap:result" back to that player
+  → Client plays SFX: "power-activation" (success) or "no-charges" (failure)
+  → Client updates charge display
+```
+
+**Response payload:**
+
+```typescript
+{
+  success: boolean;
+  reason?: "game_not_active" | "player_not_found" | "player_dead"
+         | "no_ability" | "no_charges" | "ability_failed";
+  charges: { current: number; max: number; cooldownRemaining: number } | null;
+}
+```
+
+**Cooldown Regeneration:**
+
+Each game tick (100ms), `processCooldown()` reduces `cooldownRemaining` by `100ms * cooldownSpeedMultiplier`. When it reaches 0, one charge is regenerated. If still below `maxCharges`, a new cooldown cycle starts.
+
+**Role Ability Hook:**
+
+```typescript
+// BasePlayer (default: no ability)
+onAbilityUse(gameTime: number): boolean {
+  return false;
+}
+
+// Roles override this to implement their ability
+// Return true = ability succeeded, false = refund the charge
+```
+
+**Role Lifecycle Hooks (Full List):**
+
+| Hook | When | Example Usage |
+|------|------|---------------|
+| `onInit(gameTime)` | Round starts | Initialize role-specific state |
+| `onTick(gameTime, deltaTime)` | Every 100ms tick | Passive timers, periodic checks |
+| `beforeDeath(gameTime)` | Before player dies | Angel can prevent death |
+| `die(gameTime)` | Player dies | Cleanup, emit death events |
+| `onDeath(gameTime)` | After death confirmed | Award points to killers |
+| `onAbilityUse(gameTime)` | Player taps screen | Active ability (Ironclad iron skin) |
+
+**Currently Implemented Roles:**
+
+| Role | Ability Type | Charges | Cooldown | Description |
+|------|-------------|---------|----------|-------------|
+| Ironclad | Active (tap) | 1 | None | Activates Toughened effect (2x damage resistance) for 5s |
+| Angel | Passive | - | - | Prevents first death (via `beforeDeath` hook) |
+| Vampire | Passive | - | - | Bloodlust mechanic (periodic event, not tap-triggered) |
+| Beast | Passive | - | - | 1.5x toughness multiplier (always active) |
+| BeastHunter | Passive | - | - | Bonus points for killing the Beast |
+
+**Adding a New Active Ability:**
+
+1. In your role constructor, set `this.maxCharges` and optionally `this.cooldownDuration`
+2. Override `onAbilityUse(gameTime)` — return `true` if ability succeeded
+3. The charge system, socket handling, and client SFX work automatically
+
+```typescript
+// Example: A role with 2 charges and 10s cooldown
+class MyRole extends BasePlayer {
+  constructor(data: PlayerData) {
+    super(data);
+    this.maxCharges = 2;
+    this.cooldownDuration = 10000; // 10s per charge regen
+  }
+
+  override onAbilityUse(gameTime: number): boolean {
+    // Do something...
+    return true; // Ability succeeded
+  }
+}
+```
+
+**Role Configuration:**
+
+Role-specific parameters are defined in `server/src/config/roleConfig.ts` (e.g., Ironclad's charge count, cooldown, toughness value, ability duration). Roles read from `roleConfigs` in their constructor.
+
 ### 2. StatusEffect - Modular Buffs/Debuffs
 
 StatusEffect is an abstract class with TypeScript generics support:
