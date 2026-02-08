@@ -1,28 +1,23 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { useEffect } from 'react'
-import { useSocket } from '@/hooks/useSocket'
-import { useReconnect } from '@/hooks/useReconnect'
-import { useAudio } from '@/hooks/useAudio'
-import JoinView from '@/pages/JoinView'
-import PlayerView from '@/pages/PlayerView'
-import DashboardView from '@/pages/DashboardView'
-import ErrorBoundary from '@/components/shared/ErrorBoundary'
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useSocket } from "@/hooks/useSocket";
+import { useReconnect } from "@/hooks/useReconnect";
+import JoinView from "@/pages/JoinView";
+import PlayerView from "@/pages/PlayerView";
+import DashboardView from "@/pages/DashboardView";
+import ErrorBoundary from "@/components/shared/ErrorBoundary";
+import { audioManager } from "./services/audio";
 
 function App() {
   // Initialize socket connection
-  useSocket()
-  
+  useSocket();
+
   // Initialize reconnection logic
-  useReconnect()
-  
-  // Preload audio
-  const { isPreloaded } = useAudio()
+  useReconnect();
 
   useEffect(() => {
-    if (isPreloaded) {
-      console.log('✅ All audio preloaded')
-    }
-  }, [isPreloaded])
+    audioManager.initialize();
+  });
 
   return (
     <ErrorBoundary>
@@ -34,7 +29,7 @@ function App() {
         <Route path="*" element={<Navigate to="/join" replace />} />
       </Routes>
     </ErrorBoundary>
-  )
+  );
 }
 
-export default App
+export default App;

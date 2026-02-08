@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { useGameState } from "@/hooks/useGameState";
-import { useAudio } from "@/hooks/useAudio";
 import { useModeEvents } from "@/hooks/useModeEvents";
 import { useGameStore } from "@/store/gameStore";
 import { apiService } from "@/services/api";
@@ -11,6 +10,8 @@ import EventFeed from "@/components/dashboard/EventFeed";
 import AdminControls from "@/components/dashboard/AdminControls";
 import Scoreboard from "@/components/dashboard/Scoreboard";
 import CountdownDisplay from "@/components/dashboard/CountdownDisplay";
+import { useAudioStore } from "@/store/audioStore";
+import { audioManager } from "@/services/audio";
 
 function DashboardView() {
   const {
@@ -30,7 +31,7 @@ function DashboardView() {
     setPlayerReady,
     setReadyCount,
   } = useGameStore();
-  const { playMusic, playSfx, isAudioUnlocked } = useAudio();
+  const isAudioUnlocked = useAudioStore((state) => state.isAudioUnlocked);
   const { background } = useModeEvents();
   const lastReadyPlayerRef = useRef<string | null>(null);
   const [isStopping, setIsStopping] = useState(false);
@@ -135,7 +136,7 @@ function DashboardView() {
       // Play ready sound (only when becoming ready, not when dashboard first loads)
       if (data.isReady && lastReadyPlayerRef.current !== data.playerId) {
         lastReadyPlayerRef.current = data.playerId;
-        playSfx("ready", { volume: 0.5 });
+        audioManager.playSfx("ready", { volume: 0.5 });
       }
     });
 
@@ -147,7 +148,7 @@ function DashboardView() {
       socketService.off("player:ready");
       socketService.off("ready:update");
     };
-  }, [setPlayerReady, setReadyCount, playSfx]);
+  }, [setPlayerReady, setReadyCount]);
 
   // Background music management
   useEffect(() => {
@@ -155,24 +156,24 @@ function DashboardView() {
     if (!isAudioUnlocked) return;
 
     if (isWaiting) {
-      playMusic("lobby-music", { loop: true, volume: 0.4 });
+      audioManager.playMusic("lobby-music", { loop: true, volume: 0.4 });
     } else if (isCountdown) {
       // Play tension buildup music during countdown
-      playMusic("tension-medium", { loop: true, volume: 0.4 });
+      audioManager.playMusic("tension-medium", { loop: true, volume: 0.4 });
     } else if (isActive) {
       // Todo use a different music when only 3 players remain
       if (aliveCount <= 3) {
-        playMusic("tension-medium", { loop: true, volume: 0.5 });
+        audioManager.playMusic("tension-medium", { loop: true, volume: 0.5 });
       } else {
-        playMusic("tension-medium", { loop: true, volume: 0.4 });
+        audioManager.playMusic("tension-medium", { loop: true, volume: 0.4 });
       }
     } else if (isRoundEnded) {
       // Loop victory music between rounds so it doesn't stop
       // Todo add round victory music
-      playMusic("tension-medium", { loop: true, volume: 0.5 });
+      audioManager.playMusic("tension-medium", { loop: true, volume: 0.5 });
     } else if (isFinished) {
       // Don't loop at game end - it's a final fanfare
-      playMusic("victory", { loop: false, volume: 0.6 });
+      audioManager.playMusic("victory", { loop: false, volume: 0.6 });
     }
   }, [
     isWaiting,

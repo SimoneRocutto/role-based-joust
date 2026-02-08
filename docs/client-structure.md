@@ -43,7 +43,6 @@ client/
 │   │   ├── useAccelerometer.ts        # Motion sensor access + throttling
 │   │   ├── useWakeLock.ts             # Keep screen awake
 │   │   ├── useFullscreen.ts           # Fullscreen mode toggle
-│   │   ├── useAudio.ts                # Sound effects player
 │   │   ├── useReconnect.ts            # Auto-reconnection with token
 │   │   └── useGameState.ts            # Zustand store wrapper
 │   │
@@ -54,6 +53,7 @@ client/
 │   │   └── accelerometer.ts           # Motion sensor handler + normalization
 │   │
 │   ├── store/
+│   │   ├── audioStore.ts              # Zustand global audio state
 │   │   └── gameStore.ts               # Zustand global state
 │   │
 │   ├── types/

@@ -5,7 +5,6 @@ import { useGameStore } from "@/store/gameStore";
 import { useAccelerometer } from "@/hooks/useAccelerometer";
 import { useWakeLock } from "@/hooks/useWakeLock";
 import { useFullscreen } from "@/hooks/useFullscreen";
-import { useAudio } from "@/hooks/useAudio";
 import { useShakeDetection } from "@/hooks/useShakeDetection";
 import { socketService } from "@/services/socket";
 import { requestMotionPermission } from "@/utils/permissions";
@@ -17,6 +16,7 @@ import ConnectionStatus from "@/components/player/ConnectionStatus";
 import PortraitLock from "@/components/player/PortraitLock";
 import DamageFlash from "@/components/player/DamageFlash";
 import type { ChargeInfo } from "@/types/socket.types";
+import { audioManager } from "@/services/audio";
 
 // In development mode, allow button click instead of shake
 // Use ?mode=production URL param to test production behavior in dev
@@ -53,7 +53,6 @@ function PlayerView() {
   const { countdownSeconds, countdownPhase, myIsReady, setMyReady } =
     useGameStore();
 
-  const { playSfx } = useAudio();
   const { start: startAccelerometer, lastData } = useAccelerometer();
   const { enable: enableWakeLock } = useWakeLock(true);
   const { enter: enterFullscreen } = useFullscreen();
@@ -75,8 +74,8 @@ function PlayerView() {
     socketService.sendReady(myPlayerId);
 
     // Play a feedback sound (optional)
-    playSfx("ready", { volume: 0.5 });
-  }, [myPlayerId, myIsReady, setMyReady, playSfx]);
+    audioManager.playSfx("ready", { volume: 0.5 });
+  }, [myPlayerId, myIsReady, setMyReady]);
 
   // Handle tap for ability use during active game
   const handleTap = useCallback(() => {
@@ -188,7 +187,7 @@ function PlayerView() {
 
     // Check if player took damage (simplified - in real app track previous damage)
     if (myPlayer.accumulatedDamage > 0) {
-      playSfx("damage", { volume: 0.3, noRepeatFor: 1000 });
+      audioManager.playSfx("damage", { volume: 0.3, noRepeatFor: 1000 });
     }
   }, [myPlayer?.accumulatedDamage]);
 
@@ -213,9 +212,9 @@ function PlayerView() {
 
       // Play appropriate sound
       if (data.success) {
-        playSfx("power-activation", { volume: 0.6 });
+        audioManager.playSfx("power-activation", { volume: 0.6 });
       } else if (data.reason === "no_charges") {
-        playSfx("no-charges", { volume: 0.4 });
+        audioManager.playSfx("no-charges", { volume: 0.4 });
       }
     };
 
@@ -224,7 +223,7 @@ function PlayerView() {
     return () => {
       socketService.off("player:tap:result", handleTapResult);
     };
-  }, [playSfx]);
+  }, []);
 
   if (!myPlayerNumber || !myPlayerId) {
     return (

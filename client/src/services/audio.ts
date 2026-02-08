@@ -1,6 +1,7 @@
 import { Howl, Howler } from "howler";
 import { AUDIO_VOLUMES, PATHS } from "@/utils/constants";
 import { useGameStore } from "@/store/gameStore";
+import { useAudioStore } from "@/store/audioStore";
 
 class AudioManager {
   private sounds: Map<string, Howl> = new Map();
@@ -8,12 +9,29 @@ class AudioManager {
   private currentMusic: Howl | null = null;
   private currentTrack: string | null = null;
   private originalMusicVolume: number = AUDIO_VOLUMES.MUSIC;
-  private isMuted = false;
-  private isSpeaking = false;
-  private _isUnlocked = false;
-  private unlockCallbacks: Array<() => void> = [];
+  private _isInitialized = false;
   private pendingMusicTimeout: ReturnType<typeof setTimeout> | null = null;
   private pendingMusicTrack: string | null = null;
+
+  // Initialize once
+  async initialize(): Promise<void> {
+    if (this._isInitialized) return;
+    this._isInitialized = true;
+
+    const soundModules: Record<string, { default: string }> = import.meta.glob(
+      "/public/sounds/**/*.mp3",
+      {
+        eager: true,
+        query: "?url",
+      }
+    );
+
+    const soundPaths = Object.values(soundModules).map((item) => item?.default);
+
+    await this.preload(soundPaths);
+    useAudioStore.getState().setPreloaded(true);
+    console.log("AudioManager initialized");
+  }
 
   async preload(soundPaths: string[]): Promise<void> {
     const promises = soundPaths.map(
@@ -44,7 +62,6 @@ class AudioManager {
   }
 
   // Music management
-  // Uses debouncing to prevent multiple tracks playing when rapid state changes occur
   playMusic(track: string, options: { loop?: boolean; volume?: number } = {}) {
     // If same track is already playing or pending, skip
     if (track === this.currentTrack && !this.pendingMusicTimeout) return;
@@ -62,12 +79,11 @@ class AudioManager {
     this.pendingMusicTrack = track;
 
     // Debounce: wait a short time before actually changing music
-    // This allows rapid state changes to settle on the final track
     this.pendingMusicTimeout = setTimeout(() => {
       this.pendingMusicTimeout = null;
       this.pendingMusicTrack = null;
 
-      // Double-check we still need to change (might have been superseded)
+      // Double-check we still need to change
       if (track === this.currentTrack) return;
 
       // Stop current music immediately
@@ -76,16 +92,15 @@ class AudioManager {
       }
 
       const fullPath = this.getSoundPath(`music/${track}`);
-      // Get or create sound
       let sound = this.sounds.get(fullPath);
 
       if (!sound) {
         sound = this.getHowl(fullPath, options);
         this.sounds.set(track, sound);
       } else {
-        // Ensure correct settings for existing sound
         sound.loop(loop);
-        sound.volume(this.isMuted ? 0 : volume);
+        const isMuted = useAudioStore.getState().isMuted;
+        sound.volume(isMuted ? 0 : volume);
       }
 
       this.originalMusicVolume = volume;
@@ -94,15 +109,12 @@ class AudioManager {
 
       this.setMusicRate(1.0);
       sound.play();
-    }, 50); // 50ms debounce - enough to catch rapid state changes
+
+      // Update store
+      useAudioStore.getState().setPlayingMusic(true);
+    }, 50);
   }
 
-  /**
-   * Gets howl sound based on trackPath. Uses mode-specific sounds, otherwise falls back to general directory.
-   * @param trackPath Something like "music/lobby"
-   * @param options
-   * @returns
-   */
   private getHowl(
     fullPath: string,
     options: { loop?: boolean; volume?: number } = {}
@@ -131,12 +143,14 @@ class AudioManager {
       this.currentMusic.once("fade", () => {
         this.currentMusic?.stop();
         this.currentMusic = null;
+        useAudioStore.getState().setPlayingMusic(false);
       });
     }
   }
 
   fadeMusic(targetVolume: number, duration: number) {
-    if (this.currentMusic && !this.isMuted) {
+    const isMuted = useAudioStore.getState().isMuted;
+    if (this.currentMusic && !isMuted) {
       this.currentMusic.fade(
         this.currentMusic.volume(),
         targetVolume,
@@ -166,10 +180,10 @@ class AudioManager {
 
     if (this.bannedSoundList.has(soundName)) return;
 
-    sound.volume(this.isMuted ? 0 : volume);
+    const isMuted = useAudioStore.getState().isMuted;
+    sound.volume(isMuted ? 0 : volume);
     sound.play();
 
-    // Prevent the same sound for `noRepeatFor` ms
     if (options.noRepeatFor) {
       this.bannedSoundList.add(soundName);
       setTimeout(() => {
@@ -186,8 +200,9 @@ class AudioManager {
     }
 
     const volume = options.volume ?? AUDIO_VOLUMES.SFX;
+    const isMuted = useAudioStore.getState().isMuted;
     sound.loop(true);
-    sound.volume(this.isMuted ? 0 : volume);
+    sound.volume(isMuted ? 0 : volume);
     sound.play();
   }
 
@@ -213,31 +228,36 @@ class AudioManager {
     // Duck music
     this.duck();
 
+    const isMuted = useAudioStore.getState().isMuted;
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 1.1;
     utterance.pitch = 1.0;
-    utterance.volume = this.isMuted ? 0 : AUDIO_VOLUMES.TTS;
+    utterance.volume = isMuted ? 0 : AUDIO_VOLUMES.TTS;
+
+    utterance.onstart = () => {
+      useAudioStore.getState().setSpeaking(true);
+    };
 
     utterance.onend = () => {
-      this.isSpeaking = false;
+      useAudioStore.getState().setSpeaking(false);
       this.unduck();
     };
 
-    this.isSpeaking = true;
     window.speechSynthesis.speak(utterance);
   }
 
   stopSpeaking() {
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
-      this.isSpeaking = false;
+      useAudioStore.getState().setSpeaking(false);
       this.unduck();
     }
   }
 
   // Audio ducking
   private duck() {
-    if (this.currentMusic && !this.isMuted) {
+    const isMuted = useAudioStore.getState().isMuted;
+    if (this.currentMusic && !isMuted) {
       this.currentMusic.fade(
         this.currentMusic.volume(),
         AUDIO_VOLUMES.MUSIC_DUCKED,
@@ -247,7 +267,8 @@ class AudioManager {
   }
 
   private unduck() {
-    if (this.currentMusic && !this.isMuted) {
+    const isMuted = useAudioStore.getState().isMuted;
+    if (this.currentMusic && !isMuted) {
       this.currentMusic.fade(
         this.currentMusic.volume(),
         this.originalMusicVolume,
@@ -262,18 +283,28 @@ class AudioManager {
   }
 
   mute() {
-    this.isMuted = true;
     Howler.volume(0);
+    useAudioStore.getState().setMuted(true);
   }
 
   unmute() {
-    this.isMuted = false;
     Howler.volume(1);
+    useAudioStore.getState().setMuted(false);
+  }
+
+  toggleMute() {
+    const isMuted = useAudioStore.getState().isMuted;
+    if (isMuted) {
+      this.unmute();
+    } else {
+      this.mute();
+    }
   }
 
   // Utility
   unlockAudio() {
-    if (this._isUnlocked) return;
+    const isUnlocked = useAudioStore.getState().isAudioUnlocked;
+    if (isUnlocked) return;
 
     // Play silent sound to unlock audio context on mobile
     const unlock = new Howl({
@@ -284,33 +315,8 @@ class AudioManager {
     });
     unlock.play();
 
-    this._isUnlocked = true;
+    useAudioStore.getState().setAudioUnlocked(true);
     console.log("Audio context unlocked");
-
-    // Notify all listeners
-    this.unlockCallbacks.forEach((cb) => cb());
-  }
-
-  onUnlock(callback: () => void) {
-    if (this._isUnlocked) {
-      // Already unlocked, call immediately
-      callback();
-    } else {
-      this.unlockCallbacks.push(callback);
-    }
-  }
-
-  get isUnlocked() {
-    return this._isUnlocked;
-  }
-
-  getStatus() {
-    return {
-      isMuted: this.isMuted,
-      isSpeaking: this.isSpeaking,
-      isPlayingMusic: this.currentMusic?.playing() || false,
-      isUnlocked: this._isUnlocked,
-    };
   }
 }
 

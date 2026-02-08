@@ -1,33 +1,25 @@
-import { useGameState } from '@/hooks/useGameState'
-import { formatTime } from '@/utils/formatters'
-import { useAudio } from '@/hooks/useAudio'
-import { Music2 } from 'lucide-react'
-import ReadyCounter from './ReadyCounter'
+import { useGameState } from "@/hooks/useGameState";
+import { formatTime } from "@/utils/formatters";
+import { Music2 } from "lucide-react";
+import ReadyCounter from "./ReadyCounter";
+import { useAudioStore } from "@/store/audioStore";
 
 function GameState() {
-  const {
-    mode,
-    currentRound,
-    totalRounds,
-    gameTime,
-    isActive,
-    isWaiting
-  } = useGameState()
+  const { mode, currentRound, totalRounds, gameTime, isActive, isWaiting } =
+    useGameState();
 
-  const { isPlayingMusic } = useAudio()
+  const isPlayingMusic = useAudioStore((state) => state.isSpeaking);
 
   // Calculate remaining time (default 5 minutes = 300000ms)
-  const roundDuration = 300000 // 5 minutes
-  const timeRemaining = isActive ? roundDuration - gameTime : 0
+  const roundDuration = 300000; // 5 minutes
+  const timeRemaining = isActive ? roundDuration - gameTime : 0;
 
   return (
     <div className="bg-gray-800 border-b border-gray-700 px-8 py-4">
       <div className="flex items-center justify-between">
         {/* Left: Title + Round */}
         <div className="flex items-center gap-8">
-          <h1 className="text-4xl font-bold tracking-wider">
-            EXTENDED JOUST
-          </h1>
+          <h1 className="text-4xl font-bold tracking-wider">EXTENDED JOUST</h1>
           {!isWaiting && (
             <div className="text-xl text-gray-300">
               Round {currentRound}/{totalRounds}
@@ -59,7 +51,7 @@ function GameState() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default GameState
+export default GameState;

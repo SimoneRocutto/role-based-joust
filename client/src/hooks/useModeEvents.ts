@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 import { useGameStore } from "@/store/gameStore";
 import { useGameState } from "@/hooks/useGameState";
-import { useAudio } from "@/hooks/useAudio";
 import { socketService } from "@/services/socket";
 import {
   DASHBOARD_MODE_BACKGROUNDS,
   MODE_EVENT_EFFECTS,
 } from "@/utils/constants";
+import { audioManager } from "@/services/audio";
 
 /**
  * Handles mode:event socket events and resolves the dashboard background.
@@ -15,7 +15,7 @@ import {
  */
 export function useModeEvents() {
   const { isActive } = useGameState();
-  const { playSfx, setMusicRate } = useAudio();
+
   const setActiveModeEvent = useGameStore((s) => s.setActiveModeEvent);
   const activeModeEvent = useGameStore((s) => s.activeModeEvent);
   const mode = useGameStore((s) => s.mode);
@@ -29,17 +29,17 @@ export function useModeEvents() {
       setActiveModeEvent(eventType);
 
       if (effects.sfx) {
-        playSfx(effects.sfx);
+        audioManager.playSfx(effects.sfx);
       }
       if (effects.musicRate !== undefined) {
-        setMusicRate(effects.musicRate);
+        audioManager.setMusicRate(effects.musicRate);
       }
     });
 
     return () => {
       socketService.off("mode:event");
     };
-  }, [setActiveModeEvent, playSfx, setMusicRate]);
+  }, [setActiveModeEvent]);
 
   // Clear active event when game is no longer active
   useEffect(() => {
