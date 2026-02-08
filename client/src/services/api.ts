@@ -138,6 +138,7 @@ class ApiService {
     gameMode: string;
     theme: string;
     roundCount: number;
+    roundDuration: number;
     movement: { dangerThreshold: number; damageMultiplier: number; oneshotMode: boolean };
     presets: Array<{
       key: string;
@@ -158,6 +159,7 @@ class ApiService {
     gameMode?: string;
     theme?: string;
     roundCount?: number;
+    roundDuration?: number;
     dangerThreshold?: number;
     damageMultiplier?: number;
   }): Promise<{
@@ -166,6 +168,7 @@ class ApiService {
     gameMode: string;
     theme: string;
     roundCount: number;
+    roundDuration: number;
     movement: { dangerThreshold: number; damageMultiplier: number; oneshotMode: boolean };
   }> {
     return this.request("/game/settings", {

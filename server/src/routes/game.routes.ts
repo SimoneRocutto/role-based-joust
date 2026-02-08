@@ -12,6 +12,7 @@ import {
   setGameModePreference,
   setThemePreference,
   setRoundCountPreference,
+  setRoundDurationPreference,
   userPreferences,
 } from "@/config/gameConfig";
 import { getAvailableThemes, themeExists } from "@/config/roleThemes";
@@ -225,9 +226,12 @@ router.post(
 
     // Create mode instance with options
     const factory = GameModeFactory.getInstance();
-    const modeOptions = effectiveMode === "role-based"
-      ? { theme: effectiveTheme, roundCount: effectiveRoundCount }
-      : { roundCount: effectiveRoundCount };
+    const modeOptions: Record<string, any> = { roundCount: effectiveRoundCount };
+    if (effectiveMode === "role-based") {
+      modeOptions.theme = effectiveTheme;
+    }
+    // Pass roundDuration in ms for timed modes
+    modeOptions.roundDuration = userPreferences.roundDuration * 1000;
     const gameMode = factory.createMode(effectiveMode, modeOptions);
 
     // Set mode on engine
@@ -355,6 +359,7 @@ router.get(
       gameMode: userPreferences.gameMode,
       theme: userPreferences.theme,
       roundCount: userPreferences.roundCount,
+      roundDuration: userPreferences.roundDuration,
       // Movement details
       movement: {
         dangerThreshold: gameConfig.movement.dangerThreshold,
@@ -385,7 +390,7 @@ router.post(
   "/settings",
   validate("gameSettings"),
   asyncHandler(async (req: Request, res: Response) => {
-    const { sensitivity, gameMode, theme, roundCount, dangerThreshold, damageMultiplier } =
+    const { sensitivity, gameMode, theme, roundCount, roundDuration, dangerThreshold, damageMultiplier } =
       req.body;
     const updates: string[] = [];
 
@@ -445,6 +450,19 @@ router.post(
       updates.push(`roundCount=${roundCount}`);
     }
 
+    // Update round duration preference
+    if (roundDuration !== undefined) {
+      if (typeof roundDuration !== "number" || roundDuration < 30 || roundDuration > 300) {
+        res.status(400).json({
+          success: false,
+          error: "roundDuration must be a number between 30 and 300",
+        });
+        return;
+      }
+      setRoundDurationPreference(roundDuration);
+      updates.push(`roundDuration=${roundDuration}`);
+    }
+
     // Custom sensitivity values (overrides preset)
     if (dangerThreshold !== undefined || damageMultiplier !== undefined) {
       const update: Partial<{
@@ -463,7 +481,7 @@ router.post(
       res.status(400).json({
         success: false,
         error:
-          "Provide at least one setting to update: sensitivity, gameMode, theme, roundCount, or custom values (dangerThreshold/damageMultiplier)",
+          "Provide at least one setting to update: sensitivity, gameMode, theme, roundCount, roundDuration, or custom values (dangerThreshold/damageMultiplier)",
       });
       return;
     }
@@ -476,6 +494,7 @@ router.post(
       gameMode: userPreferences.gameMode,
       theme: userPreferences.theme,
       roundCount: userPreferences.roundCount,
+      roundDuration: userPreferences.roundDuration,
       movement: {
         dangerThreshold: gameConfig.movement.dangerThreshold,
         damageMultiplier: gameConfig.movement.damageMultiplier,

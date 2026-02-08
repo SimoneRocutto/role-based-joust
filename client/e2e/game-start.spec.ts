@@ -97,9 +97,9 @@ test.describe('Game Start Flow', () => {
       dashboard.locator('text=Get ready')
     ).toBeVisible({ timeout: 5000 });
 
-    // Wait for countdown to complete - either "GO!" or game active state
+    // Wait for countdown to complete - either "GO!" or game active state (ALIVE counter)
     await expect(
-      dashboard.locator('text=/GO!|remaining/i')
+      dashboard.locator('text=/GO!|ALIVE:/')
     ).toBeVisible({ timeout: 15000 });
   });
 

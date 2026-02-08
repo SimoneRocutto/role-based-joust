@@ -10,6 +10,7 @@ const logger = Logger.getInstance();
  */
 export interface GameModeOptions {
   roundCount?: number;
+  roundDuration?: number;
 }
 
 /**
@@ -154,6 +155,14 @@ export abstract class GameMode {
   // ========================================================================
   // UTILITY METHODS
   // ========================================================================
+
+  /**
+   * Get the death count for a player in this mode.
+   * Override in modes that track deaths (e.g., DeathCountMode).
+   */
+  getPlayerDeathCount(playerId: string): number {
+    return 0;
+  }
 
   /**
    * Validate player count for this mode

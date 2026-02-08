@@ -15,6 +15,8 @@ The settings file contains:
 | `sensitivity` | string | Sensitivity preset key | `"medium"` |
 | `gameMode` | string | Default game mode | `"role-based"` |
 | `theme` | string | Default role theme | `"standard"` |
+| `roundCount` | number | Number of rounds per game | `3` |
+| `roundDuration` | number | Round duration in seconds (30-300), used by timed modes | `90` |
 | `movement` | object | Movement detection config | See below |
 
 ### Movement Config
@@ -54,6 +56,8 @@ Returns current settings and available options.
   "sensitivity": "medium",
   "gameMode": "role-based",
   "theme": "standard",
+  "roundCount": 3,
+  "roundDuration": 90,
   "movement": {
     "dangerThreshold": 0.1,
     "damageMultiplier": 50,
@@ -74,7 +78,9 @@ Update settings. All fields are optional — only provided fields are updated.
 {
   "sensitivity": "high",
   "gameMode": "classic",
-  "theme": "halloween"
+  "theme": "halloween",
+  "roundCount": 3,
+  "roundDuration": 90
 }
 ```
 
@@ -116,7 +122,9 @@ This directory is created automatically if it doesn't exist.
   },
   "sensitivity": "high",
   "gameMode": "role-based",
-  "theme": "standard"
+  "theme": "standard",
+  "roundCount": 3,
+  "roundDuration": 90
 }
 ```
 

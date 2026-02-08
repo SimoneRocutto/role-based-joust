@@ -231,8 +231,8 @@ test.describe('Disconnect Handling', () => {
       await launchGameFast(0);
       await waitForGameActive(dashboard);
 
-      // Verify game is active before refresh
-      await expect(dashboard.locator('text=remaining')).toBeVisible();
+      // Verify game is active before refresh (ALIVE counter visible)
+      await expect(dashboard.locator('text=ALIVE:')).toBeVisible();
 
       // Refresh dashboard
       await dashboard.reload();
@@ -240,10 +240,10 @@ test.describe('Disconnect Handling', () => {
       // Wait for page to load and socket to reconnect
       await dashboard.waitForTimeout(2000);
 
-      // Should show game is active (timer visible)
+      // Should show game is active (ALIVE counter visible)
       // The dashboard fetches state on mount, so it should show the game
       await expect(
-        dashboard.locator('text=remaining')
+        dashboard.locator('text=ALIVE:')
       ).toBeVisible({ timeout: 10000 });
     });
   });

@@ -45,6 +45,7 @@ export interface GameTickPlayerState {
   points: number;
   totalPoints: number;
   toughness: number;
+  deathCount: number;
   isDisconnected: boolean;
   disconnectedAt: number | null;
   graceTimeRemaining: number;
@@ -52,6 +53,7 @@ export interface GameTickPlayerState {
 
 export interface GameTickPayload {
   gameTime: number;
+  roundTimeRemaining: number | null;
   players: GameTickPlayerState[];
 }
 
@@ -124,6 +126,17 @@ export interface ModeEventPayload {
 
 export interface ReadyEnabledPayload {
   enabled: boolean;
+}
+
+export interface PlayerRespawnPayload {
+  playerId: string;
+  playerName: string;
+  playerNumber: number;
+  gameTime: number;
+}
+
+export interface PlayerRespawnPendingPayload {
+  respawnIn: number;
 }
 
 export interface ChargeInfo {

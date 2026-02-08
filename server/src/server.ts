@@ -307,7 +307,11 @@ io.on("connection", (socket) => {
 
         // Launch new game with same mode
         const factory = GameModeFactory.getInstance();
-        const gameMode = factory.createMode(modeKey, { roundCount });
+        const roundDuration = userPreferences.roundDuration * 1000;
+        const gameMode = factory.createMode(modeKey, {
+          roundCount,
+          roundDuration,
+        });
         gameEngine.setGameMode(gameMode);
         gameEngine.lastModeKey = modeKey;
 
@@ -562,6 +566,27 @@ gameEvents.onReadyEnabled((payload) => {
 // Broadcast mode events (game events like speed-shift)
 gameEvents.onModeEvent((payload) => {
   io.emit("mode:event", payload);
+});
+
+// Broadcast player respawns
+gameEvents.onPlayerRespawn((payload) => {
+  io.emit("player:respawn", {
+    playerId: payload.player.id,
+    playerName: payload.player.name,
+    playerNumber: connectionManager.getPlayerNumber(payload.player.id) ?? 0,
+    gameTime: payload.gameTime,
+  });
+});
+
+// Send respawn-pending to the dying player only
+gameEvents.onPlayerRespawnPending((payload) => {
+  const socketId = payload.player.socketId;
+  const socket = io.sockets.sockets.get(socketId);
+  if (socket) {
+    socket.emit("player:respawn-pending", {
+      respawnIn: payload.respawnIn,
+    });
+  }
 });
 
 // Send role assignment to individual players

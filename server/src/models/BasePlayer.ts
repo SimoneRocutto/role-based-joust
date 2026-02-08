@@ -482,7 +482,10 @@ export class BasePlayer {
    * Override in role classes for death-related cleanup
    */
   onDeath(gameTime: number): void {
-    // Override in subclasses
+    // Reset these in case of future respawn
+    this.lastMovementData = null;
+    this.accumulatedDamage = 0;
+    this.movementHistory = [];
   }
 
   /**

@@ -106,6 +106,13 @@ function PlayerCard({ player }: PlayerCardProps) {
         <div className="h-12" /> // Spacer for consistent card height
       )}
 
+      {/* Death count badge (bottom left) */}
+      {(player.deathCount ?? 0) > 0 && (
+        <div className="absolute bottom-2 left-2 text-sm text-red-400">
+          💀×{player.deathCount}
+        </div>
+      )}
+
       {/* Points (bottom right, small) - show totalPoints for cumulative score */}
       {(!isDead || isRoundEnded) && (
         <div className="absolute bottom-2 right-2 text-sm text-gray-400">

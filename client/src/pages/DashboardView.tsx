@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useGameState } from "@/hooks/useGameState";
 import { useModeEvents } from "@/hooks/useModeEvents";
 import { useGameStore } from "@/store/gameStore";
@@ -184,6 +184,38 @@ function DashboardView() {
     aliveCount,
     isAudioUnlocked,
   ]);
+
+  // Round timer TTS cues (30s, 5-4-3-2-1, time up)
+  const firedThresholds = useRef<Set<number>>(new Set());
+  const roundTimeRemaining = useGameStore((state) => state.roundTimeRemaining);
+
+  useEffect(() => {
+    // Reset thresholds when round changes or game stops
+    if (!isActive || roundTimeRemaining === null) {
+      firedThresholds.current.clear();
+      return;
+    }
+
+    const thresholds = [
+      { ms: 30000, speech: "30 seconds left" },
+      { ms: 5000, speech: "5" },
+      { ms: 4000, speech: "4" },
+      { ms: 3000, speech: "3" },
+      { ms: 2000, speech: "2" },
+      { ms: 1000, speech: "1" },
+      { ms: 0, speech: "Time up!" },
+    ];
+
+    for (const { ms, speech } of thresholds) {
+      if (
+        roundTimeRemaining <= ms &&
+        !firedThresholds.current.has(ms)
+      ) {
+        firedThresholds.current.add(ms);
+        audioManager.speak(speech);
+      }
+    }
+  }, [roundTimeRemaining, isActive]);
 
   return (
     <div

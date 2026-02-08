@@ -167,14 +167,16 @@ test.describe('Game Mechanics', () => {
       const player2 = await openPlayerJoin(context);
       await joinAsPlayer(player2, 'TimerTest2');
 
-      // Fast launch (skip countdown)
-      await launchGameFast(0);
+      // Use death-count mode which has a round timer
+      await fetch(`${API_URL}/api/game/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roundDuration: 30 }),
+      });
+      await launchGameFast(0, 'death-count');
       await waitForGameActive(dashboard);
 
-      // Should see "remaining" timer
-      await expect(dashboard.locator('text=remaining')).toBeVisible();
-
-      // Timer should be counting (shows time like "04:55")
+      // Timer should be counting (shows time like "00:30")
       await expect(dashboard.locator('text=/\\d{2}:\\d{2}/')).toBeVisible();
     });
 
@@ -187,8 +189,13 @@ test.describe('Game Mechanics', () => {
       const player2 = await openPlayerJoin(context);
       await joinAsPlayer(player2, 'DecreaseTest2');
 
-      // Fast launch (skip countdown)
-      await launchGameFast(0);
+      // Use death-count mode which has a round timer
+      await fetch(`${API_URL}/api/game/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roundDuration: 30 }),
+      });
+      await launchGameFast(0, 'death-count');
       await waitForGameActive(dashboard);
 
       // Get initial time

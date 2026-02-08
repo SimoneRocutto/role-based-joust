@@ -19,6 +19,8 @@ import type {
   ReadyEnabledPayload,
   TapResultPayload,
   GameStartPayload,
+  PlayerRespawnPayload,
+  PlayerRespawnPendingPayload,
 } from "@/types/socket.types";
 
 // In development, use empty string to connect via Vite proxy (same origin)
@@ -200,6 +202,14 @@ class SocketService {
 
   onTapResult(callback: (data: TapResultPayload) => void) {
     this.on("player:tap:result", callback);
+  }
+
+  onPlayerRespawn(callback: (data: PlayerRespawnPayload) => void) {
+    this.on("player:respawn", callback);
+  }
+
+  onPlayerRespawnPending(callback: (data: PlayerRespawnPendingPayload) => void) {
+    this.on("player:respawn-pending", callback);
   }
 
   // Generic event listener management

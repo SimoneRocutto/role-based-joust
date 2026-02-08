@@ -228,6 +228,7 @@ export class GameEngine {
     // Emit a game tick so dashboard shows fresh player states during countdown
     gameEvents.emitGameTick({
       gameTime: 0,
+      roundTimeRemaining: this.currentMode?.roundDuration ?? null,
       players: this.players.map((p) => ({
         id: p.id,
         name: p.name,
@@ -236,6 +237,7 @@ export class GameEngine {
         points: p.points,
         totalPoints: p.totalPoints,
         toughness: p.toughness,
+        deathCount: this.currentMode?.getPlayerDeathCount(p.id) ?? 0,
         isDisconnected: p.isDisconnected(),
         disconnectedAt: p.disconnectedAt,
         graceTimeRemaining: p.getGraceTimeRemaining(0),
@@ -430,6 +432,9 @@ export class GameEngine {
     // Emit tick event with player states (including connection status)
     gameEvents.emitGameTick({
       gameTime: this.gameTime,
+      roundTimeRemaining: this.currentMode?.roundDuration
+        ? Math.max(0, this.currentMode.roundDuration - this.gameTime)
+        : null,
       players: this.players.map((p) => ({
         id: p.id,
         name: p.name,
@@ -438,6 +443,7 @@ export class GameEngine {
         points: p.points,
         totalPoints: p.totalPoints,
         toughness: p.toughness,
+        deathCount: this.currentMode?.getPlayerDeathCount(p.id) ?? 0,
         isDisconnected: p.isDisconnected(),
         disconnectedAt: p.disconnectedAt,
         graceTimeRemaining: p.getGraceTimeRemaining(this.gameTime),

@@ -61,6 +61,10 @@ export function useGameState() {
     isRoundWinner,
     readyEnabled,
 
+    // Timer state
+    roundTimeRemaining: store.roundTimeRemaining,
+    respawnCountdown: store.respawnCountdown,
+
     // Dashboard values
     alivePlayers,
     aliveCount,

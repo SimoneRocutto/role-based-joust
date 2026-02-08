@@ -13,6 +13,8 @@ import type {
   ReadyCountEvent,
   ReadyEnabledEvent,
   GameStartEvent,
+  PlayerRespawnEvent,
+  PlayerRespawnPendingEvent,
 } from "@/types/events.types";
 
 /**
@@ -107,6 +109,14 @@ export class GameEvents extends EventEmitter {
     this.emit("ready:enabled", payload);
   }
 
+  emitPlayerRespawn(payload: PlayerRespawnEvent): void {
+    this.emit("player:respawn", payload);
+  }
+
+  emitPlayerRespawnPending(payload: PlayerRespawnPendingEvent): void {
+    this.emit("player:respawn-pending", payload);
+  }
+
   // ========== TYPED EVENT LISTENERS ==========
 
   onGameTick(listener: (payload: GameTickEvent) => void): void {
@@ -171,6 +181,16 @@ export class GameEvents extends EventEmitter {
 
   onReadyEnabled(listener: (payload: ReadyEnabledEvent) => void): void {
     this.on("ready:enabled", listener);
+  }
+
+  onPlayerRespawn(listener: (payload: PlayerRespawnEvent) => void): void {
+    this.on("player:respawn", listener);
+  }
+
+  onPlayerRespawnPending(
+    listener: (payload: PlayerRespawnPendingEvent) => void
+  ): void {
+    this.on("player:respawn-pending", listener);
   }
 
   // ========== UTILITY METHODS ==========

@@ -146,7 +146,7 @@ Dev mode is controlled by a URL parameter, not the Node environment.
 
 **Client → Server:** `player:join`, `player:reconnect`, `player:move`, `player:ready`, `ping`
 
-**Server → Client:** `player:joined`, `player:reconnected`, `game:tick`, `player:death`, `round:start`, `round:end`, `game:end`, `game:countdown`, `game:stopped`, `vampire:bloodlust`, `role:assigned`, `lobby:update`, `player:ready`, `ready:update`, `pong`, `error`
+**Server → Client:** `player:joined`, `player:reconnected`, `game:tick`, `player:death`, `player:respawn`, `player:respawn-pending`, `round:start`, `round:end`, `game:end`, `game:countdown`, `game:stopped`, `vampire:bloodlust`, `role:assigned`, `lobby:update`, `player:ready`, `ready:update`, `pong`, `error`
 
 Full payloads and details: see `docs/communication.md`.
 

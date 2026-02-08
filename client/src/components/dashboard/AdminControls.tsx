@@ -17,6 +17,7 @@ function AdminControls() {
   >([]);
   const [dangerThreshold, setDangerThreshold] = useState(0.1);
   const [roundCount, setRoundCount] = useState(3);
+  const [roundDuration, setRoundDuration] = useState(90);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -63,6 +64,9 @@ function AdminControls() {
           }
           if (data.roundCount) {
             setRoundCount(data.roundCount);
+          }
+          if (data.roundDuration) {
+            setRoundDuration(data.roundDuration);
           }
         }
       })
@@ -142,6 +146,15 @@ function AdminControls() {
       await apiService.updateSettings({ roundCount: count });
     } catch (err) {
       console.error("Failed to update round count:", err);
+    }
+  };
+
+  const handleRoundDurationChange = async (duration: number) => {
+    setRoundDuration(duration);
+    try {
+      await apiService.updateSettings({ roundDuration: duration });
+    } catch (err) {
+      console.error("Failed to update round duration:", err);
     }
   };
 
@@ -249,6 +262,34 @@ function AdminControls() {
             : `${roundCount} rounds — points accumulate`}
         </p>
       </div>
+
+      {/* Round Duration (only for timed modes like death-count) */}
+      {selectedMode === "death-count" && (
+        <div className="mb-4">
+          <label className="block text-sm text-gray-400 mb-2">
+            Round Duration (seconds)
+          </label>
+          <div className="flex gap-2">
+            {[60, 90, 120, 180].map((duration) => (
+              <button
+                key={duration}
+                onClick={() => handleRoundDurationChange(duration)}
+                disabled={loading}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  roundDuration === duration
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                }`}
+              >
+                {duration}s
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Each round lasts {roundDuration} seconds
+          </p>
+        </div>
+      )}
 
       {/* Sensitivity Selection */}
       <div className="mb-4">

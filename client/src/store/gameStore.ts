@@ -37,6 +37,10 @@ interface GameStore {
   // All players (for dashboard)
   players: PlayerState[];
 
+  // Timer state (for timed modes)
+  roundTimeRemaining: number | null;
+  respawnCountdown: number | null;
+
   // UI state
   latestEvent: string | null;
   scores: ScoreEntry[];
@@ -64,6 +68,8 @@ interface GameStore {
   setReadyEnabled: (enabled: boolean) => void;
   setRoundWinnerId: (winnerId: string | null) => void;
   setActiveModeEvent: (event: string | null) => void;
+  setRoundTimeRemaining: (time: number | null) => void;
+  setRespawnCountdown: (countdown: number | null) => void;
   resetReadyState: () => void;
   reset: () => void;
 }
@@ -97,6 +103,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   roundWinnerId: null,
 
   players: [],
+
+  roundTimeRemaining: null,
+  respawnCountdown: null,
 
   latestEvent: null,
   scores: [],
@@ -194,6 +203,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setActiveModeEvent: (event) => set({ activeModeEvent: event }),
 
+  setRoundTimeRemaining: (time) => set({ roundTimeRemaining: time }),
+
+  setRespawnCountdown: (countdown) => set({ respawnCountdown: countdown }),
+
   resetReadyState: () =>
     set({
       readyPlayers: new Set(),
@@ -202,6 +215,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       readyEnabled: true,
       roundWinnerId: null,
       activeModeEvent: null,
+      roundTimeRemaining: null,
+      respawnCountdown: null,
     }),
 
   reset: () =>
@@ -223,6 +238,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       myIsReady: false,
       readyEnabled: true,
       roundWinnerId: null,
+      roundTimeRemaining: null,
+      respawnCountdown: null,
       players: [],
       latestEvent: null,
       scores: [],

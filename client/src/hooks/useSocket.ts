@@ -44,35 +44,41 @@ export function useSocket() {
     });
 
     // Game tick - includes player states with damage/health info
-    socketService.onGameTick(({ gameTime, players: tickPlayers }) => {
-      setGameTime(gameTime);
+    socketService.onGameTick(
+      ({ gameTime, roundTimeRemaining, players: tickPlayers }) => {
+        setGameTime(gameTime);
+        useGameStore
+          .getState()
+          .setRoundTimeRemaining(roundTimeRemaining ?? null);
 
-      // Merge tick player data with existing state to preserve fields like number, role, etc.
-      if (tickPlayers && tickPlayers.length > 0) {
-        const existingPlayers = useGameStore.getState().players;
-        const mergedPlayers = tickPlayers.map((tp) => {
-          const existing = existingPlayers.find((ep) => ep.id === tp.id);
-          return {
-            ...existing,
-            id: tp.id,
-            name: tp.name,
-            isAlive: tp.isAlive,
-            accumulatedDamage: tp.accumulatedDamage,
-            points: tp.points,
-            totalPoints: tp.totalPoints,
-            toughness: tp.toughness,
-            // Connection status
-            isDisconnected: tp.isDisconnected,
-            graceTimeRemaining: tp.graceTimeRemaining,
-            // Preserve existing fields if not in tick
-            number: existing?.number ?? 0,
-            role: existing?.role ?? "",
-            statusEffects: existing?.statusEffects ?? [],
-          };
-        });
-        updatePlayers(mergedPlayers);
+        // Merge tick player data with existing state to preserve fields like number, role, etc.
+        if (tickPlayers && tickPlayers.length > 0) {
+          const existingPlayers = useGameStore.getState().players;
+          const mergedPlayers = tickPlayers.map((tp) => {
+            const existing = existingPlayers.find((ep) => ep.id === tp.id);
+            return {
+              ...existing,
+              id: tp.id,
+              name: tp.name,
+              isAlive: tp.isAlive,
+              accumulatedDamage: tp.accumulatedDamage,
+              points: tp.points,
+              totalPoints: tp.totalPoints,
+              toughness: tp.toughness,
+              deathCount: tp.deathCount,
+              // Connection status
+              isDisconnected: tp.isDisconnected,
+              graceTimeRemaining: tp.graceTimeRemaining,
+              // Preserve existing fields if not in tick
+              number: existing?.number ?? 0,
+              role: existing?.role ?? "",
+              statusEffects: existing?.statusEffects ?? [],
+            };
+          });
+          updatePlayers(mergedPlayers);
+        }
       }
-    });
+    );
 
     // Player death
     socketService.onPlayerDeath(({ victimId, victimNumber, victimName }) => {
@@ -227,14 +233,8 @@ export function useSocket() {
         }
 
         // Play countdown sounds
-        if (
-          phase === "countdown" &&
-          secondsRemaining <= 3 &&
-          secondsRemaining > 0
-        ) {
-          audioManager.playSfx("countdown-beep", { volume: 0.5 });
-        } else if (phase === "go") {
-          audioManager.playSfx("countdown-go", { volume: 0.7 });
+        if (phase === "countdown" && secondsRemaining == 3) {
+          audioManager.playSfx("countdown", { volume: 0.5 });
         }
       }
     );
@@ -251,6 +251,44 @@ export function useSocket() {
       setLatestEvent("Game stopped");
       // Reset ready state - server resets all ready states, so client must sync
       resetReadyState();
+    });
+
+    // Player respawn - update player as alive again
+    socketService.onPlayerRespawn(({ playerId, playerName, playerNumber }) => {
+      setLatestEvent(`Player #${playerNumber} ${playerName} respawned!`);
+
+      // Update player state in store
+      const existingPlayers = useGameStore.getState().players;
+      const updatedPlayers = existingPlayers.map((p) =>
+        p.id === playerId ? { ...p, isAlive: true, accumulatedDamage: 0 } : p
+      );
+      updatePlayers(updatedPlayers);
+
+      // If it's me, clear respawn countdown and play respawn SFX
+      if (playerId === myPlayerId) {
+        useGameStore.getState().setRespawnCountdown(null);
+        audioManager.playSfx("respawn", { volume: 0.5 });
+      }
+    });
+
+    // Respawn pending - start countdown on dying player's phone
+    socketService.onPlayerRespawnPending(({ respawnIn }) => {
+      useGameStore.getState().setRespawnCountdown(respawnIn);
+
+      // Play TTS countdown at 3 seconds
+      // TODO: replace with real voice
+      setTimeout(() => {
+        audioManager.speak("respawning in");
+      }, Math.max(0, respawnIn - 4000));
+      setTimeout(() => {
+        audioManager.speak("3");
+      }, Math.max(0, respawnIn - 3000));
+      setTimeout(() => {
+        audioManager.speak("2");
+      }, Math.max(0, respawnIn - 2000));
+      setTimeout(() => {
+        audioManager.speak("1");
+      }, Math.max(0, respawnIn - 1000));
     });
 
     // Error handling
@@ -276,6 +314,8 @@ export function useSocket() {
       socketService.off("game:countdown");
       socketService.off("ready:enabled");
       socketService.off("game:stopped");
+      socketService.off("player:respawn");
+      socketService.off("player:respawn-pending");
       socketService.off("error");
     };
   }, [myPlayerId, myPlayerNumber]);

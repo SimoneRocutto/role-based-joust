@@ -38,6 +38,10 @@ vi.mock("@/services/socket", () => ({
       socketEventHandlers.set("game:start", cb),
     onReadyEnabled: (cb: Function) =>
       socketEventHandlers.set("ready:enabled", cb),
+    onPlayerRespawn: (cb: Function) =>
+      socketEventHandlers.set("player:respawn", cb),
+    onPlayerRespawnPending: (cb: Function) =>
+      socketEventHandlers.set("player:respawn-pending", cb),
     onError: (cb: Function) => socketEventHandlers.set("error", cb),
     sendMovement: vi.fn(),
     joinGame: vi.fn(),

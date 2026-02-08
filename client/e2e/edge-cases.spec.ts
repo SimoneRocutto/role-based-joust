@@ -310,8 +310,8 @@ test.describe('Error Recovery', () => {
     await launchGameFast(0);
     await waitForGameActive(dashboard);
 
-    // Verify game is active
-    await expect(dashboard.locator('text=remaining')).toBeVisible();
+    // Verify game is active (ALIVE counter visible in EventFeed)
+    await expect(dashboard.locator('text=ALIVE:')).toBeVisible();
 
     // Stop game via API
     await fetch(`${API_URL}/api/game/stop`, { method: 'POST' });

@@ -37,6 +37,7 @@ export interface UserPreferences {
   gameMode: string; // e.g., "classic", "role-based"
   theme: string; // e.g., "standard", "halloween"
   roundCount: number; // Number of rounds per game (1-10)
+  roundDuration: number; // Round duration in seconds for timed modes (30-300)
 }
 
 export interface SensitivityPreset {
@@ -94,6 +95,7 @@ const defaultPreferences: UserPreferences = {
   gameMode: "role-based",
   theme: "standard",
   roundCount: 3,
+  roundDuration: 90,
 };
 
 export const gameConfig: GameConfig = {
@@ -128,6 +130,7 @@ function persistSettings(): void {
     gameMode: userPreferences.gameMode,
     theme: userPreferences.theme,
     roundCount: userPreferences.roundCount,
+    roundDuration: userPreferences.roundDuration,
   };
   settingsStore.save(settings);
 }
@@ -219,6 +222,14 @@ export function setRoundCountPreference(count: number): void {
   persistSettings();
 }
 
+/**
+ * Update round duration preference (for timed modes).
+ */
+export function setRoundDurationPreference(duration: number): void {
+  userPreferences.roundDuration = Math.max(30, Math.min(300, duration));
+  persistSettings();
+}
+
 export function resetMovementConfig(): void {
   Object.assign(gameConfig.movement, defaultMovement);
   Object.assign(userPreferences, defaultPreferences);
@@ -245,6 +256,9 @@ export function initSettings(): void {
     }
     if (saved.roundCount !== undefined) {
       userPreferences.roundCount = saved.roundCount;
+    }
+    if (saved.roundDuration !== undefined) {
+      userPreferences.roundDuration = saved.roundDuration;
     }
   }
 }

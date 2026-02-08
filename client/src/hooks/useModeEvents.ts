@@ -24,11 +24,14 @@ export function useModeEvents() {
   useEffect(() => {
     socketService.onModeEvent(({ eventType }) => {
       const effects = MODE_EVENT_EFFECTS[eventType];
+      console.log("here", { eventType, effects });
       if (!effects) return;
 
+      console.log("there", { eventType, effects });
       setActiveModeEvent(eventType);
 
       if (effects.sfx) {
+        console.log("over there", { eventType, effects });
         audioManager.playSfx(effects.sfx);
       }
       if (effects.musicRate !== undefined) {

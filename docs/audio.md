@@ -46,8 +46,7 @@ client/public/sounds/
 │       └── tension-medium.mp3
 └── general/
     ├── effects/
-    │   ├── countdown-beep.mp3
-    │   ├── countdown-go.mp3
+    │   ├── countdown.mp3
     │   ├── damage.mp3
     │   ├── death.mp3           # Fallback death sound
     │   ├── low-health-heartbeat.mp3
@@ -172,8 +171,7 @@ State is synced to `useAudioStore.isSpeaking` via `onstart`/`onend` callbacks.
 | `power-activation`       | Ability used successfully        | 0.6    |
 | `no-charges`             | Ability tap with no charges      | 0.4    |
 | `low-health-heartbeat`   | Vampire bloodlust (looping)      | 0.6    |
-| `countdown-beep`         | Each countdown second            | 0.5    |
-| `countdown-go`           | "GO!" phase                      | 0.7    |
+| `countdown`              | Countdown                        | 0.5    |
 
 ### Dashboard Effects
 

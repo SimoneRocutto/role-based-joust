@@ -3,28 +3,23 @@
 Here are all the things this game is missing to be complete. PRIORITIES shows next todo points in priority order from top (highest priority) to bottom (lowest). Feel free to remove them once one of them is done. Below are the future tasks divided by their subject.
 
 - PRIORITIES:
-    - docs: add docs for sounds auto discover and for mode specific sounds with general directory as a fallback
-    - docs: update audio docs (zustand is now used instead of useAudio)
-    - fix client audio tests
-    - docs: write full documentation for player:tap event and player abilities in general
-    - speed shift event: there should be 1 second of threshold transition when going from fast to slow. This means that when we hear the sound from going from fast to slow, high movement threshold should persist for 1 extra second before shifting to slow. This gives time to players adapting when they hear the sound.
+    - implement team mode: players are divided in N teams and their points are summed to see who wins. We should be able to have team mode both for the death count mode and for the classic mode
+
+- NEXT PRIORITIES:
+    - GO from the countdown is immediately hidden as soon as it appears: fix this
+    - remove ready sound from dashboard
+    - remove countdown sound from phones
+    - remove points info from player screen
 
 - IMPROVEMENTS:
     - victory music
-    - remove ready sound from dashboard
-    - remove countdown sound from phones
     - introduce the possibility of having different background music tracks that are picked at random for a certain mode
 
 - FEATURES:
-    - implement death count mode: Players respawn automatically. Who died the least amount of times at the end of the round wins. 
-    - implement team mode: players are divided in N teams and their points are summed to see who wins. We should be able to have team mode both for the death count mode and for the classic mode
     - handle disconnection (I have to do tests myself for this to understand when it fails)
     - UI: add a settings screen (accessible from the UI) where all the more complex settings (like sensibility of movement detection) can be accessed. In the future, other settings will be accessed through this screen
 
 - BUGS:
-    - points on player screen always show 0 -> hide them
-    - GO from the countdown is immediately hidden as soon as it appears: fix this
-    - preloaded x sounds is logged multiple times in the console: maybe it's doing unnecessary operations
     - sometimes all players have the skull at the end of the round. Points are not cumulative. I have to track down when this happens
     - no sound on iOS chrome: it's fine, iOS users can use safari
 

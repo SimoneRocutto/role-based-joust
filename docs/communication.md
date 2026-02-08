@@ -204,13 +204,15 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
 
 ```typescript
 {
-  gameTime: number,        // Milliseconds since round start
+  gameTime: number,             // Milliseconds since round start
+  roundTimeRemaining: number | null,  // Milliseconds until round ends (null if untimed)
   players: Array<{
     id: string,
     name: string,
     isAlive: boolean,
     points: number,
     totalPoints: number,
+    deathCount: number,         // Deaths this round (0 for non-death-count modes)
     statusEffects: Array<{
       type: string,
       priority: number,
@@ -234,6 +236,37 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
   victimName: string,
   victimNumber: number,
   gameTime: number
+}
+```
+
+---
+
+#### `player:respawn`
+
+**When**: A player respawns after dying (Death Count mode only)
+
+**Payload**:
+
+```typescript
+{
+  playerId: string,
+  playerName: string,
+  playerNumber: number,
+  gameTime: number
+}
+```
+
+---
+
+#### `player:respawn-pending`
+
+**When**: A player dies and will respawn (sent only to the dying player's socket)
+
+**Payload**:
+
+```typescript
+{
+  respawnIn: number    // Milliseconds until respawn (5000)
 }
 ```
 

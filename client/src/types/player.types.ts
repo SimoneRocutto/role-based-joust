@@ -24,6 +24,7 @@ export interface PlayerState {
   toughness: number;
   accumulatedDamage: number;
   statusEffects: StatusEffectInfo[];
+  deathCount?: number;
   isDisconnected?: boolean;
   graceTimeRemaining?: number;
   isReady?: boolean;

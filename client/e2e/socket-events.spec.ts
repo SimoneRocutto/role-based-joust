@@ -109,8 +109,8 @@ test.describe('Socket Events', () => {
       await waitForGameActive(dashboard);
 
       // All clients should be in active game state
-      // Dashboard shows timer
-      await expect(dashboard.locator('text=remaining')).toBeVisible();
+      // Dashboard shows ALIVE counter
+      await expect(dashboard.locator('text=ALIVE:')).toBeVisible();
 
       // Players don't show "WAITING" anymore
       await expect(player1.locator('text=WAITING FOR GAME')).not.toBeVisible();
@@ -137,8 +137,8 @@ test.describe('Socket Events', () => {
       // Wait for socket connection and state fetch
       await dashboard.waitForTimeout(2000);
 
-      // Dashboard should show active game (timer visible)
-      await expect(dashboard.locator('text=remaining')).toBeVisible({ timeout: 10000 });
+      // Dashboard should show active game (ALIVE counter visible in EventFeed)
+      await expect(dashboard.locator('text=/ALIVE/i')).toBeVisible({ timeout: 10000 });
     });
   });
 
@@ -292,13 +292,18 @@ test.describe('Real-time Synchronization', () => {
     const player2 = await openPlayerJoin(context);
     await joinAsPlayer(player2, 'Timer2');
 
-    // Fast launch (skip countdown)
-    await launchGameFast(0);
+    // Use death-count mode which has a round timer
+    await fetch(`${API_URL}/api/game/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roundDuration: 30 }),
+    });
+    await launchGameFast(0, 'death-count');
     await waitForGameActive(dashboard1);
 
-    // Both dashboards should show timer
-    await expect(dashboard1.locator('text=remaining')).toBeVisible();
-    await expect(dashboard2.locator('text=remaining')).toBeVisible();
+    // Both dashboards should show timer (MM:SS format)
+    await expect(dashboard1.locator('text=/\\d{2}:\\d{2}/')).toBeVisible();
+    await expect(dashboard2.locator('text=/\\d{2}:\\d{2}/')).toBeVisible();
 
     // Get times - they should be close (within a few seconds)
     const time1 = await dashboard1.locator('text=/\\d{2}:\\d{2}/').textContent();

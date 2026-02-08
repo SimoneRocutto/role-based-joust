@@ -15,7 +15,7 @@ import TargetDisplay from "@/components/player/TargetDisplay";
 import ConnectionStatus from "@/components/player/ConnectionStatus";
 import PortraitLock from "@/components/player/PortraitLock";
 import DamageFlash from "@/components/player/DamageFlash";
-import type { ChargeInfo } from "@/types/socket.types";
+import type { ChargeInfo, PlayerMovePayload } from "@/types/socket.types";
 import { audioManager } from "@/services/audio";
 
 // In development mode, allow button click instead of shake
@@ -48,6 +48,7 @@ function PlayerView() {
     isMyPlayerDead,
     isRoundWinner,
     readyEnabled,
+    respawnCountdown,
   } = useGameState();
 
   const { countdownSeconds, countdownPhase, myIsReady, setMyReady } =
@@ -76,6 +77,21 @@ function PlayerView() {
     // Play a feedback sound (optional)
     audioManager.playSfx("ready", { volume: 0.5 });
   }, [myPlayerId, myIsReady, setMyReady]);
+
+  const takeDamage = useCallback(() => {
+    if (!myPlayerId) return;
+
+    const movementPayload: PlayerMovePayload = {
+      playerId: myPlayerId,
+      x: 1000,
+      y: 1000,
+      z: 1000,
+      timestamp: Date.now(),
+      deviceType: "phone",
+    };
+    // Send ready event to server
+    socketService.sendMovement(movementPayload);
+  }, [myPlayerId]);
 
   // Handle tap for ability use during active game
   const handleTap = useCallback(() => {
@@ -190,6 +206,34 @@ function PlayerView() {
       audioManager.playSfx("damage", { volume: 0.3, noRepeatFor: 1000 });
     }
   }, [myPlayer?.accumulatedDamage]);
+
+  // Client-side respawn countdown timer
+  const [displayRespawnSeconds, setDisplayRespawnSeconds] = useState<
+    number | null
+  >(null);
+
+  useEffect(() => {
+    if (respawnCountdown === null) {
+      setDisplayRespawnSeconds(null);
+      return;
+    }
+
+    // Set initial seconds
+    setDisplayRespawnSeconds(Math.ceil(respawnCountdown / 1000));
+
+    // Start client-side countdown
+    const interval = setInterval(() => {
+      setDisplayRespawnSeconds((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [respawnCountdown]);
 
   // Reset ready state when countdown starts (new round)
   useEffect(() => {
@@ -446,6 +490,9 @@ function PlayerView() {
                   {chargeInfo.current}/{chargeInfo.max}
                 </span>
               )}
+              {(myPlayer.deathCount ?? 0) > 0 && (
+                <span className="text-red-400">💀{myPlayer.deathCount}</span>
+              )}
               {Math.round((1 - myPlayer.accumulatedDamage / 100) * 100)}%
             </div>
           </div>
@@ -455,6 +502,18 @@ function PlayerView() {
             <HealthBackground player={myPlayer} />
             <PlayerNumber number={myPlayerNumber} />
           </div>
+
+          {/* Take damage button (dev mode) */}
+          {isDevMode && (
+            <>
+              <button
+                onClick={takeDamage}
+                className="px-8 py-4 bg-yellow-500 hover:bg-yellow-400 text-black text-2xl font-bold rounded-lg transition-colors"
+              >
+                CLICK TO TAKE DAMAGE
+              </button>
+            </>
+          )}
 
           {/* Info Bar (25%) */}
           <div className="h-[25%] bg-gray-900 p-4 flex flex-col justify-between">
@@ -475,7 +534,26 @@ function PlayerView() {
         !isCountdown &&
         !isRoundEnded &&
         !isWaiting &&
-        !isFinished && (
+        !isFinished &&
+        respawnCountdown !== null && (
+          <div className="fullscreen bg-gray-900 flex flex-col items-center justify-center gap-6 dead-screen">
+            <div className="text-7xl font-black text-red-500">WALK AWAY!</div>
+            <div className="text-4xl text-gray-300">
+              Respawning in {displayRespawnSeconds ?? "..."}...
+            </div>
+            {(myPlayer?.deathCount ?? 0) > 0 && (
+              <div className="text-xl text-gray-500">
+                Deaths: {myPlayer?.deathCount}
+              </div>
+            )}
+          </div>
+        )}
+      {isMyPlayerDead &&
+        !isCountdown &&
+        !isRoundEnded &&
+        !isWaiting &&
+        !isFinished &&
+        respawnCountdown === null && (
           <div className="fullscreen bg-health-dead flex flex-col items-center justify-center gap-8 dead-screen">
             <div className="text-9xl">💀</div>
             <div className="text-5xl font-bold text-gray-500">ELIMINATED</div>

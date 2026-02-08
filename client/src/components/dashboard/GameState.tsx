@@ -5,14 +5,10 @@ import ReadyCounter from "./ReadyCounter";
 import { useAudioStore } from "@/store/audioStore";
 
 function GameState() {
-  const { mode, currentRound, totalRounds, gameTime, isActive, isWaiting } =
+  const { mode, currentRound, totalRounds, isActive, isWaiting, roundTimeRemaining } =
     useGameState();
 
   const isPlayingMusic = useAudioStore((state) => state.isSpeaking);
-
-  // Calculate remaining time (default 5 minutes = 300000ms)
-  const roundDuration = 300000; // 5 minutes
-  const timeRemaining = isActive ? roundDuration - gameTime : 0;
 
   return (
     <div className="bg-gray-800 border-b border-gray-700 px-8 py-4">
@@ -28,10 +24,10 @@ function GameState() {
           {isWaiting && <ReadyCounter />}
         </div>
 
-        {/* Center: Timer (only during active game) */}
-        {isActive && timeRemaining > 0 && (
+        {/* Center: Timer (only during active game with timed mode) */}
+        {isActive && roundTimeRemaining !== null && roundTimeRemaining > 0 && (
           <div className="text-3xl font-mono text-gray-200">
-            ⏱️ {formatTime(timeRemaining)} remaining
+            {formatTime(roundTimeRemaining)}
           </div>
         )}
 

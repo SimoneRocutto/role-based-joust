@@ -17,6 +17,8 @@ export interface PersistedSettings {
   theme: string;
   /** Number of rounds per game (1-10) */
   roundCount: number;
+  /** Round duration in seconds (30-300), used by timed modes */
+  roundDuration: number;
 }
 
 class SettingsStore {

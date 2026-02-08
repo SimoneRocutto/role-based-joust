@@ -8,6 +8,7 @@ export interface GameTickPlayerState {
   points: number;
   totalPoints: number;
   toughness: number;
+  deathCount: number;
   isDisconnected: boolean;
   disconnectedAt: number | null;
   graceTimeRemaining: number;
@@ -15,6 +16,7 @@ export interface GameTickPlayerState {
 
 export interface GameTickEvent {
   gameTime: number;
+  roundTimeRemaining: number | null;
   players: GameTickPlayerState[];
 }
 
@@ -88,4 +90,14 @@ export interface ReadyCountEvent {
 
 export interface ReadyEnabledEvent {
   enabled: boolean;
+}
+
+export interface PlayerRespawnEvent {
+  player: import("../models/BasePlayer").BasePlayer;
+  gameTime: number;
+}
+
+export interface PlayerRespawnPendingEvent {
+  player: import("../models/BasePlayer").BasePlayer;
+  respawnIn: number;
 }

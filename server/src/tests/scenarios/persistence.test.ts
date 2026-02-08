@@ -47,6 +47,7 @@ function createTestSettings(overrides?: Partial<PersistedSettings>): PersistedSe
     gameMode: "role-based",
     theme: "standard",
     roundCount: 3,
+    roundDuration: 90,
     ...overrides,
   };
 }
@@ -93,6 +94,7 @@ runner.test("Settings load on init with new format", () => {
       gameMode: "classic",
       theme: "halloween",
       roundCount: 5,
+      roundDuration: 90,
     };
     writeFileSync(filePath, JSON.stringify(settings), "utf-8");
 

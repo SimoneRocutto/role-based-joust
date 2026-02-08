@@ -195,10 +195,10 @@ export async function launchGameFast(
  * Wait for countdown to complete (full countdown)
  */
 export async function waitForCountdownComplete(page: Page): Promise<void> {
-  // Wait for the game to become active (showing "remaining" timer)
+  // Wait for the game to become active (EventFeed shows "ALIVE:" counter during active game)
   // The GO! phase is very brief, so we check for the game active state
   await expect(
-    page.locator('text=remaining')
+    page.locator('text=ALIVE:')
   ).toBeVisible({ timeout: 15000 });
 
   // Wait a bit for the game to be fully active
@@ -209,9 +209,9 @@ export async function waitForCountdownComplete(page: Page): Promise<void> {
  * Wait for game to become active (for fast tests without countdown)
  */
 export async function waitForGameActive(page: Page): Promise<void> {
-  // Wait for the game to become active (showing "remaining" timer)
+  // Wait for the game to become active (EventFeed shows "ALIVE:" counter during active game)
   await expect(
-    page.locator('text=remaining')
+    page.locator('text=ALIVE:')
   ).toBeVisible({ timeout: 5000 });
 }
 
