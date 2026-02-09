@@ -52,8 +52,13 @@ function PlayerView() {
     respawnCountdown,
   } = useGameState();
 
-  const { countdownSeconds, countdownPhase, myIsReady, setMyReady, teamSelectionActive } =
-    useGameStore();
+  const {
+    countdownSeconds,
+    countdownPhase,
+    myIsReady,
+    setMyReady,
+    teamSelectionActive,
+  } = useGameStore();
 
   // Team info
   const myTeamId = myPlayer?.teamId ?? null;
@@ -298,7 +303,7 @@ function PlayerView() {
         <div
           className="fullscreen flex flex-col items-center justify-center gap-8 p-8"
           style={{
-            backgroundColor: myTeamColor ? myTeamColor.dark : '#1f2937',
+            backgroundColor: myTeamColor ? myTeamColor.dark : "#1f2937",
           }}
           onClick={handleTeamSwitch}
         >
@@ -324,9 +329,7 @@ function PlayerView() {
               {myPlayer?.name || "Player"}
             </div>
 
-            <div className="mt-8 text-xl text-gray-400">
-              Tap to switch team
-            </div>
+            <div className="mt-8 text-xl text-gray-400">Tap to switch team</div>
             <div className="text-sm text-gray-500 mt-2">
               Waiting for admin to start game...
             </div>
@@ -338,7 +341,7 @@ function PlayerView() {
       {isWaiting && !isCountdown && !teamSelectionActive && (
         <div
           className="fullscreen flex flex-col items-center justify-center gap-8 p-8"
-          style={{ backgroundColor: '#1f2937' }}
+          style={{ backgroundColor: "#1f2937" }}
         >
           <ConnectionStatus />
           <div className="text-center">
@@ -589,15 +592,17 @@ function PlayerView() {
         !isFinished &&
         respawnCountdown !== null && (
           <div
-            className="fullscreen flex flex-col items-center justify-center gap-6 dead-screen"
+            className="fullscreen flex flex-col items-center justify-center gap-4 px-4"
             style={{ backgroundColor: getDeadBackgroundColor(myTeamId) }}
           >
-            <div className="text-7xl font-black text-red-500">WALK AWAY!</div>
-            <div className="text-4xl text-gray-300">
-              Respawning in {displayRespawnSeconds ?? "..."}...
+            <div className="text-5xl sm:text-7xl font-black text-red-500 text-center">
+              RESPAWNING...
+            </div>
+            <div className="text-4xl sm:text-6xl font-bold text-gray-300 text-center">
+              {displayRespawnSeconds ?? "..."}
             </div>
             {(myPlayer?.deathCount ?? 0) > 0 && (
-              <div className="text-xl text-gray-500">
+              <div className="text-lg sm:text-xl text-gray-500">
                 Deaths: {myPlayer?.deathCount}
               </div>
             )}
@@ -610,7 +615,7 @@ function PlayerView() {
         !isFinished &&
         respawnCountdown === null && (
           <div
-            className="fullscreen flex flex-col items-center justify-center gap-8 dead-screen"
+            className="fullscreen flex flex-col items-center justify-center gap-8"
             style={{ backgroundColor: getDeadBackgroundColor(myTeamId) }}
           >
             <div className="text-9xl">💀</div>

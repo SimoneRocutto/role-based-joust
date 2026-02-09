@@ -3,7 +3,6 @@
 Here are all the things this game is missing to be complete. PRIORITIES shows next todo points in priority order from top (highest priority) to bottom (lowest). Feel free to remove them once one of them is done. Below are the future tasks divided by their subject.
 
 - PRIORITIES:
-    - walk away screen for death count mode: the text on mobile doesn't fit. Also, in team mode the background shouldn't be grey. It should be of the color of the team (in particular, the color that represents empty life bar)
 
 - IMPROVEMENTS:
     - victory music
@@ -15,6 +14,7 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 
 - BUGS:
     - sometimes all players have the skull at the end of the round. Points are not cumulative. I have to track down when this happens
+    - sometimes I hear "respawning in" "respawning in" "3" "3" "2" "2" "1" "1" when player respawns. Still haven't figured out how to reproduce this
     - no sound on iOS chrome: it's fine, iOS users can use safari
 
 - Classic mode specific:
