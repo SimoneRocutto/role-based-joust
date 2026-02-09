@@ -1,9 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { socketService } from "@/services/socket";
 import { useGameStore } from "@/store/gameStore";
 import { audioManager } from "@/services/audio";
 
 export function useSocket() {
+  const respawnTtsTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]).current;
   const {
     setConnected,
     updatePlayer,
@@ -296,20 +297,26 @@ export function useSocket() {
     socketService.onPlayerRespawnPending(({ respawnIn }) => {
       useGameStore.getState().setRespawnCountdown(respawnIn);
 
+      // Clear any previous respawn TTS timeouts to prevent duplicates
+      respawnTtsTimeouts.forEach(clearTimeout);
+      respawnTtsTimeouts.length = 0;
+
       // Play TTS countdown at 3 seconds
       // TODO: replace with real voice
-      setTimeout(() => {
-        audioManager.speak("respawning in");
-      }, Math.max(0, respawnIn - 4000));
-      setTimeout(() => {
-        audioManager.speak("3");
-      }, Math.max(0, respawnIn - 3000));
-      setTimeout(() => {
-        audioManager.speak("2");
-      }, Math.max(0, respawnIn - 2000));
-      setTimeout(() => {
-        audioManager.speak("1");
-      }, Math.max(0, respawnIn - 1000));
+      respawnTtsTimeouts.push(
+        setTimeout(() => {
+          audioManager.speak("respawning in");
+        }, Math.max(0, respawnIn - 4000)),
+        setTimeout(() => {
+          audioManager.speak("3");
+        }, Math.max(0, respawnIn - 3000)),
+        setTimeout(() => {
+          audioManager.speak("2");
+        }, Math.max(0, respawnIn - 2000)),
+        setTimeout(() => {
+          audioManager.speak("1");
+        }, Math.max(0, respawnIn - 1000))
+      );
     });
 
     // Error handling
@@ -320,6 +327,10 @@ export function useSocket() {
 
     // Cleanup
     return () => {
+      // Clear respawn TTS timeouts to prevent duplicate audio
+      respawnTtsTimeouts.forEach(clearTimeout);
+      respawnTtsTimeouts.length = 0;
+
       socketService.off("connection:change");
       socketService.off("player:joined");
       socketService.off("player:reconnected");

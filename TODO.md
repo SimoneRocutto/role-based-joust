@@ -14,10 +14,15 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 
 - BUGS:
     - sometimes all players have the skull at the end of the round. Points are not cumulative. I have to track down when this happens
-    - sometimes I hear "respawning in" "respawning in" "3" "3" "2" "2" "1" "1" when player respawns. Still haven't figured out how to reproduce this
     - no sound on iOS chrome: it's fine, iOS users can use safari
 
 - Classic mode specific:
+
+- Death count mode specific:
+    - all players have a trophy at the end of the round. This should only show up for the player with the most points in this round
+
+- Team mode specific:
+    - end of round scoreboard is confusing: it should list players in order of round points. We should also find a way to represent total points for the entire teams
 
 - Role mode specific:
     - optional through config (and useful for role): hear a sound whenever another player is dead (useful when fighting another one with the earbud on -> without earbuds you would hear his death sound from his phone) 
