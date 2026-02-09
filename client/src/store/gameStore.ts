@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { PlayerState, RoleInfo } from "@/types/player.types";
-import type { GameStateType, ScoreEntry } from "@/types/game.types";
+import type { GameStateType, ScoreEntry, TeamScore } from "@/types/game.types";
 
 interface GameStore {
   // Connection state
@@ -41,6 +41,11 @@ interface GameStore {
   roundTimeRemaining: number | null;
   respawnCountdown: number | null;
 
+  // Team state
+  teamsEnabled: boolean;
+  teamSelectionActive: boolean;
+  teamScores: TeamScore[] | null;
+
   // UI state
   latestEvent: string | null;
   scores: ScoreEntry[];
@@ -70,6 +75,9 @@ interface GameStore {
   setActiveModeEvent: (event: string | null) => void;
   setRoundTimeRemaining: (time: number | null) => void;
   setRespawnCountdown: (countdown: number | null) => void;
+  setTeamsEnabled: (enabled: boolean) => void;
+  setTeamSelectionActive: (active: boolean) => void;
+  setTeamScores: (scores: TeamScore[] | null) => void;
   resetReadyState: () => void;
   reset: () => void;
 }
@@ -106,6 +114,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   roundTimeRemaining: null,
   respawnCountdown: null,
+
+  teamsEnabled: false,
+  teamSelectionActive: false,
+  teamScores: null,
 
   latestEvent: null,
   scores: [],
@@ -207,6 +219,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setRespawnCountdown: (countdown) => set({ respawnCountdown: countdown }),
 
+  setTeamsEnabled: (enabled) => set({ teamsEnabled: enabled }),
+
+  setTeamSelectionActive: (active) => set({ teamSelectionActive: active }),
+
+  setTeamScores: (scores) => set({ teamScores: scores }),
+
   resetReadyState: () =>
     set({
       readyPlayers: new Set(),
@@ -241,6 +259,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       roundTimeRemaining: null,
       respawnCountdown: null,
       players: [],
+      teamsEnabled: false,
+      teamSelectionActive: false,
+      teamScores: null,
       latestEvent: null,
       scores: [],
       activeModeEvent: null,

@@ -98,6 +98,16 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
 
 ---
 
+#### `team:switch`
+
+**When**: Player taps their phone screen in the lobby to switch to the next team
+
+**Payload**: None (server uses socket ID to identify the player)
+
+**Server Response**: `lobby:update` broadcast with updated team assignments, `team:update` broadcast
+
+---
+
 #### `ping`
 
 **When**: Every 5 seconds to maintain connection
@@ -163,7 +173,7 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
 
 #### `lobby:update`
 
-**When**: A player joins, disconnects, or changes ready state in the lobby
+**When**: A player joins, disconnects, changes ready state, or switches team in the lobby
 
 **Payload**:
 
@@ -173,8 +183,37 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
     id: string,
     name: string,
     number: number,
-    isReady: boolean
+    isReady: boolean,
+    teamId?: number | null  // Team assignment (null when teams disabled)
   }>
+}
+```
+
+---
+
+#### `team:update`
+
+**When**: A player switches team or teams are shuffled
+
+**Payload**:
+
+```typescript
+{
+  teams: Record<string, string[]>  // teamId → playerId[]
+}
+```
+
+---
+
+#### `team:selection`
+
+**When**: Admin starts or cancels the team selection phase (teams enabled only)
+
+**Payload**:
+
+```typescript
+{
+  active: boolean  // true = team selection started, false = cancelled
 }
 ```
 
@@ -305,7 +344,17 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
     rank: number,
     status: string          // "Winner", "Eliminated", etc.
   }>,
-  gameTime: number
+  gameTime: number,
+  winnerId: string | null,
+  teamScores?: Array<{     // Only present when teams are enabled
+    teamId: number,
+    teamName: string,
+    teamColor: string,
+    score: number,
+    roundPoints: number,
+    rank: number,
+    players: ScoreEntry[]   // Individual scores within team
+  }> | null
 }
 ```
 
@@ -332,7 +381,16 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
     rank: number,
     status: string
   }>,
-  totalRounds: number
+  totalRounds: number,
+  teamScores?: Array<{     // Only present when teams are enabled
+    teamId: number,
+    teamName: string,
+    teamColor: string,
+    score: number,
+    roundPoints: number,
+    rank: number,
+    players: ScoreEntry[]
+  }> | null
 }
 ```
 
@@ -581,6 +639,21 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
     alivePlayers: number,
     players: Array<{...}>
   }
+}
+```
+
+---
+
+### `POST /api/game/team-selection`
+
+**Purpose**: Enter team selection phase. Requires teams to be enabled and at least 2 players in lobby. Assigns sequential teams if none exist, resets ready states, and broadcasts `team:selection` event.
+
+**Response**:
+
+```typescript
+{
+  success: boolean,
+  teams: Record<string, string[]>  // teamId → playerId[]
 }
 ```
 

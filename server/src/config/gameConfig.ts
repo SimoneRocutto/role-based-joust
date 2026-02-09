@@ -38,6 +38,8 @@ export interface UserPreferences {
   theme: string; // e.g., "standard", "halloween"
   roundCount: number; // Number of rounds per game (1-10)
   roundDuration: number; // Round duration in seconds for timed modes (30-300)
+  teamsEnabled: boolean; // Whether team mode is active
+  teamCount: number; // Number of teams (2-4)
 }
 
 export interface SensitivityPreset {
@@ -96,6 +98,8 @@ const defaultPreferences: UserPreferences = {
   theme: "standard",
   roundCount: 3,
   roundDuration: 90,
+  teamsEnabled: false,
+  teamCount: 2,
 };
 
 export const gameConfig: GameConfig = {
@@ -131,6 +135,8 @@ function persistSettings(): void {
     theme: userPreferences.theme,
     roundCount: userPreferences.roundCount,
     roundDuration: userPreferences.roundDuration,
+    teamsEnabled: userPreferences.teamsEnabled,
+    teamCount: userPreferences.teamCount,
   };
   settingsStore.save(settings);
 }
@@ -230,6 +236,22 @@ export function setRoundDurationPreference(duration: number): void {
   persistSettings();
 }
 
+/**
+ * Update teamsEnabled preference.
+ */
+export function setTeamsEnabledPreference(enabled: boolean): void {
+  userPreferences.teamsEnabled = enabled;
+  persistSettings();
+}
+
+/**
+ * Update teamCount preference.
+ */
+export function setTeamCountPreference(count: number): void {
+  userPreferences.teamCount = Math.max(2, Math.min(4, count));
+  persistSettings();
+}
+
 export function resetMovementConfig(): void {
   Object.assign(gameConfig.movement, defaultMovement);
   Object.assign(userPreferences, defaultPreferences);
@@ -259,6 +281,12 @@ export function initSettings(): void {
     }
     if (saved.roundDuration !== undefined) {
       userPreferences.roundDuration = saved.roundDuration;
+    }
+    if (saved.teamsEnabled !== undefined) {
+      userPreferences.teamsEnabled = saved.teamsEnabled;
+    }
+    if (saved.teamCount !== undefined) {
+      userPreferences.teamCount = saved.teamCount;
     }
   }
 }

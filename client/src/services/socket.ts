@@ -158,6 +158,22 @@ class SocketService {
     this.on("error", callback);
   }
 
+  sendTeamSwitch() {
+    this.socket?.emit("team:switch");
+  }
+
+  onTeamSelection(callback: (data: { active: boolean }) => void) {
+    this.on("team:selection", callback);
+  }
+
+  onTeamUpdate(
+    callback: (data: {
+      teams: Record<string, string[]>;
+    }) => void
+  ) {
+    this.on("team:update", callback);
+  }
+
   onLobbyUpdate(
     callback: (data: {
       players: Array<{
@@ -166,6 +182,7 @@ class SocketService {
         number: number;
         isAlive: boolean;
         isReady: boolean;
+        teamId?: number | null;
       }>;
     }) => void
   ) {

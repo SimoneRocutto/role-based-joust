@@ -1,5 +1,5 @@
 import type { PlayerState, RoleInfo } from "./player.types";
-import type { ScoreEntry } from "./game.types";
+import type { ScoreEntry, TeamScore } from "./game.types";
 
 // Client → Server Events
 export interface PlayerJoinPayload {
@@ -29,6 +29,7 @@ export interface PlayerJoinedPayload {
   socketId: string;
   sessionToken: string;
   name: string;
+  teamId?: number | null;
 }
 
 export interface PlayerReconnectedPayload {
@@ -75,6 +76,7 @@ export interface RoundEndPayload {
   scores: ScoreEntry[];
   gameTime: number;
   winnerId: string | null;
+  teamScores?: TeamScore[] | null;
 }
 
 export interface GameStartPayload {
@@ -90,6 +92,7 @@ export interface GameEndPayload {
   } | null;
   scores: ScoreEntry[];
   totalRounds: number;
+  teamScores?: TeamScore[] | null;
 }
 
 export interface VampireBloodlustPayload {

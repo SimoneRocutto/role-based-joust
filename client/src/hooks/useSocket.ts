@@ -33,6 +33,11 @@ export function useSocket() {
         localStorage.setItem("sessionToken", data.sessionToken);
         localStorage.setItem("playerId", data.playerId);
         localStorage.setItem("playerNumber", data.playerNumber.toString());
+
+        // Store team assignment if present
+        if (data.teamId != null) {
+          useGameStore.getState().setTeamsEnabled(true);
+        }
       }
     });
 
@@ -73,6 +78,8 @@ export function useSocket() {
               number: existing?.number ?? 0,
               role: existing?.role ?? "",
               statusEffects: existing?.statusEffects ?? [],
+              // Preserve team assignment (set from tick if available, else from existing)
+              teamId: (tp as any).teamId ?? existing?.teamId ?? null,
             };
           });
           updatePlayers(mergedPlayers);
@@ -101,9 +108,12 @@ export function useSocket() {
     });
 
     // Round end
-    socketService.onRoundEnd(({ scores, winnerId }) => {
+    socketService.onRoundEnd(({ scores, winnerId, teamScores }) => {
       setScores(scores);
       setGameState("round-ended");
+
+      // Store team scores if present
+      useGameStore.getState().setTeamScores(teamScores ?? null);
 
       // Set round winner and disable ready (delay period starts)
       useGameStore.getState().setRoundWinnerId(winnerId);
@@ -126,7 +136,9 @@ export function useSocket() {
     });
 
     // Game end
-    socketService.onGameEnd(({ scores, winner }) => {
+    socketService.onGameEnd(({ scores, winner, teamScores }) => {
+      // Store team scores if present
+      useGameStore.getState().setTeamScores(teamScores ?? null);
       // Update player points FIRST from final scores (before state change triggers re-render)
       const existingPlayers = useGameStore.getState().players;
       const updatedPlayers = existingPlayers.map((player) => {
@@ -188,6 +200,15 @@ export function useSocket() {
       }, 500);
     });
 
+    // Team selection phase
+    socketService.onTeamSelection(({ active }) => {
+      useGameStore.getState().setTeamSelectionActive(active);
+      if (active) {
+        // Reset ready state when entering team selection
+        resetReadyState();
+      }
+    });
+
     // Lobby update (players joining/leaving before game starts)
     socketService.onLobbyUpdate(({ players }) => {
       // Only process lobby updates in waiting state - ignore during active gameplay
@@ -210,6 +231,7 @@ export function useSocket() {
         toughness: 1.0,
         accumulatedDamage: 0,
         statusEffects: [],
+        teamId: p.teamId ?? null,
       }));
       updatePlayers(playerStates);
     });
@@ -220,6 +242,8 @@ export function useSocket() {
         setCountdown(secondsRemaining, phase);
         setGameState("countdown");
         setRound(roundNumber, totalRounds);
+        // Team selection ends when game starts
+        useGameStore.getState().setTeamSelectionActive(false);
 
         // Reset ready state for all players when countdown starts
         // This clears the checkmarks from the previous round
@@ -245,6 +269,7 @@ export function useSocket() {
       setGameState("waiting");
       setMode(null);
       setLatestEvent("Game stopped");
+      useGameStore.getState().setTeamSelectionActive(false);
       // Reset ready state - server resets all ready states, so client must sync
       resetReadyState();
     });
@@ -307,6 +332,8 @@ export function useSocket() {
       socketService.off("vampire:bloodlust");
       socketService.off("role:assigned");
       socketService.off("lobby:update");
+      socketService.off("team:update");
+      socketService.off("team:selection");
       socketService.off("game:countdown");
       socketService.off("ready:enabled");
       socketService.off("game:stopped");

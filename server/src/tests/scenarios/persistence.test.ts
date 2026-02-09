@@ -48,6 +48,8 @@ function createTestSettings(overrides?: Partial<PersistedSettings>): PersistedSe
     theme: "standard",
     roundCount: 3,
     roundDuration: 90,
+    teamsEnabled: false,
+    teamCount: 2,
     ...overrides,
   };
 }
@@ -95,6 +97,8 @@ runner.test("Settings load on init with new format", () => {
       theme: "halloween",
       roundCount: 5,
       roundDuration: 90,
+      teamsEnabled: false,
+      teamCount: 2,
     };
     writeFileSync(filePath, JSON.stringify(settings), "utf-8");
 

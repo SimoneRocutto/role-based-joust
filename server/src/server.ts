@@ -9,6 +9,7 @@ import { GameEngine } from "@/managers/GameEngine";
 import { ConnectionManager } from "@/managers/ConnectionManager";
 import { GameModeFactory } from "@/factories/GameModeFactory";
 import { InputAdapter } from "@/utils/InputAdapter";
+import { TeamManager } from "@/managers/TeamManager";
 import { Logger } from "@/utils/Logger";
 import { initSettings, userPreferences } from "@/config/gameConfig";
 
@@ -78,6 +79,7 @@ const io = new SocketIOServer(httpServer, {
 const gameEngine = new GameEngine();
 const connectionManager = ConnectionManager.getInstance();
 const inputAdapter = InputAdapter.getInstance();
+const teamManager = TeamManager.getInstance();
 
 // Make instances globally accessible
 declare global {
@@ -89,6 +91,84 @@ declare global {
 
 global.gameEngine = gameEngine;
 global.io = io;
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+/**
+ * Build team score aggregations from individual player scores.
+ */
+function buildTeamScores(
+  scores: Array<{
+    playerId: string;
+    playerName: string;
+    playerNumber: number;
+    score: number;
+    roundPoints: number;
+    rank: number;
+    status: string;
+    teamId: number | null;
+  }>
+) {
+  const teamCount = teamManager.getTeamCount();
+  const teamScores: Array<{
+    teamId: number;
+    teamName: string;
+    teamColor: string;
+    score: number;
+    roundPoints: number;
+    rank: number;
+    players: typeof scores;
+  }> = [];
+
+  for (let i = 0; i < teamCount; i++) {
+    const info = teamManager.getTeamInfo(i);
+    const teamPlayers = scores.filter((s) => s.teamId === i);
+    const totalScore = teamPlayers.reduce((sum, s) => sum + s.score, 0);
+    const totalRoundPoints = teamPlayers.reduce((sum, s) => sum + s.roundPoints, 0);
+
+    teamScores.push({
+      teamId: i,
+      teamName: info.name,
+      teamColor: info.color,
+      score: totalScore,
+      roundPoints: totalRoundPoints,
+      rank: 0, // Will be set below
+      players: teamPlayers,
+    });
+  }
+
+  // Sort by score descending and assign ranks
+  teamScores.sort((a, b) => b.score - a.score);
+  teamScores.forEach((ts, idx) => {
+    ts.rank = idx + 1;
+  });
+
+  return teamScores;
+}
+
+/**
+ * Build lobby player list with team info for broadcasting.
+ */
+function getLobbyPlayersWithTeams() {
+  const players = connectionManager.getLobbyPlayers();
+  return players.map((p) => ({
+    ...p,
+    teamId: teamManager.isEnabled() ? teamManager.getPlayerTeam(p.id) : null,
+  }));
+}
+
+/**
+ * Broadcast team:update to all clients with current team assignments.
+ */
+function broadcastTeamUpdate() {
+  if (teamManager.isEnabled()) {
+    io.emit("team:update", {
+      teams: teamManager.getTeamAssignments(),
+    });
+  }
+}
 
 // ============================================================================
 // SOCKET.IO EVENT HANDLERS
@@ -118,6 +198,11 @@ io.on("connection", (socket) => {
       true
     );
 
+    // Assign to a team if teams are enabled
+    if (teamManager.isEnabled()) {
+      teamManager.addPlayer(data.playerId);
+    }
+
     // Acknowledge join with session token and player number
     socket.emit("player:joined", {
       success: true,
@@ -126,11 +211,12 @@ io.on("connection", (socket) => {
       sessionToken: token,
       playerNumber,
       name: data.name,
+      teamId: teamManager.isEnabled() ? teamManager.getPlayerTeam(data.playerId) : null,
     });
 
     // Broadcast updated lobby list to all clients
     io.emit("lobby:update", {
-      players: connectionManager.getLobbyPlayers(),
+      players: getLobbyPlayersWithTeams(),
     });
   });
 
@@ -387,6 +473,30 @@ io.on("connection", (socket) => {
   });
 
   /**
+   * Team switch event — player taps to cycle to next team
+   */
+  socket.on("team:switch", () => {
+    if (!teamManager.isEnabled()) return;
+    if (gameEngine.gameState !== "waiting") return; // Only in lobby
+
+    const playerId = connectionManager.getPlayerId(socket.id);
+    if (!playerId || !connectionManager.isConnected(playerId)) return;
+
+    const newTeamId = teamManager.cyclePlayerTeam(playerId);
+
+    logger.info("SOCKET", "Player switched team", {
+      playerId,
+      newTeamId,
+    });
+
+    // Broadcast updated lobby and team state
+    io.emit("lobby:update", {
+      players: getLobbyPlayersWithTeams(),
+    });
+    broadcastTeamUpdate();
+  });
+
+  /**
    * Heartbeat/ping event
    */
   socket.on("ping", () => {
@@ -409,6 +519,7 @@ io.on("connection", (socket) => {
     if (playerId && gameEngine.gameState === "waiting") {
       // No active game — fully remove player so their number is freed
       connectionManager.removePlayer(playerId);
+      teamManager.removePlayer(playerId);
     } else {
       // Game in progress — keep player data for reconnection
       connectionManager.handleDisconnect(socket.id);
@@ -420,7 +531,7 @@ io.on("connection", (socket) => {
 
     // Broadcast updated lobby list to all clients
     io.emit("lobby:update", {
-      players: connectionManager.getLobbyPlayers(),
+      players: getLobbyPlayersWithTeams(),
     });
   });
 
@@ -443,9 +554,20 @@ io.on("connection", (socket) => {
 import { GameEvents } from "@/utils/GameEvents";
 const gameEvents = GameEvents.getInstance();
 
-// Broadcast game tick to all clients
+// Broadcast game tick to all clients, adding teamId if teams are enabled
 gameEvents.onGameTick((payload) => {
-  io.emit("game:tick", payload);
+  if (teamManager.isEnabled()) {
+    const enrichedPayload = {
+      ...payload,
+      players: payload.players.map((p: any) => ({
+        ...p,
+        teamId: teamManager.getPlayerTeam(p.id),
+      })),
+    };
+    io.emit("game:tick", enrichedPayload);
+  } else {
+    io.emit("game:tick", payload);
+  }
 });
 
 // Broadcast player deaths
@@ -469,19 +591,23 @@ gameEvents.onRoundEnd((payload) => {
   const playerCount = gameEngine.players.length;
   gameEvents.emitReadyCountUpdate({ ready: 0, total: playerCount });
 
+  const scores = payload.scores.map((s) => ({
+    playerId: s.player.id,
+    playerName: s.player.name,
+    playerNumber: connectionManager.getPlayerNumber(s.player.id) ?? 0,
+    score: s.score,
+    roundPoints: s.roundPoints,
+    rank: s.rank,
+    status: s.status,
+    teamId: teamManager.isEnabled() ? teamManager.getPlayerTeam(s.player.id) : null,
+  }));
+
   io.emit("round:end", {
     roundNumber: payload.roundNumber,
-    scores: payload.scores.map((s) => ({
-      playerId: s.player.id,
-      playerName: s.player.name,
-      playerNumber: connectionManager.getPlayerNumber(s.player.id) ?? 0,
-      score: s.score,
-      roundPoints: s.roundPoints,
-      rank: s.rank,
-      status: s.status,
-    })),
+    scores,
     gameTime: payload.gameTime,
     winnerId: payload.winnerId || null,
+    teamScores: teamManager.isEnabled() ? buildTeamScores(scores) : null,
   });
 });
 
@@ -500,6 +626,17 @@ gameEvents.onGameEnd((payload) => {
   const lobbyPlayers = connectionManager.getLobbyPlayers();
   gameEvents.emitReadyCountUpdate({ ready: 0, total: lobbyPlayers.length });
 
+  const scores = payload.scores.map((s) => ({
+    playerId: s.player.id,
+    playerName: s.player.name,
+    playerNumber: connectionManager.getPlayerNumber(s.player.id) ?? 0,
+    score: s.score,
+    roundPoints: s.roundPoints,
+    rank: s.rank,
+    status: s.status,
+    teamId: teamManager.isEnabled() ? teamManager.getPlayerTeam(s.player.id) : null,
+  }));
+
   io.emit("game:end", {
     winner: payload.winner
       ? {
@@ -508,16 +645,9 @@ gameEvents.onGameEnd((payload) => {
           number: connectionManager.getPlayerNumber(payload.winner.id) ?? 0,
         }
       : null,
-    scores: payload.scores.map((s) => ({
-      playerId: s.player.id,
-      playerName: s.player.name,
-      playerNumber: connectionManager.getPlayerNumber(s.player.id) ?? 0,
-      score: s.score,
-      roundPoints: s.roundPoints,
-      rank: s.rank,
-      status: s.status,
-    })),
+    scores,
     totalRounds: payload.totalRounds,
+    teamScores: teamManager.isEnabled() ? buildTeamScores(scores) : null,
   });
 });
 

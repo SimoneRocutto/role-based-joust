@@ -155,6 +155,7 @@ Full payloads and details: see `docs/communication.md`.
 **Primary endpoints:**
 - `POST /api/game/launch` — Create and start a game (primary way to start games)
 - `POST /api/game/next-round` — Start next round
+- `POST /api/game/team-selection` — Enter team selection phase (teams enabled only)
 - `POST /api/game/stop` — Stop current game
 - `GET /api/game/state` — Current game snapshot
 - `GET /api/game/lobby` — Connected players in lobby

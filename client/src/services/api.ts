@@ -139,6 +139,8 @@ class ApiService {
     theme: string;
     roundCount: number;
     roundDuration: number;
+    teamsEnabled: boolean;
+    teamCount: number;
     movement: { dangerThreshold: number; damageMultiplier: number; oneshotMode: boolean };
     presets: Array<{
       key: string;
@@ -162,6 +164,8 @@ class ApiService {
     roundDuration?: number;
     dangerThreshold?: number;
     damageMultiplier?: number;
+    teamsEnabled?: boolean;
+    teamCount?: number;
   }): Promise<{
     success: boolean;
     sensitivity: string;
@@ -169,12 +173,44 @@ class ApiService {
     theme: string;
     roundCount: number;
     roundDuration: number;
+    teamsEnabled: boolean;
+    teamCount: number;
     movement: { dangerThreshold: number; damageMultiplier: number; oneshotMode: boolean };
   }> {
     return this.request("/game/settings", {
       method: "POST",
       body: JSON.stringify(payload),
     });
+  }
+
+  // POST /api/game/team-selection
+  async startTeamSelection(): Promise<{
+    success: boolean;
+    teams: Record<string, string[]>;
+  }> {
+    return this.request("/game/team-selection", {
+      method: "POST",
+    });
+  }
+
+  // POST /api/game/teams/shuffle
+  async shuffleTeams(): Promise<{
+    success: boolean;
+    teams: Record<string, string[]>;
+  }> {
+    return this.request("/game/teams/shuffle", {
+      method: "POST",
+    });
+  }
+
+  // GET /api/game/teams
+  async getTeams(): Promise<{
+    success: boolean;
+    enabled: boolean;
+    teamCount: number;
+    teams: Record<string, string[]>;
+  }> {
+    return this.request("/game/teams");
   }
 
   // GET /api/player/:playerId/role

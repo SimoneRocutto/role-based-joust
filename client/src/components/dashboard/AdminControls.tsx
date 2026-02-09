@@ -7,7 +7,7 @@ import type { GameMode } from "@/types/game.types";
 
 function AdminControls() {
   const { players } = useGameState();
-  const { isDevMode, readyCount, setMode } = useGameStore();
+  const { isDevMode, readyCount, teamSelectionActive } = useGameStore();
   const [modes, setModes] = useState<GameMode[]>([]);
   const [selectedMode, setSelectedMode] = useState("role-based");
   const [selectedTheme, setSelectedTheme] = useState("standard");
@@ -18,6 +18,8 @@ function AdminControls() {
   const [dangerThreshold, setDangerThreshold] = useState(0.1);
   const [roundCount, setRoundCount] = useState(3);
   const [roundDuration, setRoundDuration] = useState(90);
+  const [teamsEnabled, setTeamsEnabled] = useState(false);
+  const [teamCount, setTeamCount] = useState(2);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -67,6 +69,13 @@ function AdminControls() {
           }
           if (data.roundDuration) {
             setRoundDuration(data.roundDuration);
+          }
+          if (data.teamsEnabled !== undefined) {
+            setTeamsEnabled(data.teamsEnabled);
+            useGameStore.getState().setTeamsEnabled(data.teamsEnabled);
+          }
+          if (data.teamCount) {
+            setTeamCount(data.teamCount);
           }
         }
       })
@@ -158,6 +167,69 @@ function AdminControls() {
     }
   };
 
+  const handleTeamsEnabledChange = async (enabled: boolean) => {
+    setTeamsEnabled(enabled);
+    useGameStore.getState().setTeamsEnabled(enabled);
+    try {
+      await apiService.updateSettings({ teamsEnabled: enabled });
+    } catch (err) {
+      console.error("Failed to update teams setting:", err);
+    }
+  };
+
+  const handleTeamCountChange = async (count: number) => {
+    setTeamCount(count);
+    try {
+      await apiService.updateSettings({ teamCount: count });
+    } catch (err) {
+      console.error("Failed to update team count:", err);
+    }
+  };
+
+  const handleShuffleTeams = async () => {
+    try {
+      await apiService.shuffleTeams();
+    } catch (err) {
+      console.error("Failed to shuffle teams:", err);
+    }
+  };
+
+  const handleStartTeamSelection = async () => {
+    if (players.length < 2) {
+      setError("Need at least 2 players to start");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await apiService.startTeamSelection();
+      if (!result.success) {
+        throw new Error("Failed to start team selection");
+      }
+    } catch (err) {
+      console.error("Failed to start team selection:", err);
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelTeamSelection = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      await apiService.stopGame();
+    } catch (err) {
+      console.error("Failed to cancel team selection:", err);
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleLaunchGame = async () => {
     if (players.length < 2) {
       setError("Need at least 2 players to start");
@@ -177,8 +249,6 @@ function AdminControls() {
       if (!result.success) {
         throw new Error("Failed to launch game");
       }
-
-      console.log("Game launched:", result);
     } catch (err) {
       console.error("Failed to launch game:", err);
       setError((err as Error).message);
@@ -186,6 +256,65 @@ function AdminControls() {
       setLoading(false);
     }
   };
+
+  // Determine which action "Start Game" should trigger
+  const handleStartClick =
+    teamsEnabled && !teamSelectionActive
+      ? handleStartTeamSelection
+      : handleLaunchGame;
+
+  // Team selection active — show simplified controls
+  if (teamSelectionActive) {
+    return (
+      <div className="bg-gray-800 rounded-lg p-6 border border-blue-600">
+        <div className="flex items-center gap-4 mb-4">
+          <h2 className="text-2xl font-bold">Team Selection</h2>
+          <span className="px-3 py-1 bg-blue-600 text-blue-100 text-sm font-semibold rounded">
+            {teamCount} teams
+          </span>
+        </div>
+
+        <p className="text-gray-400 mb-4">
+          Players can tap their screen to switch teams. Press Start Game when
+          ready.
+        </p>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-900/50 border border-red-700 rounded-lg text-red-200">
+            {error}
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex gap-4 items-center">
+          <button
+            onClick={handleShuffleTeams}
+            disabled={loading}
+            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 rounded-lg font-bold text-lg transition-colors"
+          >
+            Shuffle Teams
+          </button>
+
+          <button
+            onClick={handleLaunchGame}
+            disabled={loading || players.length < 2}
+            className="px-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg font-bold text-xl transition-colors"
+          >
+            {loading ? "Starting..." : "Start Game"}
+          </button>
+
+          <button
+            onClick={handleCancelTeamSelection}
+            disabled={loading}
+            className="px-6 py-3 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-700 rounded-lg font-medium text-lg transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
@@ -291,6 +420,48 @@ function AdminControls() {
         </div>
       )}
 
+      {/* Team Mode */}
+      <div className="mb-4">
+        <div className="flex items-center gap-3 mb-2">
+          <label className="block text-sm text-gray-400">Team Mode</label>
+          <button
+            onClick={() => handleTeamsEnabledChange(!teamsEnabled)}
+            disabled={loading}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              teamsEnabled ? "bg-blue-600" : "bg-gray-600"
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                teamsEnabled ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+        </div>
+
+        {teamsEnabled && (
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-400">Teams:</span>
+            <div className="flex gap-2">
+              {[2, 3, 4].map((count) => (
+                <button
+                  key={count}
+                  onClick={() => handleTeamCountChange(count)}
+                  disabled={loading}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    teamCount === count
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                  }`}
+                >
+                  {count}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Sensitivity Selection */}
       <div className="mb-4">
         <label className="block text-sm text-gray-400 mb-2">
@@ -346,23 +517,28 @@ function AdminControls() {
         </p>
       </div>
 
-      {/* Connected Players */}
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold mb-2">
-          Connected Players: {players.length}
-        </h3>
-        {players.length > 0 ? (
-          <div className="grid grid-cols-4 gap-2">
-            {players.map((p) => (
-              <div key={p.id} className="px-3 py-2 bg-gray-700 rounded text-sm">
-                #{p.number} {p.name}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500">No players connected yet...</p>
-        )}
-      </div>
+      {/* Connected Players (only when teams disabled — team lobby grid handles team display) */}
+      {!teamsEnabled && (
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold mb-2">
+            Connected Players: {players.length}
+          </h3>
+          {players.length > 0 ? (
+            <div className="grid grid-cols-4 gap-2">
+              {players.map((p) => (
+                <div
+                  key={p.id}
+                  className="px-3 py-2 bg-gray-700 rounded text-sm"
+                >
+                  #{p.number} {p.name}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500">No players connected yet...</p>
+          )}
+        </div>
+      )}
 
       {/* Error Message */}
       {error && (
@@ -376,13 +552,11 @@ function AdminControls() {
         {/* In dev mode: always show start button */}
         {isDevMode && (
           <button
-            onClick={handleLaunchGame}
+            onClick={handleStartClick}
             disabled={loading || players.length < 2}
             className="px-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg font-bold text-xl transition-colors"
           >
-            {loading
-              ? "Starting..."
-              : `🎮 Start Game (${players.length} players)`}
+            {loading ? "Starting..." : `Start Game (${players.length} players)`}
           </button>
         )}
 
@@ -391,11 +565,11 @@ function AdminControls() {
           <>
             {allPlayersReady ? (
               <button
-                onClick={handleLaunchGame}
+                onClick={handleStartClick}
                 disabled={loading || players.length < 2}
                 className="px-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg font-bold text-xl transition-colors animate-pulse"
               >
-                {loading ? "Starting..." : `🎮 All Ready! Start Game`}
+                {loading ? "Starting..." : `All Ready! Start Game`}
               </button>
             ) : (
               <div className="px-8 py-4 bg-gray-700 rounded-lg text-gray-400 text-xl">

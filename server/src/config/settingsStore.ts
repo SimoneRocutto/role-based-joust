@@ -19,6 +19,10 @@ export interface PersistedSettings {
   roundCount: number;
   /** Round duration in seconds (30-300), used by timed modes */
   roundDuration: number;
+  /** Whether team mode is enabled */
+  teamsEnabled: boolean;
+  /** Number of teams (2-4) */
+  teamCount: number;
 }
 
 class SettingsStore {

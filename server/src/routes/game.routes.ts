@@ -13,9 +13,12 @@ import {
   setThemePreference,
   setRoundCountPreference,
   setRoundDurationPreference,
+  setTeamsEnabledPreference,
+  setTeamCountPreference,
   userPreferences,
 } from "@/config/gameConfig";
 import { getAvailableThemes, themeExists } from "@/config/roleThemes";
+import { TeamManager } from "@/managers/TeamManager";
 
 const router = Router();
 const logger = Logger.getInstance();
@@ -68,14 +71,20 @@ router.get(
   "/lobby",
   asyncHandler(async (req: Request, res: Response) => {
     const lobbyPlayers = connectionManager.getLobbyPlayers();
+    const teamManager = TeamManager.getInstance();
+
+    const players = lobbyPlayers.map((p) => ({
+      ...p,
+      teamId: teamManager.isEnabled() ? teamManager.getPlayerTeam(p.id) : null,
+    }));
 
     logger.debug("GAME", "Fetched lobby players", {
-      count: lobbyPlayers.length,
+      count: players.length,
     });
 
     res.json({
       success: true,
-      players: lobbyPlayers,
+      players,
     });
   })
 );
@@ -181,6 +190,7 @@ router.get(
     res.json({
       success: true,
       state: snapshot,
+      teamSelectionActive: TeamManager.getInstance().isSelectionActive(),
     });
   })
 );
@@ -217,6 +227,32 @@ router.post(
         error: "Need at least 2 players to start",
       });
       return;
+    }
+
+    // Configure teams based on current settings
+    const teamManager = TeamManager.getInstance();
+    teamManager.configure(userPreferences.teamsEnabled, userPreferences.teamCount);
+    // End team selection phase if it was active
+    teamManager.endSelection();
+
+    // If teams enabled, ensure sequential assignment exists for current lobby
+    if (teamManager.isEnabled()) {
+      const playerIds = lobbyPlayers.map((p) => p.id);
+      // Only assign if not already assigned (players may have manually switched)
+      const hasAssignments = playerIds.some((id) => teamManager.getPlayerTeam(id) !== null);
+      if (!hasAssignments) {
+        teamManager.assignSequential(playerIds);
+      }
+
+      // Validate: at least 1 player per team
+      const validation = teamManager.validateTeams();
+      if (!validation.valid) {
+        res.status(400).json({
+          success: false,
+          error: validation.message,
+        });
+        return;
+      }
     }
 
     // Use persisted preferences as defaults
@@ -293,6 +329,7 @@ router.post(
 
     gameEngine.stopGame();
     connectionManager.resetAllReadyState();
+    TeamManager.getInstance().reset();
 
     logger.info("GAME", "Game stopped by request");
 
@@ -360,6 +397,8 @@ router.get(
       theme: userPreferences.theme,
       roundCount: userPreferences.roundCount,
       roundDuration: userPreferences.roundDuration,
+      teamsEnabled: userPreferences.teamsEnabled,
+      teamCount: userPreferences.teamCount,
       // Movement details
       movement: {
         dangerThreshold: gameConfig.movement.dangerThreshold,
@@ -390,7 +429,7 @@ router.post(
   "/settings",
   validate("gameSettings"),
   asyncHandler(async (req: Request, res: Response) => {
-    const { sensitivity, gameMode, theme, roundCount, roundDuration, dangerThreshold, damageMultiplier } =
+    const { sensitivity, gameMode, theme, roundCount, roundDuration, teamsEnabled, teamCount, dangerThreshold, damageMultiplier } =
       req.body;
     const updates: string[] = [];
 
@@ -463,6 +502,69 @@ router.post(
       updates.push(`roundDuration=${roundDuration}`);
     }
 
+    // Update teamsEnabled preference
+    if (teamsEnabled !== undefined) {
+      if (typeof teamsEnabled !== "boolean") {
+        res.status(400).json({
+          success: false,
+          error: "teamsEnabled must be a boolean",
+        });
+        return;
+      }
+      setTeamsEnabledPreference(teamsEnabled);
+      updates.push(`teamsEnabled=${teamsEnabled}`);
+    }
+
+    // Update teamCount preference
+    if (teamCount !== undefined) {
+      if (typeof teamCount !== "number" || teamCount < 2 || teamCount > 4) {
+        res.status(400).json({
+          success: false,
+          error: "teamCount must be a number between 2 and 4",
+        });
+        return;
+      }
+      setTeamCountPreference(teamCount);
+      updates.push(`teamCount=${teamCount}`);
+    }
+
+    // If team settings changed, reconfigure TeamManager and update lobby
+    if (teamsEnabled !== undefined || teamCount !== undefined) {
+      const tm = TeamManager.getInstance();
+      tm.configure(userPreferences.teamsEnabled, userPreferences.teamCount);
+
+      // If teams enabled and in lobby, do sequential assignment
+      const { gameEngine: ge, io: ioInstance } = global;
+      if (ge && ge.gameState === "waiting" && userPreferences.teamsEnabled) {
+        const lobbyPlayers = connectionManager.getLobbyPlayers();
+        if (lobbyPlayers.length > 0) {
+          tm.assignSequential(lobbyPlayers.map((p) => p.id));
+        }
+        // Broadcast updated lobby with team info
+        if (ioInstance) {
+          const playersWithTeams = lobbyPlayers.map((p) => ({
+            ...p,
+            teamId: tm.getPlayerTeam(p.id),
+          }));
+          ioInstance.emit("lobby:update", { players: playersWithTeams });
+          ioInstance.emit("team:update", { teams: tm.getTeamAssignments() });
+        }
+      } else if (!userPreferences.teamsEnabled) {
+        // Teams disabled — reset assignments and broadcast clean lobby
+        tm.reset();
+        const { io: ioInstance } = global;
+        if (ioInstance) {
+          const lobbyPlayers = connectionManager.getLobbyPlayers();
+          const playersWithTeams = lobbyPlayers.map((p) => ({
+            ...p,
+            teamId: null,
+          }));
+          ioInstance.emit("lobby:update", { players: playersWithTeams });
+          ioInstance.emit("team:update", { teams: {} });
+        }
+      }
+    }
+
     // Custom sensitivity values (overrides preset)
     if (dangerThreshold !== undefined || damageMultiplier !== undefined) {
       const update: Partial<{
@@ -481,7 +583,7 @@ router.post(
       res.status(400).json({
         success: false,
         error:
-          "Provide at least one setting to update: sensitivity, gameMode, theme, roundCount, roundDuration, or custom values (dangerThreshold/damageMultiplier)",
+          "Provide at least one setting to update: sensitivity, gameMode, theme, roundCount, roundDuration, teamsEnabled, teamCount, or custom values (dangerThreshold/damageMultiplier)",
       });
       return;
     }
@@ -495,11 +597,146 @@ router.post(
       theme: userPreferences.theme,
       roundCount: userPreferences.roundCount,
       roundDuration: userPreferences.roundDuration,
+      teamsEnabled: userPreferences.teamsEnabled,
+      teamCount: userPreferences.teamCount,
       movement: {
         dangerThreshold: gameConfig.movement.dangerThreshold,
         damageMultiplier: gameConfig.movement.damageMultiplier,
         oneshotMode: gameConfig.movement.oneshotMode,
       },
+    });
+  })
+);
+
+/**
+ * POST /api/game/team-selection
+ * Enter team selection phase (admin action, lobby only)
+ * Requires teams to be enabled and at least 2 players in lobby.
+ */
+router.post(
+  "/team-selection",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { gameEngine } = global;
+
+    if (!gameEngine || gameEngine.gameState !== "waiting") {
+      res.status(400).json({
+        success: false,
+        error: "Can only start team selection from the lobby",
+      });
+      return;
+    }
+
+    const teamManager = TeamManager.getInstance();
+    teamManager.configure(userPreferences.teamsEnabled, userPreferences.teamCount);
+
+    if (!teamManager.isEnabled()) {
+      res.status(400).json({
+        success: false,
+        error: "Teams are not enabled",
+      });
+      return;
+    }
+
+    const lobbyPlayers = connectionManager.getLobbyPlayers();
+    if (lobbyPlayers.length < 2) {
+      res.status(400).json({
+        success: false,
+        error: "Need at least 2 players to start team selection",
+      });
+      return;
+    }
+
+    const playerIds = lobbyPlayers.map((p) => p.id);
+    teamManager.startSelection(playerIds);
+
+    // Reset ready states so players can't start game during selection
+    connectionManager.resetAllReadyState();
+
+    // Broadcast team selection active + updated lobby with team info
+    const { io } = global;
+    if (io) {
+      io.emit("team:selection", { active: true });
+      const playersWithTeams = lobbyPlayers.map((p) => ({
+        ...p,
+        teamId: teamManager.getPlayerTeam(p.id),
+      }));
+      io.emit("lobby:update", { players: playersWithTeams });
+      io.emit("team:update", { teams: teamManager.getTeamAssignments() });
+    }
+
+    logger.info("GAME", "Team selection started", { playerCount: lobbyPlayers.length });
+
+    res.json({
+      success: true,
+      teams: teamManager.getTeamAssignments(),
+    });
+  })
+);
+
+/**
+ * POST /api/game/teams/shuffle
+ * Shuffle team assignments randomly (admin action, lobby only)
+ */
+router.post(
+  "/teams/shuffle",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { gameEngine } = global;
+
+    if (!gameEngine || gameEngine.gameState !== "waiting") {
+      res.status(400).json({
+        success: false,
+        error: "Can only shuffle teams in the lobby",
+      });
+      return;
+    }
+
+    const teamManager = TeamManager.getInstance();
+    if (!teamManager.isEnabled()) {
+      res.status(400).json({
+        success: false,
+        error: "Teams are not enabled",
+      });
+      return;
+    }
+
+    const lobbyPlayers = connectionManager.getLobbyPlayers();
+    const playerIds = lobbyPlayers.map((p) => p.id);
+    teamManager.shuffle(playerIds);
+
+    // Broadcast updated lobby with new team assignments
+    const { io } = global;
+    if (io) {
+      const playersWithTeams = lobbyPlayers.map((p) => ({
+        ...p,
+        teamId: teamManager.getPlayerTeam(p.id),
+      }));
+      io.emit("lobby:update", { players: playersWithTeams });
+      io.emit("team:update", { teams: teamManager.getTeamAssignments() });
+    }
+
+    logger.info("GAME", "Teams shuffled");
+
+    res.json({
+      success: true,
+      teams: teamManager.getTeamAssignments(),
+    });
+  })
+);
+
+/**
+ * GET /api/game/teams
+ * Get current team assignments
+ */
+router.get(
+  "/teams",
+  asyncHandler(async (req: Request, res: Response) => {
+    const teamManager = TeamManager.getInstance();
+
+    res.json({
+      success: true,
+      enabled: teamManager.isEnabled(),
+      teamCount: teamManager.getTeamCount(),
+      teams: teamManager.isEnabled() ? teamManager.getTeamAssignments() : {},
     });
   })
 );

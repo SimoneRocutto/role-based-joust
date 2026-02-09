@@ -17,6 +17,7 @@ import PortraitLock from "@/components/player/PortraitLock";
 import DamageFlash from "@/components/player/DamageFlash";
 import type { ChargeInfo, PlayerMovePayload } from "@/types/socket.types";
 import { audioManager } from "@/services/audio";
+import { getTeamColor, getDeadBackgroundColor } from "@/utils/teamColors";
 
 // In development mode, allow button click instead of shake
 // Use ?mode=production URL param to test production behavior in dev
@@ -51,8 +52,18 @@ function PlayerView() {
     respawnCountdown,
   } = useGameState();
 
-  const { countdownSeconds, countdownPhase, myIsReady, setMyReady } =
+  const { countdownSeconds, countdownPhase, myIsReady, setMyReady, teamSelectionActive } =
     useGameStore();
+
+  // Team info
+  const myTeamId = myPlayer?.teamId ?? null;
+  const myTeamColor = getTeamColor(myTeamId);
+
+  // Handle tap to switch team during team selection
+  const handleTeamSwitch = useCallback(() => {
+    if (!isWaiting || !teamSelectionActive) return;
+    socketService.sendTeamSwitch();
+  }, [isWaiting, teamSelectionActive]);
 
   const { start: startAccelerometer, lastData } = useAccelerometer();
   const { enable: enableWakeLock } = useWakeLock(true);
@@ -282,9 +293,53 @@ function PlayerView() {
       {/* Portrait Lock Overlay */}
       {showPortraitLock && <PortraitLock />}
 
-      {/* Waiting State */}
-      {isWaiting && !isCountdown && (
-        <div className="fullscreen bg-gray-800 flex flex-col items-center justify-center gap-8 p-8">
+      {/* Team Selection State */}
+      {isWaiting && !isCountdown && teamSelectionActive && (
+        <div
+          className="fullscreen flex flex-col items-center justify-center gap-8 p-8"
+          style={{
+            backgroundColor: myTeamColor ? myTeamColor.dark : '#1f2937',
+          }}
+          onClick={handleTeamSwitch}
+        >
+          <ConnectionStatus />
+          <div className="text-center">
+            {/* Team badge */}
+            {myTeamColor && (
+              <div
+                className="text-lg font-bold mb-2 px-4 py-1 rounded-full inline-block"
+                style={{
+                  backgroundColor: myTeamColor.tint,
+                  color: myTeamColor.primary,
+                  border: `2px solid ${myTeamColor.primary}`,
+                }}
+              >
+                {myTeamColor.name}
+              </div>
+            )}
+            <div className="text-8xl font-bold text-white mb-4">
+              #{myPlayerNumber}
+            </div>
+            <div className="text-3xl text-gray-300 mb-2">
+              {myPlayer?.name || "Player"}
+            </div>
+
+            <div className="mt-8 text-xl text-gray-400">
+              Tap to switch team
+            </div>
+            <div className="text-sm text-gray-500 mt-2">
+              Waiting for admin to start game...
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Waiting State (normal lobby, no team selection) */}
+      {isWaiting && !isCountdown && !teamSelectionActive && (
+        <div
+          className="fullscreen flex flex-col items-center justify-center gap-8 p-8"
+          style={{ backgroundColor: '#1f2937' }}
+        >
           <ConnectionStatus />
           <div className="text-center">
             <div className="text-8xl font-bold text-white mb-4">
@@ -499,7 +554,7 @@ function PlayerView() {
 
           {/* Main Number Area (70%) */}
           <div className="h-[70%] relative">
-            <HealthBackground player={myPlayer} />
+            <HealthBackground player={myPlayer} teamId={myTeamId} />
             <PlayerNumber number={myPlayerNumber} />
           </div>
 
@@ -533,7 +588,10 @@ function PlayerView() {
         !isWaiting &&
         !isFinished &&
         respawnCountdown !== null && (
-          <div className="fullscreen bg-gray-900 flex flex-col items-center justify-center gap-6 dead-screen">
+          <div
+            className="fullscreen flex flex-col items-center justify-center gap-6 dead-screen"
+            style={{ backgroundColor: getDeadBackgroundColor(myTeamId) }}
+          >
             <div className="text-7xl font-black text-red-500">WALK AWAY!</div>
             <div className="text-4xl text-gray-300">
               Respawning in {displayRespawnSeconds ?? "..."}...
@@ -551,7 +609,10 @@ function PlayerView() {
         !isWaiting &&
         !isFinished &&
         respawnCountdown === null && (
-          <div className="fullscreen bg-health-dead flex flex-col items-center justify-center gap-8 dead-screen">
+          <div
+            className="fullscreen flex flex-col items-center justify-center gap-8 dead-screen"
+            style={{ backgroundColor: getDeadBackgroundColor(myTeamId) }}
+          >
             <div className="text-9xl">💀</div>
             <div className="text-5xl font-bold text-gray-500">ELIMINATED</div>
             <div className="text-xl text-gray-600">

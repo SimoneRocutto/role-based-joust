@@ -3,8 +3,7 @@
 Here are all the things this game is missing to be complete. PRIORITIES shows next todo points in priority order from top (highest priority) to bottom (lowest). Feel free to remove them once one of them is done. Below are the future tasks divided by their subject.
 
 - PRIORITIES:
-    - I hear "player respawning in ..." also when dying in classic and role modes: this should never happen. I think the server is sending the event even in these cases. This should happen for possible future roles like the zombie, but it should not happen on death every time
-    - implement team mode: players are divided in N teams and their points are summed to see who wins. We should be able to have team mode both for the death count mode and for the classic mode
+    - walk away screen for death count mode: the text on mobile doesn't fit. Also, in team mode the background shouldn't be grey. It should be of the color of the team (in particular, the color that represents empty life bar)
 
 - IMPROVEMENTS:
     - victory music

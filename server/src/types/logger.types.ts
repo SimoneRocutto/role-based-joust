@@ -23,7 +23,8 @@ export type LogCategory =
   | "SERVER"
   | "ANGEL"
   | "EVENT_MGR"
-  | "SPEED_SHIFT";
+  | "SPEED_SHIFT"
+  | "TEAMS";
 
 export interface LogEntry {
   timestamp: string;

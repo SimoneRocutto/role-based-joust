@@ -8,6 +8,8 @@ import {
   useGameState
 } from '@/hooks/useGameState'
 import { STATUS_ICONS } from '@/utils/constants'
+import { getTeamColor } from '@/utils/teamColors'
+import { useGameStore } from '@/store/gameStore'
 
 interface PlayerCardProps {
   player: PlayerState
@@ -15,7 +17,9 @@ interface PlayerCardProps {
 
 function PlayerCard({ player }: PlayerCardProps) {
   const { isWaiting, isRoundEnded } = useGameState()
+  const teamsEnabled = useGameStore((state) => state.teamsEnabled)
   const [justBecameReady, setJustBecameReady] = useState(false)
+  const teamColor = teamsEnabled ? getTeamColor(player.teamId ?? null) : null
 
   // Track when player becomes ready for animation
   useEffect(() => {
@@ -60,17 +64,40 @@ function PlayerCard({ player }: PlayerCardProps) {
   const statusIcon = getStatusIcon()
   const showReadyBadge = (isWaiting || isRoundEnded) && player.isReady
 
+  // Build border/tint styles: round winner > team color > health-based
+  const getCardStyles = () => {
+    if (isRoundWinner) {
+      return {
+        className: 'border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.5)] bg-yellow-500/20',
+        style: {} as React.CSSProperties,
+      }
+    }
+    if (teamColor && player.isAlive) {
+      return {
+        className: '',
+        style: {
+          borderColor: teamColor.border,
+          backgroundColor: teamColor.tint,
+        } as React.CSSProperties,
+      }
+    }
+    return {
+      className: `${getHealthBorderClass(healthPercent, player.isAlive)} ${getHealthGlowClass(healthPercent, player.isAlive)} ${getHealthTintClass(healthPercent, player.isAlive)}`,
+      style: {} as React.CSSProperties,
+    }
+  }
+
+  const cardStyles = getCardStyles()
+
   return (
     <div
       className={`
         relative rounded-lg p-4 border-4 transition-all duration-300
-        ${isRoundWinner
-          ? 'border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.5)] bg-yellow-500/20'
-          : `${getHealthBorderClass(healthPercent, player.isAlive)} ${getHealthGlowClass(healthPercent, player.isAlive)} ${getHealthTintClass(healthPercent, player.isAlive)}`
-        }
+        ${cardStyles.className}
         ${isDead && !isRoundEnded ? 'opacity-60' : ''}
         ${justBecameReady ? 'animate-card-jump' : ''}
       `}
+      style={cardStyles.style}
     >
       {/* Ready Badge (top-right corner) */}
       {showReadyBadge && (

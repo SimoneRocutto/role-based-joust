@@ -52,6 +52,8 @@ const schemas = {
     gameMode: { type: "string", required: false },
     theme: { type: "string", required: false },
     roundCount: { type: "number", required: false, min: 1, max: 10 },
+    teamsEnabled: { type: "boolean", required: false },
+    teamCount: { type: "number", required: false, min: 2, max: 4 },
     dangerThreshold: { type: "number", required: false, min: 0.001, max: 1 },
     damageMultiplier: { type: "number", required: false, min: 1, max: 500 },
   },

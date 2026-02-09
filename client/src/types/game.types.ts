@@ -38,6 +38,17 @@ export interface ScoreEntry {
   roundPoints: number;
   rank: number;
   status: string;
+  teamId?: number | null;
+}
+
+export interface TeamScore {
+  teamId: number;
+  teamName: string;
+  teamColor: string;
+  score: number;
+  roundPoints: number;
+  rank: number;
+  players: ScoreEntry[];
 }
 
 export interface GameEndInfo {
