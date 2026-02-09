@@ -163,11 +163,10 @@ test.describe('Death Count Mode', () => {
         method: 'POST',
       });
 
-      // Player should see "WALK AWAY!" and respawn countdown
-      await expect(player1.locator('text=WALK AWAY!')).toBeVisible({
+      // Player should see "RESPAWNING..." and countdown number
+      await expect(player1.locator('text=RESPAWNING...')).toBeVisible({
         timeout: 3000,
       });
-      await expect(player1.locator('text=/Respawning in/')).toBeVisible();
 
       // Should NOT see permanent "ELIMINATED"
       await expect(player1.locator('text=ELIMINATED')).not.toBeVisible();
@@ -176,7 +175,7 @@ test.describe('Death Count Mode', () => {
       await player1.waitForTimeout(6000);
 
       // Player should be alive again
-      await expect(player1.locator('text=WALK AWAY!')).not.toBeVisible();
+      await expect(player1.locator('text=RESPAWNING...')).not.toBeVisible();
       await expect(player1.locator('text=ELIMINATED')).not.toBeVisible();
     });
 
@@ -200,10 +199,9 @@ test.describe('Death Count Mode', () => {
       });
 
       // Should see respawn UI
-      await expect(player1.locator('text=WALK AWAY!')).toBeVisible({
+      await expect(player1.locator('text=RESPAWNING...')).toBeVisible({
         timeout: 3000,
       });
-      await expect(player1.locator('text=/Respawning in/')).toBeVisible();
 
       // Should NOT see permanent death UI
       await expect(player1.locator('text=ELIMINATED')).not.toBeVisible();

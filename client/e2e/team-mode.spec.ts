@@ -229,7 +229,7 @@ test.describe('Team Mode', () => {
   });
 
   test.describe('Team Lobby Dashboard', () => {
-    test('dashboard shows team sections when teams enabled', async ({ context }) => {
+    test('dashboard shows team sections during team selection', async ({ context }) => {
       // Enable teams
       await fetch(`${API_URL}/api/game/settings`, {
         method: 'POST',
@@ -246,12 +246,204 @@ test.describe('Team Mode', () => {
       const p2 = await openPlayerJoin(context);
       await joinAsPlayer(p2, 'DashTeam2');
 
-      // Wait for lobby to update
+      // Enter team selection phase
+      const selResponse = await fetch(`${API_URL}/api/game/team-selection`, {
+        method: 'POST',
+      });
+      expect(selResponse.ok).toBe(true);
+
+      // Wait for state propagation
       await dashboard.waitForTimeout(1000);
 
       // Should see team names
       await expect(dashboard.locator('text=Red Team')).toBeVisible({ timeout: 5000 });
       await expect(dashboard.locator('text=Blue Team')).toBeVisible({ timeout: 5000 });
+    });
+  });
+
+  test.describe('Team Selection Phase', () => {
+    test('POST /api/game/team-selection enters selection phase', async ({ context }) => {
+      // Enable teams
+      await fetch(`${API_URL}/api/game/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamsEnabled: true, teamCount: 2 }),
+      });
+
+      // Join 2 players
+      const p1 = await openPlayerJoin(context);
+      await joinAsPlayer(p1, 'SelP1');
+      const p2 = await openPlayerJoin(context);
+      await joinAsPlayer(p2, 'SelP2');
+
+      // Enter team selection
+      const response = await fetch(`${API_URL}/api/game/team-selection`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+
+      expect(response.ok).toBe(true);
+      expect(data.success).toBe(true);
+      expect(data.teams).toBeDefined();
+
+      // Game state should report teamSelectionActive
+      const stateResponse = await fetch(`${API_URL}/api/game/state`);
+      const stateData = await stateResponse.json();
+      expect(stateData.teamSelectionActive).toBe(true);
+      expect(stateData.state.state).toBe('waiting');
+    });
+
+    test('team selection requires at least 2 players', async () => {
+      // Enable teams
+      await fetch(`${API_URL}/api/game/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamsEnabled: true, teamCount: 2 }),
+      });
+
+      // Try entering selection with no players
+      const response = await fetch(`${API_URL}/api/game/team-selection`, {
+        method: 'POST',
+      });
+
+      expect(response.ok).toBe(false);
+      const data = await response.json();
+      expect(data.error).toContain('at least 2 players');
+    });
+
+    test('team selection requires teams to be enabled', async () => {
+      // Disable teams
+      await fetch(`${API_URL}/api/game/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamsEnabled: false }),
+      });
+
+      const response = await fetch(`${API_URL}/api/game/team-selection`, {
+        method: 'POST',
+      });
+
+      expect(response.ok).toBe(false);
+      const data = await response.json();
+      expect(data.error).toContain('not enabled');
+    });
+
+    test('player phones show team color during selection', async ({ context }) => {
+      // Enable teams
+      await fetch(`${API_URL}/api/game/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamsEnabled: true, teamCount: 2 }),
+      });
+
+      const p1 = await openPlayerJoin(context);
+      await joinAsPlayer(p1, 'PhoneSelP1');
+      const p2 = await openPlayerJoin(context);
+      await joinAsPlayer(p2, 'PhoneSelP2');
+
+      // Enter team selection
+      await fetch(`${API_URL}/api/game/team-selection`, { method: 'POST' });
+      await p1.waitForTimeout(1000);
+
+      // Player should see team badge and tap-to-switch hint
+      await expect(p1.locator('text=/Tap to switch team/i')).toBeVisible({ timeout: 5000 });
+
+      // Should NOT see ready UI during team selection
+      await expect(p1.locator('text=/SHAKE TO READY|CLICK TO READY/i')).not.toBeVisible();
+    });
+
+    test('launching game from team selection works', async ({ context }) => {
+      // Enable teams
+      await fetch(`${API_URL}/api/game/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamsEnabled: true, teamCount: 2 }),
+      });
+
+      const dashboard = await openDashboard(context);
+
+      const p1 = await openPlayerJoin(context);
+      await joinAsPlayer(p1, 'LaunchSelP1');
+      const p2 = await openPlayerJoin(context);
+      await joinAsPlayer(p2, 'LaunchSelP2');
+
+      // Enter team selection
+      await fetch(`${API_URL}/api/game/team-selection`, { method: 'POST' });
+      await dashboard.waitForTimeout(500);
+
+      // Launch game from team selection
+      const response = await fetch(`${API_URL}/api/game/launch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'classic', countdownDuration: 0 }),
+      });
+      expect(response.ok).toBe(true);
+
+      // Team selection should be cleared
+      await dashboard.waitForTimeout(500);
+      const stateData = await (await fetch(`${API_URL}/api/game/state`)).json();
+      expect(stateData.teamSelectionActive).toBe(false);
+      expect(stateData.state.state).toBe('active');
+    });
+
+    test('stopping game clears team selection', async ({ context }) => {
+      // Enable teams
+      await fetch(`${API_URL}/api/game/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamsEnabled: true, teamCount: 2 }),
+      });
+
+      const p1 = await openPlayerJoin(context);
+      await joinAsPlayer(p1, 'StopSelP1');
+      const p2 = await openPlayerJoin(context);
+      await joinAsPlayer(p2, 'StopSelP2');
+
+      // Enter team selection
+      await fetch(`${API_URL}/api/game/team-selection`, { method: 'POST' });
+
+      // Verify it's active
+      let stateData = await (await fetch(`${API_URL}/api/game/state`)).json();
+      expect(stateData.teamSelectionActive).toBe(true);
+
+      // Stop game (cancels team selection)
+      await fetch(`${API_URL}/api/game/stop`, { method: 'POST' });
+      await new Promise((r) => setTimeout(r, 500));
+
+      // Team selection should be cleared
+      stateData = await (await fetch(`${API_URL}/api/game/state`)).json();
+      expect(stateData.teamSelectionActive).toBe(false);
+    });
+
+    test('shuffle works during team selection', async ({ context }) => {
+      // Enable teams
+      await fetch(`${API_URL}/api/game/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamsEnabled: true, teamCount: 2 }),
+      });
+
+      // Join 4 players
+      for (let i = 0; i < 4; i++) {
+        const p = await openPlayerJoin(context);
+        await joinAsPlayer(p, `ShufSelP${i + 1}`);
+      }
+
+      // Enter team selection
+      await fetch(`${API_URL}/api/game/team-selection`, { method: 'POST' });
+
+      // Shuffle
+      const response = await fetch(`${API_URL}/api/game/teams/shuffle`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+
+      expect(response.ok).toBe(true);
+      expect(data.success).toBe(true);
+
+      // All 4 players should still be assigned
+      const allPlayers = Object.values(data.teams).flat();
+      expect(allPlayers).toHaveLength(4);
     });
   });
 
