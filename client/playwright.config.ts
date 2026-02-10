@@ -90,10 +90,21 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
+    // NOTE: WebSocket connections (Socket.IO) don't work through Vite's proxy in webkit.
+    // API-only tests pass, but tests requiring player join/socket will fail.
+    // To run: npx playwright test --project=webkit
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+    },
     // Can add mobile testing later
     // {
     //   name: 'mobile-chrome',
     //   use: { ...devices['Pixel 5'] },
+    // },
+    // {
+    //   name: 'mobile-safari',
+    //   use: { ...devices['iPhone 13'] },
     // },
   ],
 

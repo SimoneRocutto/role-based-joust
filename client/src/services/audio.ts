@@ -172,7 +172,11 @@ class AudioManager {
   ) {
     const volume = options.volume ?? AUDIO_VOLUMES.SFX;
     const fullPath = this.getSoundPath(`effects/${soundName}`);
-    const sound = this.getHowl(fullPath, { volume });
+
+    // Use preloaded sound (Web Audio API) instead of creating new Howl instances.
+    // Creating new Howl with html5:true leaks HTMLAudioElements which breaks iOS
+    // after a few consecutive plays.
+    const sound = this.sounds.get(fullPath);
     if (!sound) {
       console.warn(`Sound '${soundName}' not preloaded`);
       return;

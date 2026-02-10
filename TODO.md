@@ -3,6 +3,7 @@
 Here are all the things this game is missing to be complete. PRIORITIES shows next todo points in priority order from top (highest priority) to bottom (lowest). Feel free to remove them once one of them is done. Below are the future tasks divided by their subject.
 
 - PRIORITIES:
+    - no death sound on iOS for death count mode. It looks like after two consecutive sounds play, audio stops working on iOS
 
 - IMPROVEMENTS:
     - victory music
