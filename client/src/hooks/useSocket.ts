@@ -219,7 +219,7 @@ export function useSocket() {
         return;
       }
 
-      // Convert lobby players to PlayerState format, preserving isReady from backend
+      // Convert lobby players to PlayerState format, preserving isReady and isConnected from backend
       const playerStates = players.map((p) => ({
         id: p.id,
         name: p.name,
@@ -227,6 +227,7 @@ export function useSocket() {
         role: "",
         isAlive: p.isAlive,
         isReady: p.isReady ?? false,
+        isConnected: p.isConnected ?? true,
         points: 0,
         totalPoints: 0,
         toughness: 1.0,

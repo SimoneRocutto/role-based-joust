@@ -231,6 +231,15 @@ io.on("connection", (socket) => {
     const result = connectionManager.reconnect(data.token, socket.id);
 
     if (result.success) {
+      // Cancel lobby disconnect grace period if reconnecting in lobby
+      if (gameEngine.gameState === "waiting") {
+        connectionManager.cancelLobbyDisconnect(result.playerId!);
+        // Broadcast updated lobby list so dashboard shows player as connected again
+        io.emit("lobby:update", {
+          players: getLobbyPlayersWithTeams(),
+        });
+      }
+
       // Notify game engine of reconnection if game is active
       if (gameEngine.isActive()) {
         gameEngine.handlePlayerReconnect(result.playerId!, socket.id);
@@ -517,9 +526,15 @@ io.on("connection", (socket) => {
     const playerId = connectionManager.getPlayerId(socket.id);
 
     if (playerId && gameEngine.gameState === "waiting") {
-      // No active game — fully remove player so their number is freed
-      connectionManager.removePlayer(playerId);
-      teamManager.removePlayer(playerId);
+      // No active game — start lobby disconnect grace period instead of immediate removal
+      connectionManager.handleLobbyDisconnect(playerId, socket.id, (expiredPlayerId) => {
+        // Grace period expired — remove from team and broadcast updated lobby
+        teamManager.removePlayer(expiredPlayerId);
+        io.emit("lobby:update", {
+          players: getLobbyPlayersWithTeams(),
+        });
+      });
+      // Don't remove from team — they keep their team spot during grace period
     } else {
       // Game in progress — keep player data for reconnection
       connectionManager.handleDisconnect(socket.id);

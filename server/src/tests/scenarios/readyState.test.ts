@@ -740,6 +740,151 @@ runner.test("GameEvents: ReadyEnabled event is emitted", (engine) => {
 });
 
 // ============================================================================
+// LOBBY DISCONNECT GRACE PERIOD TESTS
+// ============================================================================
+
+runner.test("ConnectionManager: handleLobbyDisconnect keeps player in lobby as disconnected", (engine) => {
+  const connectionManager = ConnectionManager.getInstance();
+  connectionManager.clearAll();
+
+  // Register a player
+  connectionManager.registerConnection("p1", "socket1", "Alice", true);
+  connectionManager.setPlayerReady("p1", true);
+
+  // Simulate lobby disconnect
+  const mockOnExpiry = () => {};
+  connectionManager.handleLobbyDisconnect("p1", "socket1", mockOnExpiry);
+
+  // Player should still appear in lobby
+  const lobbyPlayers = connectionManager.getLobbyPlayers();
+  assertEqual(lobbyPlayers.length, 1, "Disconnected player should still be in lobby");
+  assertEqual(lobbyPlayers[0].isConnected, false, "Disconnected player should have isConnected=false");
+  assertEqual(lobbyPlayers[0].isReady, false, "Disconnected player should not be ready");
+  assertEqual(lobbyPlayers[0].name, "Alice", "Disconnected player name should be preserved");
+
+  // Player should not be in playerSockets (not actively connected)
+  assertEqual(connectionManager.isConnected("p1"), false, "Player should not be connected");
+
+  // Player should be in disconnected lobby map
+  assertEqual(connectionManager.isDisconnectedInLobby("p1"), true, "Player should be in disconnected lobby map");
+
+  connectionManager.clearAll();
+});
+
+runner.test("ConnectionManager: cancelLobbyDisconnect restores player to connected state", (engine) => {
+  const connectionManager = ConnectionManager.getInstance();
+  connectionManager.clearAll();
+
+  // Register and disconnect
+  connectionManager.registerConnection("p1", "socket1", "Alice", true);
+  const mockOnExpiry = () => {};
+  connectionManager.handleLobbyDisconnect("p1", "socket1", mockOnExpiry);
+
+  assertEqual(connectionManager.isDisconnectedInLobby("p1"), true, "Should be disconnected");
+
+  // Simulate reconnection — registerConnection + cancelLobbyDisconnect
+  connectionManager.registerConnection("p1", "socket2", "Alice", false);
+  connectionManager.cancelLobbyDisconnect("p1");
+
+  assertEqual(connectionManager.isDisconnectedInLobby("p1"), false, "Should no longer be disconnected");
+  assertEqual(connectionManager.isConnected("p1"), true, "Should be connected again");
+
+  // Should appear as connected in lobby
+  const lobbyPlayers = connectionManager.getLobbyPlayers();
+  assertEqual(lobbyPlayers.length, 1, "Should have 1 player");
+  assertEqual(lobbyPlayers[0].isConnected, true, "Should be connected");
+
+  connectionManager.clearAll();
+});
+
+runner.test("ConnectionManager: getLobbyPlayers includes both connected and disconnected players", (engine) => {
+  const connectionManager = ConnectionManager.getInstance();
+  connectionManager.clearAll();
+
+  // Register two players
+  connectionManager.registerConnection("p1", "socket1", "Alice", true);
+  connectionManager.registerConnection("p2", "socket2", "Bob", true);
+
+  // Disconnect one
+  const mockOnExpiry = () => {};
+  connectionManager.handleLobbyDisconnect("p2", "socket2", mockOnExpiry);
+
+  const lobbyPlayers = connectionManager.getLobbyPlayers();
+  assertEqual(lobbyPlayers.length, 2, "Both players should be in lobby");
+
+  const alice = lobbyPlayers.find(p => p.id === "p1");
+  const bob = lobbyPlayers.find(p => p.id === "p2");
+
+  assert(alice !== undefined, "Alice should be in lobby");
+  assert(bob !== undefined, "Bob should be in lobby");
+  assertEqual(alice!.isConnected, true, "Alice should be connected");
+  assertEqual(bob!.isConnected, false, "Bob should be disconnected");
+
+  connectionManager.clearAll();
+});
+
+runner.test("ConnectionManager: removePlayer clears lobby disconnect timeout", (engine) => {
+  const connectionManager = ConnectionManager.getInstance();
+  connectionManager.clearAll();
+
+  connectionManager.registerConnection("p1", "socket1", "Alice", true);
+  const mockOnExpiry = () => {};
+  connectionManager.handleLobbyDisconnect("p1", "socket1", mockOnExpiry);
+
+  assertEqual(connectionManager.isDisconnectedInLobby("p1"), true, "Should be in disconnected map");
+
+  // Fully remove player
+  connectionManager.removePlayer("p1");
+
+  assertEqual(connectionManager.isDisconnectedInLobby("p1"), false, "Should be removed from disconnected map");
+  assertEqual(connectionManager.getLobbyPlayers().length, 0, "No players should be in lobby");
+
+  connectionManager.clearAll();
+});
+
+runner.test("ConnectionManager: getReadyCount excludes lobby-disconnected players", (engine) => {
+  const connectionManager = ConnectionManager.getInstance();
+  connectionManager.clearAll();
+
+  // Register 3 players, all ready
+  connectionManager.registerConnection("p1", "socket1", "Alice", true);
+  connectionManager.registerConnection("p2", "socket2", "Bob", true);
+  connectionManager.registerConnection("p3", "socket3", "Charlie", true);
+  connectionManager.setPlayerReady("p1", true);
+  connectionManager.setPlayerReady("p2", true);
+  connectionManager.setPlayerReady("p3", true);
+
+  let readyCount = connectionManager.getReadyCount();
+  assertEqual(readyCount.ready, 3, "All 3 should be ready");
+  assertEqual(readyCount.total, 3, "Total should be 3");
+
+  // Disconnect one player in lobby
+  const mockOnExpiry = () => {};
+  connectionManager.handleLobbyDisconnect("p2", "socket2", mockOnExpiry);
+
+  readyCount = connectionManager.getReadyCount();
+  assertEqual(readyCount.ready, 2, "Only 2 connected players should be ready");
+  assertEqual(readyCount.total, 2, "Total should be 2 (only connected)");
+
+  connectionManager.clearAll();
+});
+
+runner.test("ConnectionManager: clearAll clears lobby disconnect timeouts", (engine) => {
+  const connectionManager = ConnectionManager.getInstance();
+  connectionManager.clearAll();
+
+  connectionManager.registerConnection("p1", "socket1", "Alice", true);
+  const mockOnExpiry = () => {};
+  connectionManager.handleLobbyDisconnect("p1", "socket1", mockOnExpiry);
+
+  assertEqual(connectionManager.isDisconnectedInLobby("p1"), true, "Should be disconnected");
+
+  connectionManager.clearAll();
+
+  assertEqual(connectionManager.isDisconnectedInLobby("p1"), false, "Should be cleared");
+});
+
+// ============================================================================
 // RUN TESTS
 // ============================================================================
 

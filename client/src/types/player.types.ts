@@ -28,6 +28,7 @@ export interface PlayerState {
   isDisconnected?: boolean;
   graceTimeRemaining?: number;
   isReady?: boolean;
+  isConnected?: boolean;
   teamId?: number | null;
 }
 

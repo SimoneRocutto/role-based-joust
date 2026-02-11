@@ -3,14 +3,14 @@
 Here are all the things this game is missing to be complete. PRIORITIES shows next todo points in priority order from top (highest priority) to bottom (lowest). Feel free to remove them once one of them is done. Below are the future tasks divided by their subject.
 
 - PRIORITIES:
-    - no death sound on iOS for death count mode. It looks like after two consecutive sounds play, audio stops working on iOS
+    - add the possibility to kick a player while in lobby
+    - client auto-recovery: use visibilitychange event to trigger reconnection when tab becomes visible again. Player page should recover from disconnected state with just a refresh (no need to navigate back to /join)
 
 - IMPROVEMENTS:
     - victory music
     - introduce the possibility of having different background music tracks that are picked at random for a certain mode
 
 - FEATURES:
-    - handle disconnection (I have to do tests myself for this to understand when it fails)
     - UI: add a settings screen (accessible from the UI) where all the more complex settings (like sensibility of movement detection) can be accessed. In the future, other settings will be accessed through this screen
 
 - BUGS:

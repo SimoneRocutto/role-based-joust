@@ -173,7 +173,7 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
 
 #### `lobby:update`
 
-**When**: A player joins, disconnects, changes ready state, or switches team in the lobby
+**When**: A player joins, disconnects, reconnects, changes ready state, or switches team in the lobby. Disconnected players remain in the list for 1 minute (grace period) before being auto-removed.
 
 **Payload**:
 
@@ -184,7 +184,8 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
     name: string,
     number: number,
     isReady: boolean,
-    teamId?: number | null  // Team assignment (null when teams disabled)
+    isConnected: boolean,     // false during lobby disconnect grace period
+    teamId?: number | null    // Team assignment (null when teams disabled)
   }>
 }
 ```

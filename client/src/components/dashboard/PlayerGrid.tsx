@@ -145,19 +145,25 @@ function CompactPlayerCard({
   player,
   teamColor,
 }: {
-  player: { id: string; name: string; number: number; isReady?: boolean }
+  player: { id: string; name: string; number: number; isReady?: boolean; isConnected?: boolean }
   teamColor: string
 }) {
+  const isDisconnected = player.isConnected === false
+
   return (
     <div
-      className="px-3 py-1.5 rounded text-sm font-medium flex items-center gap-2 bg-gray-800/80"
-      style={{ borderLeft: `3px solid ${teamColor}` }}
+      className={`px-3 py-1.5 rounded text-sm font-medium flex items-center gap-2 bg-gray-800/80 ${
+        isDisconnected ? 'opacity-40' : ''
+      }`}
+      style={{ borderLeft: `3px solid ${isDisconnected ? '#4b5563' : teamColor}` }}
     >
       <span className="font-bold text-white">#{player.number}</span>
       <span className="text-gray-300 truncate max-w-[80px]">{player.name}</span>
-      {player.isReady && (
+      {isDisconnected ? (
+        <span className="text-gray-500 text-xs font-bold">OFFLINE</span>
+      ) : player.isReady ? (
         <span className="text-green-400 text-xs font-bold">✓</span>
-      )}
+      ) : null}
     </div>
   )
 }

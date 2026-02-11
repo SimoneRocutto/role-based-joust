@@ -32,7 +32,7 @@ test.describe('Disconnect Handling', () => {
   });
 
   test.describe('Lobby Disconnects', () => {
-    test('player removed from lobby on disconnect', async ({ context }) => {
+    test('disconnected player shown as offline in lobby during grace period', async ({ context }) => {
       const dashboard = await openDashboard(context);
 
       const player1 = await openPlayerJoin(context);
@@ -47,17 +47,22 @@ test.describe('Disconnect Handling', () => {
       // Wait for disconnect to register
       await dashboard.waitForTimeout(1500);
 
-      // Dashboard should show 0 players
+      // Dashboard should show 0 connected players (player is offline, still in lobby)
       await expectDashboardPlayerCount(dashboard, 0);
+
+      // Player card should still be visible but marked offline
+      await expect(dashboard.locator('text=OFFLINE')).toBeVisible();
+      await expect(dashboard.locator('text=DisconnectP1')).toBeVisible();
     });
 
-    test('server lobby updates on disconnect', async ({ context }) => {
+    test('server lobby keeps disconnected player during grace period', async ({ context }) => {
       const player1 = await openPlayerJoin(context);
       await joinAsPlayer(player1, 'ServerDisc1');
 
       // Verify player is in server lobby
       let lobby = await getLobbyPlayers();
       expect(lobby.players).toHaveLength(1);
+      expect(lobby.players[0].isConnected).toBe(true);
 
       // Close player page
       await player1.close();
@@ -65,9 +70,10 @@ test.describe('Disconnect Handling', () => {
       // Wait for disconnect
       await new Promise((r) => setTimeout(r, 1500));
 
-      // Server should show 0 players
+      // Server should still show 1 player (in grace period) but disconnected
       lobby = await getLobbyPlayers();
-      expect(lobby.players).toHaveLength(0);
+      expect(lobby.players).toHaveLength(1);
+      expect(lobby.players[0].isConnected).toBe(false);
     });
 
     test('multiple player disconnects handled correctly', async ({ context }) => {
@@ -96,6 +102,10 @@ test.describe('Disconnect Handling', () => {
 
       // Player 3 should still be connected
       await expect(dashboard.locator('text=/#\\d+ MultiDisc3/')).toBeVisible();
+
+      // Disconnected players should show as offline
+      const offlineLabels = dashboard.locator('text=OFFLINE');
+      await expect(offlineLabels).toHaveCount(2);
     });
 
     test('start button disables when player disconnects below minimum', async ({
@@ -117,7 +127,7 @@ test.describe('Disconnect Handling', () => {
       await player2.close();
       await dashboard.waitForTimeout(1500);
 
-      // Start button should be disabled with 1 player
+      // Start button should be disabled (only 1 connected player)
       await expect(startButton).toBeDisabled();
     });
   });

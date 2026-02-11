@@ -24,6 +24,10 @@ function AdminControls() {
   const [error, setError] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
+  // Separate connected and disconnected players for accurate counts
+  const connectedPlayers = players.filter((p) => p.isConnected !== false);
+  const disconnectedPlayers = players.filter((p) => p.isConnected === false);
+
   // Preserve ?mode=production in QR code URL if dashboard was loaded with it
   const urlParams = new URLSearchParams(window.location.search);
   const modeParam = urlParams.get("mode");
@@ -195,7 +199,7 @@ function AdminControls() {
   };
 
   const handleStartTeamSelection = async () => {
-    if (players.length < 2) {
+    if (connectedPlayers.length < 2) {
       setError("Need at least 2 players to start");
       return;
     }
@@ -231,7 +235,7 @@ function AdminControls() {
   };
 
   const handleLaunchGame = async () => {
-    if (players.length < 2) {
+    if (connectedPlayers.length < 2) {
       setError("Need at least 2 players to start");
       return;
     }
@@ -298,7 +302,7 @@ function AdminControls() {
 
           <button
             onClick={handleLaunchGame}
-            disabled={loading || players.length < 2}
+            disabled={loading || connectedPlayers.length < 2}
             className="px-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg font-bold text-xl transition-colors"
           >
             {loading ? "Starting..." : "Start Game"}
@@ -521,16 +525,26 @@ function AdminControls() {
       {!teamsEnabled && (
         <div className="mb-4">
           <h3 className="text-lg font-semibold mb-2">
-            Connected Players: {players.length}
+            Connected Players: {connectedPlayers.length}
+            {disconnectedPlayers.length > 0 && (
+              <span className="text-gray-500 text-sm font-normal ml-2">
+                ({disconnectedPlayers.length} offline)
+              </span>
+            )}
           </h3>
           {players.length > 0 ? (
             <div className="grid grid-cols-4 gap-2">
               {players.map((p) => (
                 <div
                   key={p.id}
-                  className="px-3 py-2 bg-gray-700 rounded text-sm"
+                  className={`px-3 py-2 bg-gray-700 rounded text-sm ${
+                    p.isConnected === false ? 'opacity-40' : ''
+                  }`}
                 >
                   #{p.number} {p.name}
+                  {p.isConnected === false && (
+                    <span className="text-gray-500 text-xs ml-1">OFFLINE</span>
+                  )}
                 </div>
               ))}
             </div>
@@ -553,10 +567,10 @@ function AdminControls() {
         {isDevMode && (
           <button
             onClick={handleStartClick}
-            disabled={loading || players.length < 2}
+            disabled={loading || connectedPlayers.length < 2}
             className="px-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg font-bold text-xl transition-colors"
           >
-            {loading ? "Starting..." : `Start Game (${players.length} players)`}
+            {loading ? "Starting..." : `Start Game (${connectedPlayers.length} players)`}
           </button>
         )}
 
@@ -566,7 +580,7 @@ function AdminControls() {
             {allPlayersReady ? (
               <button
                 onClick={handleStartClick}
-                disabled={loading || players.length < 2}
+                disabled={loading || connectedPlayers.length < 2}
                 className="px-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg font-bold text-xl transition-colors animate-pulse"
               >
                 {loading ? "Starting..." : `All Ready! Start Game`}

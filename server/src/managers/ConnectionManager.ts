@@ -37,9 +37,16 @@ export class ConnectionManager {
   // Map: playerId -> ready state (for lobby ready tracking)
   private playerReadyState: Map<string, boolean> = new Map();
 
+  // Map: playerId -> lobby disconnect info (for grace period)
+  private disconnectedLobbyPlayers: Map<
+    string,
+    { disconnectedAt: number; removalTimeout: ReturnType<typeof setTimeout> }
+  > = new Map();
+
   // Configuration
   private readonly SESSION_TIMEOUT = 300000; // 5 minutes
   private readonly HEARTBEAT_INTERVAL = 30000; // 30 seconds
+  private readonly LOBBY_DISCONNECT_TIMEOUT = 60000; // 1 minute
 
   private constructor() {
     this.startHeartbeatMonitor();
@@ -128,7 +135,7 @@ export class ConnectionManager {
   }
 
   /**
-   * Get all lobby players (connected players waiting for game)
+   * Get all lobby players (connected + disconnected with grace period)
    */
   getLobbyPlayers(): Array<{
     id: string;
@@ -136,6 +143,7 @@ export class ConnectionManager {
     number: number;
     isAlive: boolean;
     isReady: boolean;
+    isConnected: boolean;
   }> {
     const lobbyPlayers: Array<{
       id: string;
@@ -143,9 +151,11 @@ export class ConnectionManager {
       number: number;
       isAlive: boolean;
       isReady: boolean;
+      isConnected: boolean;
     }> = [];
 
-    for (const [playerId, socketId] of this.playerSockets.entries()) {
+    // Connected players
+    for (const [playerId] of this.playerSockets.entries()) {
       const name = this.playerNames.get(playerId);
       const number = this.playerNumbers.get(playerId);
 
@@ -154,8 +164,26 @@ export class ConnectionManager {
           id: playerId,
           name,
           number,
-          isAlive: true, // All lobby players are "alive" (waiting)
+          isAlive: true,
           isReady: this.playerReadyState.get(playerId) ?? false,
+          isConnected: true,
+        });
+      }
+    }
+
+    // Disconnected players still within grace period
+    for (const [playerId] of this.disconnectedLobbyPlayers.entries()) {
+      const name = this.playerNames.get(playerId);
+      const number = this.playerNumbers.get(playerId);
+
+      if (name && number !== undefined) {
+        lobbyPlayers.push({
+          id: playerId,
+          name,
+          number,
+          isAlive: true,
+          isReady: false,
+          isConnected: false,
         });
       }
     }
@@ -187,13 +215,14 @@ export class ConnectionManager {
   }
 
   /**
-   * Get count of ready players
+   * Get count of ready players (excludes lobby-disconnected players)
    */
   getReadyCount(): { ready: number; total: number } {
     const total = this.playerSockets.size;
     let ready = 0;
-    for (const isReady of this.playerReadyState.values()) {
-      if (isReady) ready++;
+    for (const [playerId, isReady] of this.playerReadyState.entries()) {
+      // Only count connected players as ready
+      if (isReady && this.playerSockets.has(playerId)) ready++;
     }
     return { ready, total };
   }
@@ -278,7 +307,7 @@ export class ConnectionManager {
 
   /**
    * Fully remove a player (clears all data including number, name, token)
-   * Use this when reconnection is not needed (e.g. lobby disconnect)
+   * Use this when reconnection is not needed (e.g. lobby disconnect timeout)
    */
   removePlayer(playerId: string): void {
     const socketId = this.playerSockets.get(playerId);
@@ -294,7 +323,75 @@ export class ConnectionManager {
     this.sessionTokens.delete(playerId);
     this.playerReadyState.delete(playerId);
 
+    // Clear lobby disconnect grace period if active
+    const disconnectInfo = this.disconnectedLobbyPlayers.get(playerId);
+    if (disconnectInfo) {
+      clearTimeout(disconnectInfo.removalTimeout);
+      this.disconnectedLobbyPlayers.delete(playerId);
+    }
+
     logger.info("CONNECTION", `Player ${playerId} fully removed`);
+  }
+
+  /**
+   * Handle lobby disconnect with grace period.
+   * Player data is kept for LOBBY_DISCONNECT_TIMEOUT, then auto-removed.
+   * `onExpiry` is called when the grace period expires and the player is removed.
+   */
+  handleLobbyDisconnect(
+    playerId: string,
+    socketId: string,
+    onExpiry: (playerId: string) => void
+  ): void {
+    logger.info(
+      "CONNECTION",
+      `Player ${playerId} disconnected in lobby — grace period started (${this.LOBBY_DISCONNECT_TIMEOUT / 1000}s)`
+    );
+
+    // Remove socket mappings (same as handleDisconnect)
+    this.playerSockets.delete(playerId);
+    this.socketPlayers.delete(socketId);
+    this.lastActivity.delete(socketId);
+
+    // Set ready to false
+    this.playerReadyState.set(playerId, false);
+
+    // Set up auto-removal timeout
+    const removalTimeout = setTimeout(() => {
+      logger.info(
+        "CONNECTION",
+        `Player ${playerId} lobby grace period expired — removing`
+      );
+      this.removePlayer(playerId);
+      onExpiry(playerId);
+    }, this.LOBBY_DISCONNECT_TIMEOUT);
+
+    this.disconnectedLobbyPlayers.set(playerId, {
+      disconnectedAt: Date.now(),
+      removalTimeout,
+    });
+  }
+
+  /**
+   * Cancel lobby disconnect grace period (player reconnected)
+   */
+  cancelLobbyDisconnect(playerId: string): void {
+    const disconnectInfo = this.disconnectedLobbyPlayers.get(playerId);
+    if (disconnectInfo) {
+      clearTimeout(disconnectInfo.removalTimeout);
+      this.disconnectedLobbyPlayers.delete(playerId);
+      logger.info(
+        "CONNECTION",
+        `Player ${playerId} lobby disconnect grace period cancelled (reconnected)`
+      );
+    }
+  }
+
+  /**
+   * Check if player is in lobby disconnect grace period
+   */
+  isDisconnectedInLobby(playerId: string): boolean {
+    return this.disconnectedLobbyPlayers.has(playerId);
   }
 
   /**
@@ -435,6 +532,12 @@ export class ConnectionManager {
     this.playerNumbers.clear();
     this.playerNames.clear();
     this.playerReadyState.clear();
+
+    // Clear all lobby disconnect timeouts
+    for (const info of this.disconnectedLobbyPlayers.values()) {
+      clearTimeout(info.removalTimeout);
+    }
+    this.disconnectedLobbyPlayers.clear();
 
     logger.info("CONNECTION", "All connections cleared");
   }

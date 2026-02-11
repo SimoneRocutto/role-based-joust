@@ -32,6 +32,10 @@ function PlayerCard({ player }: PlayerCardProps) {
   const healthPercent = getHealthPercentage(player.accumulatedDamage)
   const isDead = !player.isAlive
 
+  // Player is disconnected if either lobby flag or in-game flag is set
+  const isPlayerDisconnected =
+    player.isConnected === false || player.isDisconnected === true
+
   // Check if this player is the round winner (alive when round ended)
   const isRoundWinner = isRoundEnded && player.isAlive
 
@@ -94,11 +98,18 @@ function PlayerCard({ player }: PlayerCardProps) {
       className={`
         relative rounded-lg p-4 border-4 transition-all duration-300
         ${cardStyles.className}
-        ${isDead && !isRoundEnded ? 'opacity-60' : ''}
+        ${isPlayerDisconnected ? 'opacity-40 !border-gray-600' : ''}
+        ${isDead && !isRoundEnded && !isPlayerDisconnected ? 'opacity-60' : ''}
         ${justBecameReady ? 'animate-card-jump' : ''}
       `}
-      style={cardStyles.style}
+      style={isPlayerDisconnected ? {} : cardStyles.style}
     >
+      {/* Disconnected overlay */}
+      {isPlayerDisconnected && (
+        <div className="absolute top-1 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-gray-700/80 rounded text-xs text-gray-400 font-bold tracking-wider z-10">
+          OFFLINE
+        </div>
+      )}
       {/* Ready Badge (top-right corner) */}
       {showReadyBadge && (
         <div
