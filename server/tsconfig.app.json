@@ -57,6 +57,7 @@
       "@/config/*": ["config/*"],
       "@/routes/*": ["routes/*"],
       "@/middleware/*": ["middleware/*"],
+      "@/sockets/*": ["sockets/*"],
       "@/tests/*": ["tests/*"]
     }
   },

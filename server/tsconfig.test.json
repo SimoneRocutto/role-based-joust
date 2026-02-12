@@ -18,7 +18,8 @@
       "@/types/*": ["types/*"],
       "@/config/*": ["config/*"],
       "@/routes/*": ["routes/*"],
-      "@/middleware/*": ["middleware/*"]
+      "@/middleware/*": ["middleware/*"],
+      "@/sockets/*": ["sockets/*"]
     }
   },
   "references": [{ "path": "./tsconfig.app.json" }],
