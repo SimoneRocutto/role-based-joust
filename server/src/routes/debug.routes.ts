@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { asyncHandler } from "@/middleware/errorHandler";
+import { GameEngine } from "@/managers/GameEngine";
 import { Logger } from "@/utils/Logger";
 import { ConnectionManager } from "@/managers/ConnectionManager";
 import { resetMovementConfig } from "@/config/gameConfig";
@@ -15,15 +16,7 @@ const logger = Logger.getInstance();
 router.get(
   "/state",
   asyncHandler(async (req: Request, res: Response) => {
-    const { gameEngine } = global;
-
-    if (!gameEngine) {
-      res.status(503).json({
-        success: false,
-        error: "Game engine not initialized",
-      });
-      return;
-    }
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
 
     const snapshot = gameEngine.getGameSnapshot();
 
@@ -49,15 +42,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const { botId } = req.params;
     const { action, args } = req.body;
-    const { gameEngine } = global;
-
-    if (!gameEngine) {
-      res.status(503).json({
-        success: false,
-        error: "Game engine not initialized",
-      });
-      return;
-    }
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
 
     const bot = gameEngine.getPlayerById(botId);
 
@@ -95,15 +80,7 @@ router.post(
   "/fastforward",
   asyncHandler(async (req: Request, res: Response) => {
     const { milliseconds } = req.body;
-    const { gameEngine } = global;
-
-    if (!gameEngine) {
-      res.status(503).json({
-        success: false,
-        error: "Game engine not initialized",
-      });
-      return;
-    }
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
 
     if (!gameEngine.testMode) {
       res.status(400).json({
@@ -227,15 +204,7 @@ router.post(
   "/test/create",
   asyncHandler(async (req: Request, res: Response) => {
     const { roles } = req.body;
-    const { gameEngine } = global;
-
-    if (!gameEngine) {
-      res.status(503).json({
-        success: false,
-        error: "Game engine not initialized",
-      });
-      return;
-    }
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
 
     if (!roles || !Array.isArray(roles)) {
       res.status(400).json({
@@ -268,15 +237,7 @@ router.post(
   "/player/:playerId/kill",
   asyncHandler(async (req: Request, res: Response) => {
     const { playerId } = req.params;
-    const { gameEngine } = global;
-
-    if (!gameEngine) {
-      res.status(503).json({
-        success: false,
-        error: "Game engine not initialized",
-      });
-      return;
-    }
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
 
     if (!gameEngine.isActive()) {
       res.status(400).json({
@@ -326,19 +287,17 @@ router.post(
 router.post(
   "/reset",
   asyncHandler(async (req: Request, res: Response) => {
-    const { gameEngine } = global;
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
     const connectionManager = ConnectionManager.getInstance();
 
     // Stop any running game
-    if (gameEngine) {
-      if (gameEngine.isActive()) {
-        gameEngine.stopGame();
-        logger.info("DEBUG", "Stopped active game for reset");
-      }
-
-      // Reset countdown duration to default (10 seconds)
-      gameEngine.setCountdownDuration(10);
+    if (gameEngine.isActive()) {
+      gameEngine.stopGame();
+      logger.info("DEBUG", "Stopped active game for reset");
     }
+
+    // Reset countdown duration to default (10 seconds)
+    gameEngine.setCountdownDuration(10);
 
     // Reset movement settings to defaults (and flush persisted overrides)
     resetMovementConfig();

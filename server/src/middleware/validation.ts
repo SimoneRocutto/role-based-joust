@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
+import type { GameEngine } from "@/managers/GameEngine";
 import { ApiError } from "./errorHandler";
 
 /**
@@ -203,11 +204,7 @@ export function validateGameActive(
   res: Response,
   next: NextFunction
 ): void {
-  const { gameEngine } = global;
-
-  if (!gameEngine) {
-    throw new ApiError("Game engine not initialized", 503);
-  }
+  const gameEngine: GameEngine = req.app.locals.gameEngine;
 
   if (!gameEngine.isActive()) {
     throw new ApiError("Game is not active", 400);

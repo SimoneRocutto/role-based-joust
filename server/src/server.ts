@@ -82,16 +82,9 @@ ConnectionManager.getInstance();
 InputAdapter.getInstance();
 TeamManager.getInstance();
 
-// Make instances globally accessible
-declare global {
-  // eslint-disable-next-line no-var
-  var gameEngine: GameEngine;
-  // eslint-disable-next-line no-var
-  var io: SocketIOServer;
-}
-
-global.gameEngine = gameEngine;
-global.io = io;
+// Make instances accessible to routes via app.locals (replaces global scope)
+app.locals.gameEngine = gameEngine;
+app.locals.io = io;
 
 // ============================================================================
 // WIRE UP SOCKET HANDLERS + GAME EVENT BROADCASTERS

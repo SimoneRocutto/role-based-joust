@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { asyncHandler } from "@/middleware/errorHandler";
 import { validate, validateGameActive } from "@/middleware/validation";
+import { GameEngine } from "@/managers/GameEngine";
 import { InputAdapter } from "@/utils/InputAdapter";
 import { ConnectionManager } from "@/managers/ConnectionManager";
 import { Logger } from "@/utils/Logger";
@@ -18,7 +19,7 @@ router.post(
   validateGameActive,
   asyncHandler(async (req: Request, res: Response) => {
     const { playerId, ...rawMovementData } = req.body;
-    const { gameEngine } = global;
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
 
     if (!playerId) {
       res.status(400).json({
@@ -33,7 +34,7 @@ router.post(
     const movementData = inputAdapter.normalizeInput(rawMovementData);
 
     // Route to game engine
-    gameEngine!.handlePlayerMovement(playerId, movementData);
+    gameEngine.handlePlayerMovement(playerId, movementData);
 
     res.json({
       success: true,
@@ -49,15 +50,7 @@ router.get(
   "/:playerId/role",
   asyncHandler(async (req: Request, res: Response) => {
     const { playerId } = req.params;
-    const { gameEngine } = global;
-
-    if (!gameEngine) {
-      res.status(503).json({
-        success: false,
-        error: "Game engine not initialized",
-      });
-      return;
-    }
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
 
     const player = gameEngine.getPlayerById(playerId);
 
@@ -111,8 +104,8 @@ router.post(
       return;
     }
 
-    const { gameEngine } = global;
-    const player = gameEngine?.getPlayerById(result.playerId!);
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
+    const player = gameEngine.getPlayerById(result.playerId!);
 
     res.json({
       success: true,
@@ -138,15 +131,7 @@ router.get(
   "/:playerId/state",
   asyncHandler(async (req: Request, res: Response) => {
     const { playerId } = req.params;
-    const { gameEngine } = global;
-
-    if (!gameEngine) {
-      res.status(503).json({
-        success: false,
-        error: "Game engine not initialized",
-      });
-      return;
-    }
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
 
     const player = gameEngine.getPlayerById(playerId);
 

@@ -1,7 +1,9 @@
 import { Router, type Request, type Response } from "express";
+import { Server as SocketIOServer } from "socket.io";
 import { asyncHandler } from "@/middleware/errorHandler";
 import { validate } from "@/middleware/validation";
 import { GameModeFactory } from "@/factories/GameModeFactory";
+import { GameEngine } from "@/managers/GameEngine";
 import { ConnectionManager } from "@/managers/ConnectionManager";
 import { Logger } from "@/utils/Logger";
 import {
@@ -97,15 +99,7 @@ router.post(
   validate("gameCreate"),
   asyncHandler(async (req: Request, res: Response) => {
     const { mode, theme } = req.body;
-    const { gameEngine } = global;
-
-    if (!gameEngine) {
-      res.status(503).json({
-        success: false,
-        error: "Game engine not initialized",
-      });
-      return;
-    }
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
 
     // Create mode instance
     const factory = GameModeFactory.getInstance();
@@ -135,15 +129,7 @@ router.post(
   "/start",
   asyncHandler(async (req: Request, res: Response) => {
     const { players } = req.body;
-    const { gameEngine } = global;
-
-    if (!gameEngine) {
-      res.status(503).json({
-        success: false,
-        error: "Game engine not initialized",
-      });
-      return;
-    }
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
 
     if (!players || !Array.isArray(players) || players.length === 0) {
       res.status(400).json({
@@ -174,15 +160,7 @@ router.post(
 router.get(
   "/state",
   asyncHandler(async (req: Request, res: Response) => {
-    const { gameEngine } = global;
-
-    if (!gameEngine) {
-      res.status(503).json({
-        success: false,
-        error: "Game engine not initialized",
-      });
-      return;
-    }
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
 
     const snapshot = gameEngine.getGameSnapshot();
 
@@ -207,15 +185,7 @@ router.post(
   "/launch",
   asyncHandler(async (req: Request, res: Response) => {
     const { mode, theme, countdownDuration } = req.body;
-    const { gameEngine } = global;
-
-    if (!gameEngine) {
-      res.status(503).json({
-        success: false,
-        error: "Game engine not initialized",
-      });
-      return;
-    }
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
 
     // Get lobby players
     const lobbyPlayers = connectionManager.getLobbyPlayers();
@@ -316,15 +286,7 @@ router.post(
 router.post(
   "/stop",
   asyncHandler(async (req: Request, res: Response) => {
-    const { gameEngine } = global;
-
-    if (!gameEngine) {
-      res.status(503).json({
-        success: false,
-        error: "Game engine not initialized",
-      });
-      return;
-    }
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
 
     gameEngine.stopGame();
     connectionManager.resetAllReadyState();
@@ -347,15 +309,7 @@ router.post(
 router.post(
   "/next-round",
   asyncHandler(async (req: Request, res: Response) => {
-    const { gameEngine } = global;
-
-    if (!gameEngine) {
-      res.status(503).json({
-        success: false,
-        error: "Game engine not initialized",
-      });
-      return;
-    }
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
 
     const result = gameEngine.startNextRound();
 
@@ -533,25 +487,21 @@ router.post(
       tm.configure(userPreferences.teamsEnabled, userPreferences.teamCount);
 
       // If teams enabled and in lobby, do sequential assignment
-      const { gameEngine: ge, io: ioInstance } = global;
-      if (ge && ge.gameState === "waiting" && userPreferences.teamsEnabled) {
+      const ge: GameEngine = req.app.locals.gameEngine;
+      const ioInstance: SocketIOServer = req.app.locals.io;
+      if (ge.gameState === "waiting" && userPreferences.teamsEnabled) {
         const lobbyPlayers = connectionManager.getLobbyPlayers();
         if (lobbyPlayers.length > 0) {
           tm.assignSequential(lobbyPlayers.map((p) => p.id));
         }
         // Broadcast updated lobby with team info
-        if (ioInstance) {
-          broadcastLobbyUpdate(ioInstance);
-          broadcastTeamUpdate(ioInstance);
-        }
+        broadcastLobbyUpdate(ioInstance);
+        broadcastTeamUpdate(ioInstance);
       } else if (!userPreferences.teamsEnabled) {
         // Teams disabled — reset assignments and broadcast clean lobby
         tm.reset();
-        const { io: ioInstance } = global;
-        if (ioInstance) {
-          broadcastLobbyUpdate(ioInstance);
-          ioInstance.emit("team:update", { teams: {} });
-        }
+        broadcastLobbyUpdate(ioInstance);
+        ioInstance.emit("team:update", { teams: {} });
       }
     }
 
@@ -606,9 +556,9 @@ router.post(
 router.post(
   "/team-selection",
   asyncHandler(async (req: Request, res: Response) => {
-    const { gameEngine } = global;
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
 
-    if (!gameEngine || gameEngine.gameState !== "waiting") {
+    if (gameEngine.gameState !== "waiting") {
       res.status(400).json({
         success: false,
         error: "Can only start team selection from the lobby",
@@ -643,12 +593,10 @@ router.post(
     connectionManager.resetAllReadyState();
 
     // Broadcast team selection active + updated lobby with team info
-    const { io } = global;
-    if (io) {
-      io.emit("team:selection", { active: true });
-      broadcastLobbyUpdate(io);
-      broadcastTeamUpdate(io);
-    }
+    const io: SocketIOServer = req.app.locals.io;
+    io.emit("team:selection", { active: true });
+    broadcastLobbyUpdate(io);
+    broadcastTeamUpdate(io);
 
     logger.info("GAME", "Team selection started", { playerCount: lobbyPlayers.length });
 
@@ -666,9 +614,9 @@ router.post(
 router.post(
   "/teams/shuffle",
   asyncHandler(async (req: Request, res: Response) => {
-    const { gameEngine } = global;
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
 
-    if (!gameEngine || gameEngine.gameState !== "waiting") {
+    if (gameEngine.gameState !== "waiting") {
       res.status(400).json({
         success: false,
         error: "Can only shuffle teams in the lobby",
@@ -690,11 +638,9 @@ router.post(
     teamManager.shuffle(playerIds);
 
     // Broadcast updated lobby with new team assignments
-    const { io } = global;
-    if (io) {
-      broadcastLobbyUpdate(io);
-      broadcastTeamUpdate(io);
-    }
+    const io: SocketIOServer = req.app.locals.io;
+    broadcastLobbyUpdate(io);
+    broadcastTeamUpdate(io);
 
     logger.info("GAME", "Teams shuffled");
 
@@ -712,10 +658,11 @@ router.post(
 router.post(
   "/kick/:playerId",
   asyncHandler(async (req: Request, res: Response) => {
-    const { gameEngine } = global;
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
+    const io: SocketIOServer = req.app.locals.io;
     const { playerId } = req.params;
 
-    if (!gameEngine || gameEngine.gameState !== "waiting") {
+    if (gameEngine.gameState !== "waiting") {
       res.status(400).json({
         success: false,
         error: "Can only kick players from the lobby",
@@ -736,13 +683,10 @@ router.post(
     // Get player's socket and emit kick event before disconnecting
     const socketId = connectionManager.getSocketId(playerId);
     if (socketId) {
-      const { io } = global;
-      if (io) {
-        const socket = io.sockets.sockets.get(socketId);
-        if (socket) {
-          socket.emit("player:kicked", { reason: "You were removed from the game" });
-          socket.disconnect(true);
-        }
+      const socket = io.sockets.sockets.get(socketId);
+      if (socket) {
+        socket.emit("player:kicked", { reason: "You were removed from the game" });
+        socket.disconnect(true);
       }
     }
 
@@ -754,11 +698,8 @@ router.post(
     teamManager.removePlayer(playerId);
 
     // Broadcast updated lobby list
-    const { io } = global;
-    if (io) {
-      broadcastLobbyUpdate(io);
-      broadcastTeamUpdate(io);
-    }
+    broadcastLobbyUpdate(io);
+    broadcastTeamUpdate(io);
 
     logger.info("GAME", "Player kicked from lobby", { playerId, playerName });
 
