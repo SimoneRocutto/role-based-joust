@@ -15,9 +15,8 @@ runner.test("Classic mode sets countdown to 3 seconds", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("classic");
   engine.setGameMode(mode);
 
-  // Access private countdownDuration via any cast
   assertEqual(
-    (engine as any).countdownDuration,
+    engine.getCountdownDuration(),
     3,
     "Countdown should be set to 3 seconds for classic mode"
   );
@@ -85,7 +84,7 @@ runner.test("stopGame restores movement config and resets countdown", (engine) =
   const mode = GameModeFactory.getInstance().createMode("classic");
   engine.setGameMode(mode);
 
-  assertEqual((engine as any).countdownDuration, 3, "Countdown should be 3");
+  assertEqual(engine.getCountdownDuration(), 3, "Countdown should be 3");
 
   const players: PlayerData[] = [
     { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
@@ -107,7 +106,7 @@ runner.test("stopGame restores movement config and resets countdown", (engine) =
     "oneshotMode should be restored after stopGame"
   );
   assertEqual(
-    (engine as any).countdownDuration,
+    engine.getCountdownDuration(),
     10,
     "Countdown should be reset to 10 after stopGame"
   );

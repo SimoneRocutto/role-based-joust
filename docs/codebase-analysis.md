@@ -153,7 +153,7 @@ These features exist in code but were missing or incomplete in documentation:
 
 ### Fix Soon (Maintainability)
 
-3. Split `GameEngine` into focused services (StateMachine, PlayerManager, ReadyStateManager).
+3. ~~Split `GameEngine` into focused services (StateMachine, PlayerManager, ReadyStateManager)~~
 4. Split `PlayerView` and `AdminControls` into smaller, focused components.
 5. Remove global scope usage for `gameEngine`/`io` — introduce dependency injection.
 6. Sync server/client type definitions (`PlayerState`, `ScoreEntry`).

@@ -10,6 +10,8 @@ import {
   restoreMovementConfig,
   saveMovementConfig,
 } from "@/config/gameConfig";
+import { ReadyStateManager } from "@/managers/ReadyStateManager";
+import { CountdownManager } from "@/managers/CountdownManager";
 
 const logger = Logger.getInstance();
 const gameEvents = GameEvents.getInstance();
@@ -25,6 +27,10 @@ const gameEvents = GameEvents.getInstance();
  * - Routes movement data to players
  * - Manages rounds and match flow
  * - Test mode support (bots, fast-forward)
+ *
+ * Delegates to:
+ * - ReadyStateManager: player ready state between rounds
+ * - CountdownManager: pre-round countdown sequence
  */
 export class GameEngine {
   // ========== PLAYERS ==========
@@ -44,25 +50,28 @@ export class GameEngine {
   private gameLoop: NodeJS.Timeout | null = null;
   private lastTickTime: number = 0;
 
-  // ========== COUNTDOWN ==========
-  private countdownTimer: NodeJS.Timeout | null = null;
-  private countdownSeconds: number = 0;
-  private countdownDuration: number = 10; // Default 10 seconds countdown
-
   // ========== TEST MODE ==========
   testMode: boolean = false;
 
   // ========== LAST GAME MODE ==========
   lastModeKey: string = "role-based";
 
-  // ========== READY STATE ==========
-  private playerReadyState: Map<string, boolean> = new Map();
+  // ========== MANAGERS ==========
+  private readyStateManager = new ReadyStateManager();
+  private countdownManager = new CountdownManager();
   readonly isDevMode: boolean = process.env.NODE_ENV === "development";
-  private readyDelayTimer: NodeJS.Timeout | null = null;
-  private readyEnabled: boolean = true;
 
   constructor() {
     this.tickRate = gameConfig.tick.rate;
+
+    // Wire up auto-start: when all players are ready between rounds, start next round
+    this.readyStateManager.onAllReady = () => {
+      if (this.gameState === "round-ended") {
+        logger.info("ENGINE", "All players ready - auto-starting next round");
+        this.startNextRound();
+      }
+    };
+
     logger.info("ENGINE", "Game engine initialized", {
       tickRate: this.tickRate,
     });
@@ -77,11 +86,11 @@ export class GameEngine {
    * Use 0 or negative to skip countdown entirely
    */
   setCountdownDuration(seconds: number): void {
-    this.countdownDuration = Math.max(0, seconds);
-    logger.info(
-      "ENGINE",
-      `Countdown duration set to ${this.countdownDuration}s`
-    );
+    this.countdownManager.setCountdownDuration(seconds);
+  }
+
+  getCountdownDuration(): number {
+    return this.countdownManager.getCountdownDuration();
   }
 
   /**
@@ -204,145 +213,21 @@ export class GameEngine {
 
   /**
    * Start the pre-game countdown
-   * Emits role info to players and counts down before starting
+   * Delegates to CountdownManager with the current engine context
    */
   private startCountdown(): void {
-    logger.info("ENGINE", "Starting countdown", {
-      duration: this.countdownDuration,
-    });
-
-    // Reset ready state for the new round
-    this.resetReadyState();
-
-    // Reset all players for the new round (before countdown so dashboard shows alive players)
-    this.players.forEach((player) => {
-      player.isAlive = true;
-      player.accumulatedDamage = 0;
-      player.points = 0;
-      player.clearStatusEffects(0);
-    });
-
-    // Emit role assignments to each player
-    this.emitRoleAssignments();
-
-    // Emit a game tick so dashboard shows fresh player states during countdown
-    gameEvents.emitGameTick({
-      gameTime: 0,
-      roundTimeRemaining: this.currentMode?.roundDuration ?? null,
-      players: this.players.map((p) => ({
-        id: p.id,
-        name: p.name,
-        isAlive: p.isAlive,
-        accumulatedDamage: p.accumulatedDamage,
-        points: p.points,
-        totalPoints: p.totalPoints,
-        toughness: p.toughness,
-        deathCount: this.currentMode?.getPlayerDeathCount(p.id) ?? 0,
-        isDisconnected: p.isDisconnected(),
-        disconnectedAt: p.disconnectedAt,
-        graceTimeRemaining: p.getGraceTimeRemaining(0),
-      })),
-    });
-
-    const roundNumber = this.currentRound;
-    const totalRounds = this.currentMode?.roundCount || 1;
-
-    // If countdown is 0, skip directly to game start
-    if (this.countdownDuration <= 0) {
-      logger.info("ENGINE", "Countdown skipped (duration=0)");
-      gameEvents.emitCountdown({
-        secondsRemaining: 0,
-        totalSeconds: 0,
-        phase: "go",
-        roundNumber,
-        totalRounds,
-      });
-      this.startRound();
-      return;
-    }
-
-    this.gameState = "countdown";
-    this.countdownSeconds = this.countdownDuration;
-
-    // Emit initial countdown event
-    gameEvents.emitCountdown({
-      secondsRemaining: this.countdownSeconds,
-      totalSeconds: this.countdownDuration,
-      phase: "countdown",
-      roundNumber,
-      totalRounds,
-    });
-
-    // Start countdown timer
-    this.countdownTimer = setInterval(() => {
-      this.countdownSeconds--;
-
-      if (this.countdownSeconds > 0) {
-        // Emit countdown tick
-        gameEvents.emitCountdown({
-          secondsRemaining: this.countdownSeconds,
-          totalSeconds: this.countdownDuration,
-          phase: "countdown",
-          roundNumber,
-          totalRounds,
-        });
-
-        logger.debug("ENGINE", `Countdown: ${this.countdownSeconds}`);
-      } else {
-        // Countdown finished - emit GO and start round
-        gameEvents.emitCountdown({
-          secondsRemaining: 0,
-          totalSeconds: this.countdownDuration,
-          phase: "go",
-          roundNumber,
-          totalRounds,
-        });
-
-        logger.info("ENGINE", "Countdown complete - GO!");
-
-        // Clear timer and start round
-        if (this.countdownTimer) {
-          clearInterval(this.countdownTimer);
-          this.countdownTimer = null;
-        }
-
-        setTimeout(() => this.startRound(), 1000);
+    this.countdownManager.startCountdown(
+      {
+        players: this.players,
+        currentMode: this.currentMode,
+        currentRound: this.currentRound,
+        resetReadyState: () => this.resetReadyState(),
+        onCountdownComplete: () => this.startRound(),
+      },
+      (state) => {
+        this.gameState = state;
       }
-    }, 1000); // Tick every second
-  }
-
-  /**
-   * Emit role assignment info to each player via their socket
-   */
-  private emitRoleAssignments(): void {
-    // Skip role assignments for modes without roles (e.g., Classic)
-    if (this.currentMode && !this.currentMode.useRoles) {
-      logger.debug("ENGINE", "Skipping role assignments (mode has no roles)");
-      return;
-    }
-
-    for (const player of this.players) {
-      const roleInfo = {
-        playerId: player.id,
-        name: player.constructor.name.toLowerCase(),
-        displayName:
-          (player.constructor as any).displayName || player.constructor.name,
-        description: (player.constructor as any).description || "",
-        difficulty: (player.constructor as any).difficulty || "normal",
-      };
-
-      logger.debug(
-        "ENGINE",
-        `Emitting role assignment to ${player.name}`,
-        roleInfo
-      );
-
-      // Emit role:assigned event (will be broadcast via server.ts)
-      gameEvents.emit("role:assigned", {
-        ...roleInfo,
-        socketId: player.socketId,
-      });
-    }
+    );
   }
 
   /**
@@ -476,29 +361,8 @@ export class GameEngine {
     // Reset ready state so between-rounds screen starts at 0/N
     this.resetReadyState();
 
-    // Disable ready state and set up delay timer (skip in test mode)
-    if (!this.testMode) {
-      this.readyEnabled = false;
-      gameEvents.emitReadyEnabled({ enabled: false });
-
-      // Clear any existing timer
-      if (this.readyDelayTimer) {
-        clearTimeout(this.readyDelayTimer);
-      }
-
-      // Start delay timer
-      this.readyDelayTimer = setTimeout(() => {
-        this.readyEnabled = true;
-        this.readyDelayTimer = null;
-        gameEvents.emitReadyEnabled({ enabled: true });
-        logger.info("ENGINE", "Ready state enabled after delay");
-      }, gameConfig.timing.readyDelayMs);
-
-      logger.info(
-        "ENGINE",
-        `Ready state disabled for ${gameConfig.timing.readyDelayMs}ms`
-      );
-    }
+    // Start ready delay (disabled for a few seconds after round end)
+    this.readyStateManager.startReadyDelay(this.testMode);
 
     // Notify mode
     if (this.currentMode) {
@@ -612,28 +476,18 @@ export class GameEngine {
       this.gameLoop = null;
     }
 
-    if (this.countdownTimer) {
-      clearInterval(this.countdownTimer);
-      this.countdownTimer = null;
-    }
-
-    // Clear ready delay timer and reset readyEnabled
-    if (this.readyDelayTimer) {
-      clearTimeout(this.readyDelayTimer);
-      this.readyDelayTimer = null;
-    }
-    this.readyEnabled = true;
+    this.countdownManager.cancel();
+    this.readyStateManager.cleanup();
 
     this.gameState = "waiting";
     this.players = [];
     this.playerDataCache = [];
     this.currentRound = 0;
     this.gameTime = 0;
-    this.resetReadyState();
 
     // Restore movement config to what user had before game started
     restoreMovementConfig();
-    this.countdownDuration = 10;
+    this.countdownManager.setCountdownDuration(10);
 
     // Notify clients that game was stopped
     gameEvents.emitGameStopped();
@@ -750,20 +604,13 @@ export class GameEngine {
   }
 
   // ========================================================================
-  // READY STATE MANAGEMENT (for between rounds)
+  // READY STATE (delegates to ReadyStateManager)
   // ========================================================================
 
-  /**
-   * Check if ready state is enabled (not in delay period after round end)
-   */
   isReadyEnabled(): boolean {
-    return this.readyEnabled;
+    return this.readyStateManager.isReadyEnabled();
   }
 
-  /**
-   * Set player ready state (for between rounds)
-   * Returns true if ready was accepted, false if rejected (e.g., during delay period)
-   */
   setPlayerReady(playerId: string, isReady: boolean): boolean {
     const player = this.getPlayerById(playerId);
     if (!player) {
@@ -773,79 +620,28 @@ export class GameEngine {
       );
       return false;
     }
-
-    // Reject ready during delay period (only when trying to set ready, not unready)
-    if (isReady && !this.readyEnabled) {
-      logger.debug(
-        "ENGINE",
-        `Rejecting ready for ${player.name} - ready not yet enabled`
-      );
-      return false;
-    }
-
-    this.playerReadyState.set(playerId, isReady);
-    logger.debug("ENGINE", `Player ${player.name} ready state: ${isReady}`);
-
-    // Check if all players ready for auto-start (production mode only)
-    this.checkAutoStart();
-    return true;
+    return this.readyStateManager.setPlayerReady(
+      playerId,
+      player.name,
+      isReady,
+      this.players
+    );
   }
 
-  /**
-   * Get ready count for current game players
-   */
   getReadyCount(): { ready: number; total: number } {
-    const total = this.players.length;
-    let ready = 0;
-    for (const player of this.players) {
-      if (this.playerReadyState.get(player.id)) {
-        ready++;
-      }
-    }
-    return { ready, total };
+    return this.readyStateManager.getReadyCount(this.players);
   }
 
-  /**
-   * Check if all players are ready
-   */
   areAllPlayersReady(): boolean {
-    if (this.players.length === 0) return false;
-    for (const player of this.players) {
-      if (!this.playerReadyState.get(player.id)) {
-        return false;
-      }
-    }
-    return true;
+    return this.readyStateManager.areAllPlayersReady(this.players);
   }
 
-  /**
-   * Reset ready state for all players
-   */
   resetReadyState(): void {
-    this.playerReadyState.clear();
-    logger.debug("ENGINE", "Ready state reset for all players");
+    this.readyStateManager.resetReadyState();
   }
 
-  /**
-   * Check if game should auto-start (production mode: all players ready)
-   * Called when a player becomes ready
-   */
-  private checkAutoStart(): void {
-    // Only auto-start between rounds
-    if (this.gameState !== "round-ended") return;
-
-    // Check if all players are ready
-    if (this.areAllPlayersReady()) {
-      logger.info("ENGINE", "All players ready - auto-starting next round");
-      this.startNextRound();
-    }
-  }
-
-  /**
-   * Get player ready state
-   */
   getPlayerReady(playerId: string): boolean {
-    return this.playerReadyState.get(playerId) ?? false;
+    return this.readyStateManager.getPlayerReady(playerId);
   }
 
   // ========================================================================

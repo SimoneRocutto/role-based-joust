@@ -21,7 +21,7 @@ runner.test("DeathCountMode creates with correct defaults", (engine) => {
   assertEqual(mode.roundCount, 3, "Default roundCount should be 3");
   assertEqual(mode.roundDuration, 90000, "Default roundDuration should be 90000ms");
   assertEqual(
-    (engine as any).countdownDuration,
+    engine.getCountdownDuration(),
     3,
     "Countdown should be set to 3 seconds"
   );
