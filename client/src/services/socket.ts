@@ -229,6 +229,10 @@ class SocketService {
     this.on("player:respawn-pending", callback);
   }
 
+  onPlayerKicked(callback: (data: { reason: string }) => void) {
+    this.on("player:kicked", callback);
+  }
+
   // Generic event listener management
   on(event: string, callback: Function) {
     if (!this.socket) return;

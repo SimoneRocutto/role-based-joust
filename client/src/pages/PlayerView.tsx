@@ -130,7 +130,7 @@ function PlayerView() {
     enabled: shouldDetectShake,
   });
 
-  // Check if player has joined
+  // Check if player has joined (also reacts to kick clearing identity)
   useEffect(() => {
     const playerId = localStorage.getItem("playerId");
     const playerNumber = localStorage.getItem("playerNumber");
@@ -139,7 +139,7 @@ function PlayerView() {
       // Not joined, redirect to join page
       navigate("/join");
     }
-  }, [navigate]);
+  }, [navigate, myPlayerId]);
 
   // Request permissions on mount
   useEffect(() => {

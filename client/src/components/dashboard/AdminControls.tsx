@@ -537,14 +537,23 @@ function AdminControls() {
               {players.map((p) => (
                 <div
                   key={p.id}
-                  className={`px-3 py-2 bg-gray-700 rounded text-sm ${
+                  className={`px-3 py-2 bg-gray-700 rounded text-sm flex items-center justify-between ${
                     p.isConnected === false ? 'opacity-40' : ''
                   }`}
                 >
-                  #{p.number} {p.name}
-                  {p.isConnected === false && (
-                    <span className="text-gray-500 text-xs ml-1">OFFLINE</span>
-                  )}
+                  <span>
+                    #{p.number} {p.name}
+                    {p.isConnected === false && (
+                      <span className="text-gray-500 text-xs ml-1">OFFLINE</span>
+                    )}
+                  </span>
+                  <button
+                    onClick={() => apiService.kickPlayer(p.id)}
+                    className="ml-2 text-red-400 hover:text-red-300 text-xs font-bold px-1"
+                    title={`Kick ${p.name}`}
+                  >
+                    X
+                  </button>
                 </div>
               ))}
             </div>

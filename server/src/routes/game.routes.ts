@@ -724,6 +724,76 @@ router.post(
 );
 
 /**
+ * POST /api/game/kick/:playerId
+ * Kick a player from the lobby (admin action, lobby only)
+ */
+router.post(
+  "/kick/:playerId",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { gameEngine } = global;
+    const { playerId } = req.params;
+
+    if (!gameEngine || gameEngine.gameState !== "waiting") {
+      res.status(400).json({
+        success: false,
+        error: "Can only kick players from the lobby",
+      });
+      return;
+    }
+
+    // Validate player exists
+    const playerName = connectionManager.getPlayerName(playerId);
+    if (!playerName) {
+      res.status(404).json({
+        success: false,
+        error: "Player not found",
+      });
+      return;
+    }
+
+    // Get player's socket and emit kick event before disconnecting
+    const socketId = connectionManager.getSocketId(playerId);
+    if (socketId) {
+      const { io } = global;
+      if (io) {
+        const socket = io.sockets.sockets.get(socketId);
+        if (socket) {
+          socket.emit("player:kicked", { reason: "You were removed from the game" });
+          socket.disconnect(true);
+        }
+      }
+    }
+
+    // Remove player from connection manager (clears all data including lobby disconnect timeout)
+    connectionManager.removePlayer(playerId);
+
+    // Remove from team assignments
+    const teamManager = TeamManager.getInstance();
+    teamManager.removePlayer(playerId);
+
+    // Broadcast updated lobby list
+    const { io } = global;
+    if (io) {
+      const lobbyPlayers = connectionManager.getLobbyPlayers();
+      const playersWithTeams = lobbyPlayers.map((p) => ({
+        ...p,
+        teamId: teamManager.isEnabled() ? teamManager.getPlayerTeam(p.id) : null,
+      }));
+      io.emit("lobby:update", { players: playersWithTeams });
+      if (teamManager.isEnabled()) {
+        io.emit("team:update", { teams: teamManager.getTeamAssignments() });
+      }
+    }
+
+    logger.info("GAME", "Player kicked from lobby", { playerId, playerName });
+
+    res.json({
+      success: true,
+    });
+  })
+);
+
+/**
  * GET /api/game/teams
  * Get current team assignments
  */

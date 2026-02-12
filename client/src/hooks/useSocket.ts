@@ -320,6 +320,18 @@ export function useSocket() {
       );
     });
 
+    // Player kicked from lobby
+    socketService.onPlayerKicked(({ reason }) => {
+      // Clear session data so player is treated as new
+      localStorage.removeItem("sessionToken");
+      localStorage.removeItem("playerId");
+      localStorage.removeItem("playerNumber");
+      setLatestEvent(reason || "You were removed from the game");
+      setGameState("waiting");
+      // Clear store identity so PlayerView redirects to /join
+      useGameStore.getState().setMyPlayer("", 0);
+    });
+
     // Error handling
     socketService.onError(({ message, code }) => {
       console.error("Socket error:", code, message);
@@ -351,6 +363,7 @@ export function useSocket() {
       socketService.off("game:stopped");
       socketService.off("player:respawn");
       socketService.off("player:respawn-pending");
+      socketService.off("player:kicked");
       socketService.off("error");
     };
   }, [myPlayerId, myPlayerNumber]);

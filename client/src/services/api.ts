@@ -213,6 +213,13 @@ class ApiService {
     return this.request("/game/teams");
   }
 
+  // POST /api/game/kick/:playerId
+  async kickPlayer(playerId: string): Promise<{ success: boolean }> {
+    return this.request(`/game/kick/${playerId}`, {
+      method: "POST",
+    });
+  }
+
   // GET /api/player/:playerId/role
   async getPlayerRole(playerId: string): Promise<{
     success: boolean;

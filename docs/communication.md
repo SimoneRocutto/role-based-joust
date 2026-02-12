@@ -264,6 +264,20 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
 
 ---
 
+#### `player:kicked`
+
+**When**: Admin kicks this player from the lobby (sent only to the kicked player's socket)
+
+**Payload**:
+
+```typescript
+{
+  reason: string     // Human-readable reason (e.g. "You were removed from the game")
+}
+```
+
+---
+
 #### `player:death`
 
 **When**: Any player dies
@@ -657,6 +671,28 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
   teams: Record<string, string[]>  // teamId → playerId[]
 }
 ```
+
+---
+
+### `POST /api/game/kick/:playerId`
+
+**Purpose**: Kick a player from the lobby (admin action, lobby only)
+
+**Request**: URL parameter `playerId`
+
+**Response**:
+
+```typescript
+{
+  success: boolean
+}
+```
+
+**Side effects**: Emits `player:kicked` to the kicked player's socket, disconnects their socket, removes them from connection manager and team assignments, broadcasts `lobby:update` to all clients.
+
+**Errors**:
+- `400` — Game is not in waiting state
+- `404` — Player not found
 
 ---
 

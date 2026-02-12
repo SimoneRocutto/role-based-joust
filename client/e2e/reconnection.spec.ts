@@ -50,9 +50,10 @@ test.describe('Disconnect Handling', () => {
       // Dashboard should show 0 connected players (player is offline, still in lobby)
       await expectDashboardPlayerCount(dashboard, 0);
 
-      // Player card should still be visible but marked offline
-      await expect(dashboard.locator('text=OFFLINE')).toBeVisible();
-      await expect(dashboard.locator('text=DisconnectP1')).toBeVisible();
+      // Player card should still be visible but marked offline (scope to AdminControls player grid)
+      const adminGrid = dashboard.locator('.grid-cols-4');
+      await expect(adminGrid.getByText('OFFLINE', { exact: true })).toBeVisible();
+      await expect(adminGrid.locator('text=DisconnectP1')).toBeVisible();
     });
 
     test('server lobby keeps disconnected player during grace period', async ({ context }) => {
@@ -103,8 +104,9 @@ test.describe('Disconnect Handling', () => {
       // Player 3 should still be connected
       await expect(dashboard.locator('text=/#\\d+ MultiDisc3/')).toBeVisible();
 
-      // Disconnected players should show as offline
-      const offlineLabels = dashboard.locator('text=OFFLINE');
+      // Disconnected players should show as offline (scope to AdminControls player grid)
+      const adminGrid = dashboard.locator('.grid-cols-4');
+      const offlineLabels = adminGrid.getByText('OFFLINE', { exact: true });
       await expect(offlineLabels).toHaveCount(2);
     });
 
@@ -258,6 +260,45 @@ test.describe('Disconnect Handling', () => {
     });
   });
 });
+
+  test.describe('Kick Player', () => {
+    test.beforeEach(async () => {
+      await resetServerState();
+    });
+
+    test('admin kicks player from lobby', async ({ context }) => {
+      const dashboard = await openDashboard(context);
+
+      const player1 = await openPlayerJoin(context);
+      await joinAsPlayer(player1, 'KickP1');
+
+      const player2 = await openPlayerJoin(context);
+      await joinAsPlayer(player2, 'KickP2');
+
+      await expectDashboardPlayerCount(dashboard, 2);
+
+      // Get lobby to find player1's ID
+      const lobby = await getLobbyPlayers();
+      const kickTarget = lobby.players.find((p: any) => p.name === 'KickP1');
+      expect(kickTarget).toBeTruthy();
+
+      // Kick player1 via API
+      const response = await fetch(`${API_URL}/api/game/kick/${kickTarget!.id}`, {
+        method: 'POST',
+      });
+      const result = await response.json();
+      expect(result.success).toBe(true);
+
+      // Dashboard should now show only 1 player
+      await expectDashboardPlayerCount(dashboard, 1);
+      const adminSection = dashboard.locator('text=Connected Players').locator('..');
+      await expect(adminSection.locator('text=KickP1')).not.toBeVisible();
+      await expect(adminSection.locator('text=KickP2')).toBeVisible();
+
+      // Kicked player should be redirected to /join
+      await expect(player1).toHaveURL(/\/join/, { timeout: 5000 });
+    });
+  });
 
 test.describe('Connection Status', () => {
   test.beforeEach(async () => {

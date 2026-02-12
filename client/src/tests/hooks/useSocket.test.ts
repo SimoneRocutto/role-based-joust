@@ -44,6 +44,8 @@ vi.mock("@/services/socket", () => ({
       socketEventHandlers.set("player:respawn-pending", cb),
     onTeamSelection: (cb: Function) =>
       socketEventHandlers.set("team:selection", cb),
+    onPlayerKicked: (cb: Function) =>
+      socketEventHandlers.set("player:kicked", cb),
     onError: (cb: Function) => socketEventHandlers.set("error", cb),
     sendMovement: vi.fn(),
     joinGame: vi.fn(),

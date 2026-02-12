@@ -2,6 +2,7 @@ import { useGameState } from '@/hooks/useGameState'
 import { useGameStore } from '@/store/gameStore'
 import PlayerCard from './PlayerCard'
 import { TEAM_COLORS, getTeamName } from '@/utils/teamColors'
+import { apiService } from '@/services/api'
 
 function PlayerGrid() {
   const { sortedPlayers, players } = useGameState()
@@ -108,6 +109,7 @@ function TeamLobbyGrid({ players }: { players: ReturnType<typeof useGameState>['
                     key={player.id}
                     player={player}
                     teamColor={teamColor.primary}
+                    showKick
                   />
                 ))}
             </div>
@@ -129,6 +131,7 @@ function TeamLobbyGrid({ players }: { players: ReturnType<typeof useGameState>['
                   key={player.id}
                   player={player}
                   teamColor="#6b7280"
+                  showKick
                 />
               ))}
           </div>
@@ -144,9 +147,11 @@ function TeamLobbyGrid({ players }: { players: ReturnType<typeof useGameState>['
 function CompactPlayerCard({
   player,
   teamColor,
+  showKick,
 }: {
   player: { id: string; name: string; number: number; isReady?: boolean; isConnected?: boolean }
   teamColor: string
+  showKick?: boolean
 }) {
   const isDisconnected = player.isConnected === false
 
@@ -164,6 +169,15 @@ function CompactPlayerCard({
       ) : player.isReady ? (
         <span className="text-green-400 text-xs font-bold">✓</span>
       ) : null}
+      {showKick && (
+        <button
+          onClick={() => apiService.kickPlayer(player.id)}
+          className="ml-auto text-red-400 hover:text-red-300 text-xs font-bold px-1"
+          title={`Kick ${player.name}`}
+        >
+          X
+        </button>
+      )}
     </div>
   )
 }

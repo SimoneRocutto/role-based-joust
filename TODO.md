@@ -3,7 +3,6 @@
 Here are all the things this game is missing to be complete. PRIORITIES shows next todo points in priority order from top (highest priority) to bottom (lowest). Feel free to remove them once one of them is done. Below are the future tasks divided by their subject.
 
 - PRIORITIES:
-    - add the possibility to kick a player while in lobby
     - client auto-recovery: use visibilitychange event to trigger reconnection when tab becomes visible again. Player page should recover from disconnected state with just a refresh (no need to navigate back to /join)
 
 - IMPROVEMENTS:

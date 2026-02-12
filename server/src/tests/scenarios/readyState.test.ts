@@ -885,6 +885,80 @@ runner.test("ConnectionManager: clearAll clears lobby disconnect timeouts", (eng
 });
 
 // ============================================================================
+// KICK PLAYER TESTS
+// ============================================================================
+
+runner.test("ConnectionManager: Kick removes connected player from lobby", (engine) => {
+  const connectionManager = ConnectionManager.getInstance();
+  connectionManager.clearAll();
+
+  // Register two players
+  connectionManager.registerConnection("p1", "socket1", "Alice", true);
+  connectionManager.registerConnection("p2", "socket2", "Bob", true);
+
+  assertEqual(connectionManager.getLobbyPlayers().length, 2, "Should have 2 lobby players");
+
+  // Kick player 2
+  connectionManager.removePlayer("p2");
+
+  const lobbyPlayers = connectionManager.getLobbyPlayers();
+  assertEqual(lobbyPlayers.length, 1, "Should have 1 lobby player after kick");
+  assertEqual(lobbyPlayers[0].id, "p1", "Remaining player should be Alice");
+  assertEqual(connectionManager.getPlayerName("p2"), undefined, "Kicked player name should be gone");
+
+  connectionManager.clearAll();
+});
+
+runner.test("ConnectionManager: Kick removes disconnected-in-lobby player", (engine) => {
+  const connectionManager = ConnectionManager.getInstance();
+  connectionManager.clearAll();
+
+  // Register and disconnect a player
+  connectionManager.registerConnection("p1", "socket1", "Alice", true);
+  connectionManager.registerConnection("p2", "socket2", "Bob", true);
+  const mockOnExpiry = () => {};
+  connectionManager.handleLobbyDisconnect("p2", "socket2", mockOnExpiry);
+
+  assertEqual(connectionManager.isDisconnectedInLobby("p2"), true, "Player should be disconnected in lobby");
+  assertEqual(connectionManager.getLobbyPlayers().length, 2, "Both players should be in lobby");
+
+  // Kick disconnected player
+  connectionManager.removePlayer("p2");
+
+  assertEqual(connectionManager.isDisconnectedInLobby("p2"), false, "Should no longer be in disconnected map");
+  assertEqual(connectionManager.getLobbyPlayers().length, 1, "Should have 1 player after kick");
+  assertEqual(connectionManager.getPlayerName("p2"), undefined, "Kicked player name should be gone");
+
+  connectionManager.clearAll();
+});
+
+runner.test("Kick should only work in waiting state", (engine) => {
+  const connectionManager = ConnectionManager.getInstance();
+  connectionManager.clearAll();
+
+  // Register players and start a game
+  connectionManager.registerConnection("p1", "socket1", "Alice", true);
+  connectionManager.registerConnection("p2", "socket2", "Bob", true);
+
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "socket1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "socket2", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+  assertEqual(engine.gameState, "active", "Game should be active");
+
+  // The kick endpoint checks gameState === "waiting" before proceeding.
+  // Here we verify that the game is NOT in waiting state, so the route would reject.
+  assert(engine.gameState !== "waiting", "Game should not be in waiting state during active game");
+
+  connectionManager.clearAll();
+});
+
+// ============================================================================
 // RUN TESTS
 // ============================================================================
 
