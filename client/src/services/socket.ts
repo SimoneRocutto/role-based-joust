@@ -71,6 +71,14 @@ class SocketService {
     });
   }
 
+  // Force a reconnection attempt (e.g. when tab becomes visible again)
+  forceReconnect() {
+    if (this.socket && !this.socket.connected) {
+      console.log("Force reconnecting socket...");
+      this.socket.connect();
+    }
+  }
+
   // Connection status
   getConnectionStatus(): boolean {
     return (this.isConnected && this.socket?.connected) || false;

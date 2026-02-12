@@ -5,6 +5,9 @@ import { useGameStore } from '@/store/gameStore'
 // Track registered event handlers - must be at module level for hoisting
 const socketEventHandlers: Map<string, Function[]> = new Map()
 
+// Track connection status for mock
+let mockConnected = true
+
 // Mock socketService - factory must not reference variables defined after vi.mock
 vi.mock('@/services/socket', () => ({
   socketService: {
@@ -25,6 +28,8 @@ vi.mock('@/services/socket', () => ({
     },
     reconnect: vi.fn(),
     getSocketId: () => 'mock-socket-id',
+    getConnectionStatus: () => mockConnected,
+    forceReconnect: vi.fn(),
   },
 }))
 
@@ -55,6 +60,7 @@ describe('useReconnect', () => {
     vi.clearAllMocks()
     socketEventHandlers.clear()
     useGameStore.getState().reset()
+    mockConnected = true
 
     // Reset localStorage mock
     vi.mocked(localStorage.getItem).mockReturnValue(null)
@@ -90,7 +96,7 @@ describe('useReconnect', () => {
   })
 
   describe('disconnect handling', () => {
-    it('does not start reconnecting without session token', () => {
+    it('does not start reconnecting without session token but reconnects transport', () => {
       vi.mocked(localStorage.getItem).mockReturnValue(null)
 
       const { result } = renderHook(() => useReconnect())
@@ -100,6 +106,7 @@ describe('useReconnect', () => {
       })
 
       expect(result.current.isReconnecting).toBe(false)
+      expect(socketService.forceReconnect).toHaveBeenCalled()
     })
 
     it('starts reconnecting when disconnected with session token', () => {
@@ -292,6 +299,95 @@ describe('useReconnect', () => {
       const storeState = useGameStore.getState()
       expect(storeState.isReconnecting).toBe(false)
       expect(storeState.reconnectAttempts).toBe(0)
+    })
+  })
+
+  describe('visibility change auto-recovery', () => {
+    it('triggers forceReconnect when tab becomes visible and disconnected', () => {
+      vi.mocked(localStorage.getItem).mockReturnValue('valid-token')
+      mockConnected = false
+
+      renderHook(() => useReconnect())
+
+      act(() => {
+        Object.defineProperty(document, 'visibilityState', {
+          value: 'visible',
+          writable: true,
+          configurable: true,
+        })
+        document.dispatchEvent(new Event('visibilitychange'))
+      })
+
+      expect(socketService.forceReconnect).toHaveBeenCalled()
+    })
+
+    it('does not trigger forceReconnect when tab becomes visible and already connected', () => {
+      vi.mocked(localStorage.getItem).mockReturnValue('valid-token')
+      mockConnected = true
+
+      renderHook(() => useReconnect())
+
+      act(() => {
+        Object.defineProperty(document, 'visibilityState', {
+          value: 'visible',
+          writable: true,
+          configurable: true,
+        })
+        document.dispatchEvent(new Event('visibilitychange'))
+      })
+
+      expect(socketService.forceReconnect).not.toHaveBeenCalled()
+    })
+
+    it('does not trigger forceReconnect when no session token', () => {
+      vi.mocked(localStorage.getItem).mockReturnValue(null)
+      mockConnected = false
+
+      renderHook(() => useReconnect())
+
+      act(() => {
+        Object.defineProperty(document, 'visibilityState', {
+          value: 'visible',
+          writable: true,
+          configurable: true,
+        })
+        document.dispatchEvent(new Event('visibilitychange'))
+      })
+
+      expect(socketService.forceReconnect).not.toHaveBeenCalled()
+    })
+
+    it('does not trigger forceReconnect when tab becomes hidden', () => {
+      vi.mocked(localStorage.getItem).mockReturnValue('valid-token')
+      mockConnected = false
+
+      renderHook(() => useReconnect())
+
+      act(() => {
+        Object.defineProperty(document, 'visibilityState', {
+          value: 'hidden',
+          writable: true,
+          configurable: true,
+        })
+        document.dispatchEvent(new Event('visibilitychange'))
+      })
+
+      expect(socketService.forceReconnect).not.toHaveBeenCalled()
+    })
+
+    it('cleans up visibilitychange listener on unmount', () => {
+      const removeEventListenerSpy = vi.spyOn(document, 'removeEventListener')
+
+      const { unmount } = renderHook(() => useReconnect())
+
+      unmount()
+
+      expect(removeEventListenerSpy).toHaveBeenCalledWith(
+        'visibilitychange',
+        expect.any(Function)
+      )
+
+      removeEventListenerSpy.mockRestore()
     })
   })
 

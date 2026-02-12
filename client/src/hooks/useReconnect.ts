@@ -14,7 +14,10 @@ export function useReconnect() {
     const handleDisconnect = () => {
       const sessionToken = localStorage.getItem("sessionToken");
       if (!sessionToken) {
-        console.log("No session token, cannot reconnect");
+        // No session to restore, but still reconnect the transport
+        // (e.g. after being kicked, the server force-disconnects the socket)
+        console.log("No session token, reconnecting transport only");
+        socketService.forceReconnect();
         return;
       }
 
@@ -89,12 +92,26 @@ export function useReconnect() {
       }
     });
 
+    // When the tab becomes visible again, force a reconnection if disconnected
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        const sessionToken = localStorage.getItem("sessionToken");
+        if (sessionToken && !socketService.getConnectionStatus()) {
+          console.log("Tab became visible, forcing reconnection...");
+          socketService.forceReconnect();
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
       socketService.off("connection:change");
       socketService.off("player:reconnected");
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [isReconnecting, isConnected]);
 
