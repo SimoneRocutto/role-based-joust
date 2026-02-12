@@ -16,21 +16,24 @@ server/
 │   │   │   ├── Vampire.ts          # Bloodlust mechanic, priority 20
 │   │   │   ├── Beast.ts            # Increased toughness (1.5x), priority 10
 │   │   │   ├── BeastHunter.ts      # Bonus points when Beast dies, priority 5
-│   │   │   └── Angel.ts            # One-time death prevention, priority 50
+│   │   │   ├── Angel.ts            # One-time death prevention, priority 50
+│   │   │   └── Ironclad.ts         # Active ability: Toughened effect (2x resist), priority 10
 │   │   │
 │   │   └── statusEffects/          # Status effect implementations (auto-discovered)
 │   │       ├── Invulnerability.ts  # Blocks all damage, priority 100
 │   │       ├── Shielded.ts        # Absorbs damage up to capacity, priority 80
 │   │       ├── Strengthened.ts    # Increased damage resistance, priority 60
 │   │       ├── Weakened.ts        # Reduces toughness, priority 50
-│   │       └── Excited.ts         # Must keep moving or die, priority 10
+│   │       ├── Excited.ts         # Must keep moving or die, priority 10
+│   │       └── Toughened.ts       # Temporary damage resistance, priority 60
 │   │
 │   ├── gameModes/                  # Game mode implementations (auto-discovered)
 │   │   ├── GameMode.ts             # Abstract base class (template methods,
 │   │   │                           # hooks, getRolePool, checkWinCondition,
 │   │   │                           # calculateFinalScores)
 │   │   ├── ClassicMode.ts          # No roles, pure survival, single round
-│   │   └── RoleBasedMode.ts        # Roles + multi-round (3) + points
+│   │   ├── RoleBasedMode.ts        # Roles + multi-round (3) + points
+│   │   └── DeathCountMode.ts       # Respawns, score by death count, teams support
 │   │
 │   ├── managers/
 │   │   ├── GameEngine.ts           # Core game loop (100ms tick), state machine
@@ -40,13 +43,17 @@ server/
 │   │   ├── GameState.ts            # Round history, snapshots, statistics
 │   │   ├── ConnectionManager.ts    # Session tokens, socket-player mapping,
 │   │   │                           # heartbeat/timeout, ready state, lobby
+│   │   ├── TeamManager.ts          # Team assignments, team scores, team switching
+│   │   ├── GameEventManager.ts     # Manages game-wide events lifecycle per mode
 │   │   └── StatusEffectManager.ts  # Auto-discovery registry for effects
 │   │
 │   ├── factories/
 │   │   ├── RoleFactory.ts          # Auto-discovers roles from models/roles/,
 │   │   │                           # assigns roles randomly to players
-│   │   └── GameModeFactory.ts      # Auto-discovers modes from gameModes/,
-│   │                               # creates mode instances
+│   │   ├── GameModeFactory.ts      # Auto-discovers modes from gameModes/,
+│   │   │                           # creates mode instances
+│   │   └── GameEventFactory.ts     # Auto-discovers events from gameEvents/,
+│   │                               # creates event instances
 │   │
 │   ├── utils/
 │   │   ├── GameEvents.ts           # EventEmitter singleton (game:tick, player:death,
@@ -55,6 +62,10 @@ server/
 │   │   ├── Logger.ts               # Logging with levels, categories, file output,
 │   │   │                           # filtering, querying, export
 │   │   └── InputAdapter.ts         # Normalizes device input (phone/joycon/custom)
+│   │
+│   ├── gameEvents/                   # Game-wide event implementations (auto-discovered)
+│   │   ├── GameEvent.ts              # Abstract base class for game events
+│   │   └── SpeedShift.ts             # Alternates slow/fast phases
 │   │
 │   ├── routes/
 │   │   ├── game.routes.ts          # POST /game/launch (primary), /game/next-round,

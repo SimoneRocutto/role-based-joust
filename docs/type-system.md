@@ -301,19 +301,13 @@ abstract class GameMode {
 - Points accumulate across rounds
 - Last standing gets 5 bonus points per round
 
-**HalloweenMode:**
+**DeathCountMode:**
 
-- Extends RoleBasedMode
-- Uses halloween theme
-- Special events (full moon, fog, candy rush)
-- Events trigger on timers
-
-**SurvivalMode:**
-
-- No roles
-- Difficulty increases over time
-- Score by survival duration
-- Damage multiplier grows
+- Respawn-based gameplay (players respawn 5s after death)
+- Score by death count (fewer deaths = higher score)
+- Timed rounds (configurable duration)
+- Supports teams via `TeamManager`
+- Uses game events (e.g., SpeedShift)
 
 **Type Safety in Modes:**
 
@@ -468,7 +462,7 @@ interface RoleThemes {
 
 ```typescript
 const roleThemes: RoleThemes = {
-  standard: ["vampire", "beast", "beastHunter", "angel"],
+  standard: ["vampire", "beast", "beastHunter", "angel", "ironclad"],
   halloween: ["witch", "werewolf", "ghost", "zombie"],
   mafia: ["godfather", "detective", "doctor", "civilian"],
 };

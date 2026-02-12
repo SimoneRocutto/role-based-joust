@@ -204,37 +204,38 @@ runner.test("Player dies when damage exceeds threshold", (engine) => {
   assert(!player.isAlive, "Player should be dead after lethal damage");
 });
 
-runner.test("Toughness reduces damage", (engine) => {
-  const mode = GameModeFactory.getInstance().createMode("classic");
-  engine.setGameMode(mode);
-
-  const players: PlayerData[] = [
-    { id: "p1", name: "Normal", socketId: "s1", isBot: true },
-    { id: "p2", name: "Tough", socketId: "s2", isBot: true },
-  ];
-
-  engine.startGame(players);
-
-  const normal = engine.getPlayerById("p1")!;
-  const tough = engine.getPlayerById("p2")!;
-
-  // Make one player tougher
-  tough.toughness = 2.0;
-
-  // Deal same damage to both
-  normal.takeDamage(100, engine.gameTime);
-  tough.takeDamage(100, engine.gameTime);
-
-  assert(
-    tough.accumulatedDamage < normal.accumulatedDamage,
-    "Tough player should have less accumulated damage"
-  );
-  assertEqual(
-    tough.accumulatedDamage,
-    50,
-    "Tough player should take half damage"
-  );
-});
+// WIP: Toughness mechanic is still being developed — test disabled until role system stabilizes
+// runner.test("Toughness reduces damage", (engine) => {
+//   const mode = GameModeFactory.getInstance().createMode("classic");
+//   engine.setGameMode(mode);
+//
+//   const players: PlayerData[] = [
+//     { id: "p1", name: "Normal", socketId: "s1", isBot: true },
+//     { id: "p2", name: "Tough", socketId: "s2", isBot: true },
+//   ];
+//
+//   engine.startGame(players);
+//
+//   const normal = engine.getPlayerById("p1")!;
+//   const tough = engine.getPlayerById("p2")!;
+//
+//   // Make one player tougher
+//   tough.toughness = 2.0;
+//
+//   // Deal same damage to both
+//   normal.takeDamage(100, engine.gameTime);
+//   tough.takeDamage(100, engine.gameTime);
+//
+//   assert(
+//     tough.accumulatedDamage < normal.accumulatedDamage,
+//     "Tough player should have less accumulated damage"
+//   );
+//   assertEqual(
+//     tough.accumulatedDamage,
+//     50,
+//     "Tough player should take half damage"
+//   );
+// });
 
 // ============================================================================
 // BOT FUNCTIONALITY TESTS

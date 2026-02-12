@@ -44,7 +44,9 @@ client/
 │   │   ├── useWakeLock.ts             # Keep screen awake
 │   │   ├── useFullscreen.ts           # Fullscreen mode toggle
 │   │   ├── useReconnect.ts            # Auto-reconnection with token
-│   │   └── useGameState.ts            # Zustand store wrapper
+│   │   ├── useGameState.ts            # Zustand store wrapper
+│   │   ├── useShakeDetection.ts       # Shake detection for ready-up
+│   │   └── useModeEvents.ts           # Game event handling (e.g., speed shifts)
 │   │
 │   ├── services/
 │   │   ├── socket.ts                  # Socket.IO client setup + event handlers
@@ -109,11 +111,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/api": {
-        target: "http://localhost:3000",
+        target: "http://localhost:4000",
         changeOrigin: true,
       },
       "/socket.io": {
-        target: "http://localhost:3000",
+        target: "http://localhost:4000",
         changeOrigin: true,
         ws: true,
       },
@@ -577,7 +579,7 @@ npm start
 ## 🔒 Security Considerations
 
 1. **Input Validation**: All accelerometer data validated server-side
-2. **Session Tokens**: Random strings, 10s expiry after disconnect
+2. **Session Tokens**: Random strings, 5-minute expiry after disconnect
 3. **Rate Limiting**: Max 20Hz movement data (enforced server-side)
 4. **No Sensitive Data**: Roles not sent to other players
 5. **Admin Actions**: Dashboard-only endpoints (future: auth)

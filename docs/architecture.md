@@ -32,16 +32,16 @@
 #### Development (2 Processes)
 
 ```
-Backend:  npm run dev → localhost:3000 (Express + Socket.IO)
+Backend:  npm run dev → localhost:4000 (Express + Socket.IO)
 Frontend: npm run dev → localhost:5173 (Vite dev server)
-          ├─ Proxies API to :3000
+          ├─ Proxies API to :4000
           └─ Hot module reload enabled
 ```
 
 #### Production (1 Process)
 
 ```
-Backend serves everything on port 3000:
+Backend serves everything on port 4000:
 ├─ Express API endpoints
 ├─ Socket.IO server
 └─ Static frontend from /dist
@@ -52,9 +52,9 @@ Backend serves everything on port 3000:
 ```
 ┌─────────────────────────────────────┐
 │  Host Machine (Laptop/Desktop)      │
-│  ├─ Node.js server (port 3000)      │
+│  ├─ Node.js server (port 4000)      │
 │  ├─ Serves API + web interface      │
-│  └─ WiFi: 192.168.x.x:3000          │
+│  └─ WiFi: 192.168.x.x:4000          │
 └─────────────────────────────────────┘
                 │
         WiFi Network
@@ -128,7 +128,7 @@ Backend serves everything on port 3000:
 ### 1. Lobby Phase
 
 1. Admin opens dashboard (`/dashboard`)
-2. Players navigate to host's IP (`http://192.168.x.x:3000`)
+2. Players navigate to host's IP (`http://192.168.x.x:5173`)
 3. Players enter names and join (`/join` → `/player`)
 4. Dashboard shows connected players and their ready status
 5. Players shake their device to ready up (or click in dev mode — controlled by URL parameter, not Node environment)
@@ -249,7 +249,7 @@ socket.on("player:reconnected", (data) => {
 - Random string (not JWTs - unnecessary for this use case)
 - Stored in `localStorage` on client
 - Server maps `token → playerId` for reconnection
-- **10-second expiry** after disconnect (prevents rejoin exploits)
+- **5-minute expiry** after disconnect (heartbeat monitor runs every 30s)
 
 ### Input Validation
 
@@ -288,7 +288,7 @@ socket.on("player:reconnected", (data) => {
 
 ```bash
 # Use ngrok or similar for HTTPS tunnel
-ngrok http 3000
+ngrok http 5173
 
 # Or use mkcert for local HTTPS
 mkcert -install

@@ -36,11 +36,12 @@ Currently, the only way to earn points is being the last player alive in a round
 
 ```
 role-based-joust/
-├── server/              # Express + Socket.IO backend (port 3000)
+├── server/              # Express + Socket.IO backend (port 4000)
 │   └── src/
 │       ├── models/          # BasePlayer, StatusEffect, roles/, statusEffects/
-│       ├── managers/        # GameEngine (100ms tick loop), GameState, ConnectionManager
-│       ├── gameModes/       # ClassicMode, RoleBasedMode (auto-discovered)
+│       ├── managers/        # GameEngine (100ms tick loop), GameState, ConnectionManager, TeamManager
+│       ├── gameModes/       # ClassicMode, RoleBasedMode, DeathCountMode (auto-discovered)
+│       ├── gameEvents/      # SpeedShift and other game-wide events (auto-discovered)
 │       ├── factories/       # RoleFactory, GameModeFactory (auto-discovery)
 │       ├── routes/          # game.routes.ts, player.routes.ts, debug.routes.ts
 │       ├── config/          # gameConfig.ts, roleThemes.ts
@@ -51,7 +52,7 @@ role-based-joust/
 │       ├── pages/           # JoinView, PlayerView, DashboardView
 │       ├── services/        # socket.ts, api.ts, accelerometer.ts, audio.ts
 │       ├── store/           # Zustand gameStore.ts
-│       └── hooks/           # useSocket, useAccelerometer, useReconnect, etc.
+│       └── hooks/           # useSocket, useAccelerometer, useReconnect, useShakeDetection, useModeEvents, etc.
 │   └── e2e/             # Playwright end-to-end tests
 ├── docs/                # All documentation (see index below)
 ├── CLAUDE.md            # This file (read first)
@@ -76,7 +77,7 @@ npm run lint         # ESLint
 ### Client (`cd client`)
 
 ```bash
-npm run dev          # Vite dev server with proxy to :3000
+npm run dev          # Vite dev server with proxy to :4000
 npm run dev:https    # HTTPS mode (needed for iOS accelerometer)
 npm run build        # Production build to dist/
 npm run test:run     # Run all client unit tests (Vitest, single run)
@@ -97,7 +98,7 @@ npm run lint         # ESLint
 
 Server tests use a custom test runner (no Jest/Mocha) with `assert()`, `assertEqual()`, `assertContains()` helpers. Each test gets a fresh GameEngine instance in test mode.
 
-E2e tests auto-start both the server (port 3000) and client (port 5173) before running. They cover: game start, game mechanics, reconnection, socket events, player join, dashboard/lobby, API endpoints, and edge cases.
+E2e tests auto-start both the server (port 4000) and client (port 5173) before running. They cover: game start, game mechanics, reconnection, socket events, player join, dashboard/lobby, API endpoints, and edge cases.
 
 ## Architecture Patterns
 
@@ -111,10 +112,11 @@ Game loop ticks every 100ms. All timing uses `gameTime` (milliseconds since roun
 `waiting` → `countdown` → `active` → `round-ended` → `finished`
 
 ### Auto-Discovery Pattern
-New roles, status effects, and game modes are auto-discovered from the filesystem:
+New roles, status effects, game modes, and game events are auto-discovered from the filesystem:
 - Add `server/src/models/roles/MyRole.ts` extending `BasePlayer` → loaded by RoleFactory
 - Add `server/src/models/statusEffects/MyEffect.ts` extending `StatusEffect` → loaded automatically
 - Add `server/src/gameModes/MyMode.ts` extending `GameMode` → loaded by GameModeFactory
+- Add `server/src/gameEvents/MyEvent.ts` extending `GameEvent` → loaded by GameEventFactory
 
 ### Priority-Based Execution
 Status effects and roles execute in priority order (higher = earlier):
@@ -128,11 +130,19 @@ Status effects and roles execute in priority order (higher = earlier):
 
 ### Roles (Work in Progress)
 
-Roles extend `BasePlayer` and override lifecycle hooks (`onInit`, `onTick`, `beforeDeath`, `die`, `onDeath`) to implement special abilities. Currently implemented: **Vampire**, **Beast**, **BeastHunter**, **Angel**. Role mechanics are still being developed and may change.
+Roles extend `BasePlayer` and override lifecycle hooks (`onInit`, `onTick`, `beforeDeath`, `die`, `onDeath`, `onAbilityUse`) to implement special abilities. Currently implemented: **Vampire**, **Beast**, **BeastHunter**, **Angel**, **Ironclad**. Role mechanics are still being developed and may change.
 
-Status effects (buffs/debuffs) are applied to players by roles or game events. Currently implemented: **Invulnerability**, **Shielded**, **Strengthened**, **Weakened**, **Excited**.
+Status effects (buffs/debuffs) are applied to players by roles or game events. Currently implemented: **Invulnerability**, **Shielded**, **Strengthened**, **Weakened**, **Excited**, **Toughened**.
 
-Game modes define rule sets. Currently implemented: **ClassicMode** (pure survival, no roles) and **RoleBasedMode** (roles + multi-round + points).
+Game modes define rule sets. Currently implemented: **ClassicMode** (pure survival, no roles), **RoleBasedMode** (roles + multi-round + points), and **DeathCountMode** (respawns, score by death count, supports teams).
+
+### Teams System
+
+Teams are supported in certain game modes (DeathCountMode). The admin enables teams in settings, enters a team selection phase, and players can switch teams by tapping. Teams are managed by `TeamManager` on the server. Team scores are aggregated from individual player scores and shown on the round-end/game-end leaderboard.
+
+### Game Events System
+
+Game events are temporary, game-wide effects that alter gameplay for all players (distinct from the `GameEvents` event bus). Currently implemented: **SpeedShift** (alternates between slow/fast phases). Events are auto-discovered from `server/src/gameEvents/` and managed by `GameEventManager` per mode. They communicate to clients via the `mode:event` socket event.
 
 ### Ready State System
 
@@ -144,9 +154,9 @@ Dev mode is controlled by a URL parameter, not the Node environment.
 
 ## Socket.IO Events (Quick Reference)
 
-**Client → Server:** `player:join`, `player:reconnect`, `player:move`, `player:ready`, `ping`
+**Client → Server:** `player:join`, `player:reconnect`, `player:move`, `player:ready`, `player:tap`, `team:switch`, `ping`
 
-**Server → Client:** `player:joined`, `player:reconnected`, `game:tick`, `player:death`, `player:respawn`, `player:respawn-pending`, `round:start`, `round:end`, `game:end`, `game:countdown`, `game:stopped`, `vampire:bloodlust`, `role:assigned`, `lobby:update`, `player:ready`, `ready:update`, `pong`, `error`
+**Server → Client:** `player:joined`, `player:reconnected`, `game:tick`, `player:death`, `player:respawn`, `player:respawn-pending`, `round:start`, `round:end`, `game:end`, `game:countdown`, `game:stopped`, `vampire:bloodlust`, `role:assigned`, `lobby:update`, `player:ready`, `ready:update`, `player:tap:result`, `player:kicked`, `team:update`, `team:selection`, `mode:event`, `pong`, `error`
 
 Full payloads and details: see `docs/communication.md`.
 
@@ -156,6 +166,7 @@ Full payloads and details: see `docs/communication.md`.
 - `POST /api/game/launch` — Create and start a game (primary way to start games)
 - `POST /api/game/next-round` — Start next round
 - `POST /api/game/team-selection` — Enter team selection phase (teams enabled only)
+- `POST /api/game/kick/:playerId` — Kick a player from the lobby
 - `POST /api/game/stop` — Stop current game
 - `GET /api/game/state` — Current game snapshot
 - `GET /api/game/lobby` — Connected players in lobby

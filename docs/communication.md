@@ -513,6 +513,22 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
 
 ---
 
+#### `mode:event`
+
+**When**: A game-wide event activates or deactivates (e.g., SpeedShift phases). Emitted by `GameEventManager` through `GameEvents.emitModeEvent()`.
+
+**Payload**:
+
+```typescript
+{
+  eventKey: string,        // Event identifier (e.g., "speed-shift")
+  type: string,            // Sub-event type (e.g., "slow-phase", "fast-phase", "end")
+  data?: Record<string, any>  // Event-specific data
+}
+```
+
+---
+
 #### `error`
 
 **When**: Error notifications from server
@@ -895,20 +911,20 @@ socket.on("player:reconnected", (data) => {
 
 ```typescript
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 ```
 
 **Environment Variables** (`.env` file):
 
 ```bash
 # Development
-VITE_API_BASE_URL=http://localhost:3000
+VITE_API_BASE_URL=http://localhost:4000
 
 # Production (same machine)
-VITE_API_BASE_URL=http://localhost:3000
+VITE_API_BASE_URL=http://localhost:4000
 
 # Production (separate machines)
-VITE_API_BASE_URL=http://192.168.1.100:3000
+VITE_API_BASE_URL=http://192.168.1.100:4000
 ```
 
 ---
