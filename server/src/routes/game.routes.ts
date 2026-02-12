@@ -19,6 +19,11 @@ import {
 } from "@/config/gameConfig";
 import { getAvailableThemes, themeExists } from "@/config/roleThemes";
 import { TeamManager } from "@/managers/TeamManager";
+import {
+  getLobbyPlayersWithTeams,
+  broadcastLobbyUpdate,
+  broadcastTeamUpdate,
+} from "@/sockets/helpers";
 
 const router = Router();
 const logger = Logger.getInstance();
@@ -70,13 +75,7 @@ router.get(
 router.get(
   "/lobby",
   asyncHandler(async (req: Request, res: Response) => {
-    const lobbyPlayers = connectionManager.getLobbyPlayers();
-    const teamManager = TeamManager.getInstance();
-
-    const players = lobbyPlayers.map((p) => ({
-      ...p,
-      teamId: teamManager.isEnabled() ? teamManager.getPlayerTeam(p.id) : null,
-    }));
+    const players = getLobbyPlayersWithTeams();
 
     logger.debug("GAME", "Fetched lobby players", {
       count: players.length,
@@ -542,24 +541,15 @@ router.post(
         }
         // Broadcast updated lobby with team info
         if (ioInstance) {
-          const playersWithTeams = lobbyPlayers.map((p) => ({
-            ...p,
-            teamId: tm.getPlayerTeam(p.id),
-          }));
-          ioInstance.emit("lobby:update", { players: playersWithTeams });
-          ioInstance.emit("team:update", { teams: tm.getTeamAssignments() });
+          broadcastLobbyUpdate(ioInstance);
+          broadcastTeamUpdate(ioInstance);
         }
       } else if (!userPreferences.teamsEnabled) {
         // Teams disabled — reset assignments and broadcast clean lobby
         tm.reset();
         const { io: ioInstance } = global;
         if (ioInstance) {
-          const lobbyPlayers = connectionManager.getLobbyPlayers();
-          const playersWithTeams = lobbyPlayers.map((p) => ({
-            ...p,
-            teamId: null,
-          }));
-          ioInstance.emit("lobby:update", { players: playersWithTeams });
+          broadcastLobbyUpdate(ioInstance);
           ioInstance.emit("team:update", { teams: {} });
         }
       }
@@ -656,12 +646,8 @@ router.post(
     const { io } = global;
     if (io) {
       io.emit("team:selection", { active: true });
-      const playersWithTeams = lobbyPlayers.map((p) => ({
-        ...p,
-        teamId: teamManager.getPlayerTeam(p.id),
-      }));
-      io.emit("lobby:update", { players: playersWithTeams });
-      io.emit("team:update", { teams: teamManager.getTeamAssignments() });
+      broadcastLobbyUpdate(io);
+      broadcastTeamUpdate(io);
     }
 
     logger.info("GAME", "Team selection started", { playerCount: lobbyPlayers.length });
@@ -706,12 +692,8 @@ router.post(
     // Broadcast updated lobby with new team assignments
     const { io } = global;
     if (io) {
-      const playersWithTeams = lobbyPlayers.map((p) => ({
-        ...p,
-        teamId: teamManager.getPlayerTeam(p.id),
-      }));
-      io.emit("lobby:update", { players: playersWithTeams });
-      io.emit("team:update", { teams: teamManager.getTeamAssignments() });
+      broadcastLobbyUpdate(io);
+      broadcastTeamUpdate(io);
     }
 
     logger.info("GAME", "Teams shuffled");
@@ -774,15 +756,8 @@ router.post(
     // Broadcast updated lobby list
     const { io } = global;
     if (io) {
-      const lobbyPlayers = connectionManager.getLobbyPlayers();
-      const playersWithTeams = lobbyPlayers.map((p) => ({
-        ...p,
-        teamId: teamManager.isEnabled() ? teamManager.getPlayerTeam(p.id) : null,
-      }));
-      io.emit("lobby:update", { players: playersWithTeams });
-      if (teamManager.isEnabled()) {
-        io.emit("team:update", { teams: teamManager.getTeamAssignments() });
-      }
+      broadcastLobbyUpdate(io);
+      broadcastTeamUpdate(io);
     }
 
     logger.info("GAME", "Player kicked from lobby", { playerId, playerName });
