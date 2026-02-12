@@ -9,6 +9,8 @@ import { runPersistenceTests } from "./scenarios/persistence.test";
 import { runAbilityTests } from "./scenarios/ability.test";
 import { runDeathCountModeTests } from "./scenarios/deathCountMode.test";
 import { runTeamManagerTests } from "./scenarios/teamManager.test";
+import { runRoundSetupTests } from "./scenarios/roundSetup.test";
+import { runReadyStateManagerTests } from "./scenarios/readyStateManager.test";
 
 /**
  * Run all test suites
@@ -34,6 +36,8 @@ async function runAllTests() {
     persistence: { passed: 0, failed: 0, total: 0 },
     ability: { passed: 0, failed: 0, total: 0 },
     teamManager: { passed: 0, failed: 0, total: 0 },
+    roundSetup: { passed: 0, failed: 0, total: 0 },
+    readyStateManager: { passed: 0, failed: 0, total: 0 },
   };
 
   // Run core tests
@@ -80,6 +84,14 @@ async function runAllTests() {
   console.log("\n👥 Running Team Manager Tests...\n");
   results.teamManager = await runTeamManagerTests();
 
+  // Run round setup manager tests
+  console.log("\n🔄 Running Round Setup Manager Tests...\n");
+  results.roundSetup = await runRoundSetupTests();
+
+  // Run ready state manager tests
+  console.log("\n✋ Running Ready State Manager Tests...\n");
+  results.readyStateManager = await runReadyStateManagerTests();
+
   // Print overall summary
   console.log("\n");
   console.log("╔═══════════════════════════════════════════════════════════════╗");
@@ -88,11 +100,11 @@ async function runAllTests() {
   console.log("\n");
 
   const totalPassed =
-    results.core.passed + results.roles.passed + results.statusEffects.passed + results.readyState.passed + results.settings.passed + results.classicMode.passed + results.deathCountMode.passed + results.gameEvents.passed + results.persistence.passed + results.ability.passed + results.teamManager.passed;
+    results.core.passed + results.roles.passed + results.statusEffects.passed + results.readyState.passed + results.settings.passed + results.classicMode.passed + results.deathCountMode.passed + results.gameEvents.passed + results.persistence.passed + results.ability.passed + results.teamManager.passed + results.roundSetup.passed + results.readyStateManager.passed;
   const totalFailed =
-    results.core.failed + results.roles.failed + results.statusEffects.failed + results.readyState.failed + results.settings.failed + results.classicMode.failed + results.deathCountMode.failed + results.gameEvents.failed + results.persistence.failed + results.ability.failed + results.teamManager.failed;
+    results.core.failed + results.roles.failed + results.statusEffects.failed + results.readyState.failed + results.settings.failed + results.classicMode.failed + results.deathCountMode.failed + results.gameEvents.failed + results.persistence.failed + results.ability.failed + results.teamManager.failed + results.roundSetup.failed + results.readyStateManager.failed;
   const totalTests =
-    results.core.total + results.roles.total + results.statusEffects.total + results.readyState.total + results.settings.total + results.classicMode.total + results.deathCountMode.total + results.gameEvents.total + results.persistence.total + results.ability.total + results.teamManager.total;
+    results.core.total + results.roles.total + results.statusEffects.total + results.readyState.total + results.settings.total + results.classicMode.total + results.deathCountMode.total + results.gameEvents.total + results.persistence.total + results.ability.total + results.teamManager.total + results.roundSetup.total + results.readyStateManager.total;
 
   console.log(`Core Tests:          ${results.core.passed}/${results.core.total} passed`);
   console.log(`Role Tests:          ${results.roles.passed}/${results.roles.total} passed`);
@@ -107,6 +119,8 @@ async function runAllTests() {
   console.log(`Persistence Tests:   ${results.persistence.passed}/${results.persistence.total} passed`);
   console.log(`Ability Tests:       ${results.ability.passed}/${results.ability.total} passed`);
   console.log(`Team Manager Tests:  ${results.teamManager.passed}/${results.teamManager.total} passed`);
+  console.log(`Round Setup Tests:   ${results.roundSetup.passed}/${results.roundSetup.total} passed`);
+  console.log(`Ready State Mgr:     ${results.readyStateManager.passed}/${results.readyStateManager.total} passed`);
   console.log("\n" + "─".repeat(65) + "\n");
   console.log(`TOTAL:               ${totalPassed}/${totalTests} passed`);
 

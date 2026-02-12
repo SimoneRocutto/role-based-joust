@@ -2,11 +2,12 @@ import type { BasePlayer } from "@/models/BasePlayer";
 import type { GameMode } from "@/gameModes/GameMode";
 import { GameEvents } from "@/utils/GameEvents";
 import { Logger } from "@/utils/Logger";
+import { buildTickPlayerState } from "@/utils/tickPayload";
 
 const logger = Logger.getInstance();
 const gameEvents = GameEvents.getInstance();
 
-export interface CountdownContext {
+export interface RoundSetupContext {
   players: BasePlayer[];
   currentMode: GameMode | null;
   currentRound: number;
@@ -15,7 +16,7 @@ export interface CountdownContext {
 }
 
 /**
- * CountdownManager - Manages the pre-round countdown sequence
+ * RoundSetupManager - Manages the pre-round setup and countdown sequence
  *
  * Handles:
  * - Player reset before countdown (alive, damage, effects)
@@ -23,8 +24,9 @@ export interface CountdownContext {
  * - Countdown timer with per-second events
  * - Initial game tick emission during countdown
  */
-export class CountdownManager {
+export class RoundSetupManager {
   private countdownTimer: NodeJS.Timeout | null = null;
+  private completionTimer: ReturnType<typeof setTimeout> | null = null;
   private countdownSeconds: number = 0;
   private countdownDuration: number = 10;
 
@@ -51,7 +53,7 @@ export class CountdownManager {
    * @param setGameState - Callback to set engine game state to "countdown"
    */
   startCountdown(
-    ctx: CountdownContext,
+    ctx: RoundSetupContext,
     setGameState: (state: "countdown") => void
   ): void {
     logger.info("ENGINE", "Starting countdown", {
@@ -76,19 +78,9 @@ export class CountdownManager {
     gameEvents.emitGameTick({
       gameTime: 0,
       roundTimeRemaining: ctx.currentMode?.roundDuration ?? null,
-      players: ctx.players.map((p) => ({
-        id: p.id,
-        name: p.name,
-        isAlive: p.isAlive,
-        accumulatedDamage: p.accumulatedDamage,
-        points: p.points,
-        totalPoints: p.totalPoints,
-        toughness: p.toughness,
-        deathCount: ctx.currentMode?.getPlayerDeathCount(p.id) ?? 0,
-        isDisconnected: p.isDisconnected(),
-        disconnectedAt: p.disconnectedAt,
-        graceTimeRemaining: p.getGraceTimeRemaining(0),
-      })),
+      players: ctx.players.map((p) =>
+        buildTickPlayerState(p, 0, ctx.currentMode)
+      ),
     });
 
     const roundNumber = ctx.currentRound;
@@ -152,7 +144,10 @@ export class CountdownManager {
           this.countdownTimer = null;
         }
 
-        setTimeout(() => ctx.onCountdownComplete(), 1000);
+        this.completionTimer = setTimeout(() => {
+          this.completionTimer = null;
+          ctx.onCountdownComplete();
+        }, 1000);
       }
     }, 1000);
   }
@@ -203,6 +198,10 @@ export class CountdownManager {
     if (this.countdownTimer) {
       clearInterval(this.countdownTimer);
       this.countdownTimer = null;
+    }
+    if (this.completionTimer) {
+      clearTimeout(this.completionTimer);
+      this.completionTimer = null;
     }
   }
 }

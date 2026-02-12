@@ -11,7 +11,8 @@ import {
   saveMovementConfig,
 } from "@/config/gameConfig";
 import { ReadyStateManager } from "@/managers/ReadyStateManager";
-import { CountdownManager } from "@/managers/CountdownManager";
+import { RoundSetupManager } from "@/managers/RoundSetupManager";
+import { buildTickPlayerState } from "@/utils/tickPayload";
 
 const logger = Logger.getInstance();
 const gameEvents = GameEvents.getInstance();
@@ -30,7 +31,7 @@ const gameEvents = GameEvents.getInstance();
  *
  * Delegates to:
  * - ReadyStateManager: player ready state between rounds
- * - CountdownManager: pre-round countdown sequence
+ * - RoundSetupManager: pre-round setup and countdown sequence
  */
 export class GameEngine {
   // ========== PLAYERS ==========
@@ -58,7 +59,7 @@ export class GameEngine {
 
   // ========== MANAGERS ==========
   private readyStateManager = new ReadyStateManager();
-  private countdownManager = new CountdownManager();
+  private roundSetupManager = new RoundSetupManager();
   readonly isDevMode: boolean = process.env.NODE_ENV === "development";
 
   constructor() {
@@ -86,11 +87,11 @@ export class GameEngine {
    * Use 0 or negative to skip countdown entirely
    */
   setCountdownDuration(seconds: number): void {
-    this.countdownManager.setCountdownDuration(seconds);
+    this.roundSetupManager.setCountdownDuration(seconds);
   }
 
   getCountdownDuration(): number {
-    return this.countdownManager.getCountdownDuration();
+    return this.roundSetupManager.getCountdownDuration();
   }
 
   /**
@@ -213,10 +214,10 @@ export class GameEngine {
 
   /**
    * Start the pre-game countdown
-   * Delegates to CountdownManager with the current engine context
+   * Delegates to RoundSetupManager with the current engine context
    */
   private startCountdown(): void {
-    this.countdownManager.startCountdown(
+    this.roundSetupManager.startCountdown(
       {
         players: this.players,
         currentMode: this.currentMode,
@@ -320,19 +321,9 @@ export class GameEngine {
       roundTimeRemaining: this.currentMode?.roundDuration
         ? Math.max(0, this.currentMode.roundDuration - this.gameTime)
         : null,
-      players: this.players.map((p) => ({
-        id: p.id,
-        name: p.name,
-        isAlive: p.isAlive,
-        accumulatedDamage: p.accumulatedDamage,
-        points: p.points,
-        totalPoints: p.totalPoints,
-        toughness: p.toughness,
-        deathCount: this.currentMode?.getPlayerDeathCount(p.id) ?? 0,
-        isDisconnected: p.isDisconnected(),
-        disconnectedAt: p.disconnectedAt,
-        graceTimeRemaining: p.getGraceTimeRemaining(this.gameTime),
-      })),
+      players: this.players.map((p) =>
+        buildTickPlayerState(p, this.gameTime, this.currentMode)
+      ),
     });
 
     // Check win condition
@@ -476,7 +467,7 @@ export class GameEngine {
       this.gameLoop = null;
     }
 
-    this.countdownManager.cancel();
+    this.roundSetupManager.cancel();
     this.readyStateManager.cleanup();
 
     this.gameState = "waiting";
@@ -487,7 +478,7 @@ export class GameEngine {
 
     // Restore movement config to what user had before game started
     restoreMovementConfig();
-    this.countdownManager.setCountdownDuration(10);
+    this.roundSetupManager.setCountdownDuration(10);
 
     // Notify clients that game was stopped
     gameEvents.emitGameStopped();
