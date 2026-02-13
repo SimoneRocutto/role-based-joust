@@ -1,36 +1,16 @@
 import { Server as SocketIOServer } from "socket.io";
 import { ConnectionManager } from "@/managers/ConnectionManager";
 import { TeamManager } from "@/managers/TeamManager";
-import type { ScoreEntry } from "@/types";
+import type { ScoreEntry } from "@/types/game.types";
+import type { ClientScoreEntry, TeamScore } from "@shared/types";
 
 const connectionManager = ConnectionManager.getInstance();
 const teamManager = TeamManager.getInstance();
 
-export interface ClientScore {
-  playerId: string;
-  playerName: string;
-  playerNumber: number;
-  score: number;
-  roundPoints: number;
-  rank: number;
-  status: string;
-  teamId: number | null;
-}
-
-export interface TeamScore {
-  teamId: number;
-  teamName: string;
-  teamColor: string;
-  score: number;
-  roundPoints: number;
-  rank: number;
-  players: ClientScore[];
-}
-
 /**
  * Map ScoreEntry[] (with BasePlayer) to flat client objects with playerNumber + teamId.
  */
-export function formatScoresForClient(scores: ScoreEntry[]): ClientScore[] {
+export function formatScoresForClient(scores: ScoreEntry[]): ClientScoreEntry[] {
   return scores.map((s) => ({
     playerId: s.player.id,
     playerName: s.player.name,
@@ -46,7 +26,7 @@ export function formatScoresForClient(scores: ScoreEntry[]): ClientScore[] {
 /**
  * Build team score aggregations from individual player scores.
  */
-export function buildTeamScores(scores: ClientScore[]): TeamScore[] {
+export function buildTeamScores(scores: ClientScoreEntry[]): TeamScore[] {
   const teamCount = teamManager.getTeamCount();
   const teamScores: TeamScore[] = [];
 

@@ -5,6 +5,23 @@ import { TeamManager } from "@/managers/TeamManager";
 import { GameEvents } from "@/utils/GameEvents";
 import { Logger } from "@/utils/Logger";
 import { formatScoresForClient, buildTeamScores } from "./helpers";
+import type {
+  GameTickPlayerState,
+  PlayerDeathPayload,
+  RoundStartPayload,
+  RoundEndPayload,
+  GameStartPayload,
+  GameEndPayload,
+  VampireBloodlustPayload,
+  CountdownPayload,
+  PlayerReadyPayload,
+  ReadyCountPayload,
+  ReadyEnabledPayload,
+  ModeEventPayload,
+  PlayerRespawnPayload,
+  PlayerRespawnPendingPayload,
+  RoleAssignedPayload,
+} from "@shared/types";
 
 const logger = Logger.getInstance();
 const connectionManager = ConnectionManager.getInstance();
@@ -26,7 +43,7 @@ export function registerGameEventBroadcasters(
     if (teamManager.isEnabled()) {
       const enrichedPayload = {
         ...payload,
-        players: payload.players.map((p: any) => ({
+        players: payload.players.map((p: GameTickPlayerState) => ({
           ...p,
           teamId: teamManager.getPlayerTeam(p.id),
         })),
@@ -39,17 +56,19 @@ export function registerGameEventBroadcasters(
 
   // Broadcast player deaths
   gameEvents.onPlayerDeath((payload) => {
-    io.emit("player:death", {
+    const clientPayload: PlayerDeathPayload = {
       victimId: payload.victim.id,
       victimName: payload.victim.name,
       victimNumber: connectionManager.getPlayerNumber(payload.victim.id) ?? 0,
       gameTime: payload.gameTime,
-    });
+    };
+    io.emit("player:death", clientPayload);
   });
 
   // Broadcast round start
   gameEvents.onRoundStart((payload) => {
-    io.emit("round:start", payload);
+    const clientPayload: RoundStartPayload = payload;
+    io.emit("round:start", clientPayload);
   });
 
   // Broadcast round end
@@ -60,21 +79,23 @@ export function registerGameEventBroadcasters(
 
     const scores = formatScoresForClient(payload.scores);
 
-    io.emit("round:end", {
+    const clientPayload: RoundEndPayload = {
       roundNumber: payload.roundNumber,
       scores,
       gameTime: payload.gameTime,
       winnerId: payload.winnerId || null,
       teamScores: teamManager.isEnabled() ? buildTeamScores(scores) : null,
-    });
+    };
+    io.emit("round:end", clientPayload);
   });
 
   // Broadcast game start
   gameEvents.onGameStart((payload) => {
-    io.emit("game:start", {
+    const clientPayload: GameStartPayload = {
       mode: gameEngine.lastModeKey,
       totalRounds: payload.totalRounds,
-    });
+    };
+    io.emit("game:start", clientPayload);
   });
 
   // Broadcast game end
@@ -86,7 +107,7 @@ export function registerGameEventBroadcasters(
 
     const scores = formatScoresForClient(payload.scores);
 
-    io.emit("game:end", {
+    const clientPayload: GameEndPayload = {
       winner: payload.winner
         ? {
             id: payload.winner.id,
@@ -97,29 +118,35 @@ export function registerGameEventBroadcasters(
       scores,
       totalRounds: payload.totalRounds,
       teamScores: teamManager.isEnabled() ? buildTeamScores(scores) : null,
-    });
+    };
+    io.emit("game:end", clientPayload);
   });
 
   // Broadcast vampire bloodlust events
   gameEvents.onVampireBloodlustStart((payload) => {
-    io.emit("vampire:bloodlust", {
+    const clientPayload: VampireBloodlustPayload = {
       vampireId: payload.vampire.id,
       vampireName: payload.vampire.name,
+      vampireNumber: connectionManager.getPlayerNumber(payload.vampire.id) ?? 0,
       active: true,
-    });
+    };
+    io.emit("vampire:bloodlust", clientPayload);
   });
 
   gameEvents.onVampireBloodlustEnd((payload) => {
-    io.emit("vampire:bloodlust", {
+    const clientPayload: VampireBloodlustPayload = {
       vampireId: payload.vampire.id,
       vampireName: payload.vampire.name,
+      vampireNumber: connectionManager.getPlayerNumber(payload.vampire.id) ?? 0,
       active: false,
-    });
+    };
+    io.emit("vampire:bloodlust", clientPayload);
   });
 
   // Broadcast countdown events
   gameEvents.onCountdown((payload) => {
-    io.emit("game:countdown", payload);
+    const clientPayload: CountdownPayload = payload;
+    io.emit("game:countdown", clientPayload);
   });
 
   // Broadcast game stopped events
@@ -129,32 +156,37 @@ export function registerGameEventBroadcasters(
 
   // Broadcast player ready events
   gameEvents.onPlayerReady((payload) => {
-    io.emit("player:ready", payload);
+    const clientPayload: PlayerReadyPayload = payload;
+    io.emit("player:ready", clientPayload);
   });
 
   // Broadcast ready count updates
   gameEvents.onReadyCountUpdate((payload) => {
-    io.emit("ready:update", payload);
+    const clientPayload: ReadyCountPayload = payload;
+    io.emit("ready:update", clientPayload);
   });
 
   // Broadcast ready enabled/disabled events
   gameEvents.onReadyEnabled((payload) => {
-    io.emit("ready:enabled", payload);
+    const clientPayload: ReadyEnabledPayload = payload;
+    io.emit("ready:enabled", clientPayload);
   });
 
   // Broadcast mode events (game events like speed-shift)
   gameEvents.onModeEvent((payload) => {
-    io.emit("mode:event", payload);
+    const clientPayload: ModeEventPayload = payload;
+    io.emit("mode:event", clientPayload);
   });
 
   // Broadcast player respawns
   gameEvents.onPlayerRespawn((payload) => {
-    io.emit("player:respawn", {
+    const clientPayload: PlayerRespawnPayload = {
       playerId: payload.player.id,
       playerName: payload.player.name,
       playerNumber: connectionManager.getPlayerNumber(payload.player.id) ?? 0,
       gameTime: payload.gameTime,
-    });
+    };
+    io.emit("player:respawn", clientPayload);
   });
 
   // Send respawn-pending to the dying player only
@@ -162,9 +194,10 @@ export function registerGameEventBroadcasters(
     const socketId = payload.player.socketId;
     const socket = io.sockets.sockets.get(socketId);
     if (socket) {
-      socket.emit("player:respawn-pending", {
+      const clientPayload: PlayerRespawnPendingPayload = {
         respawnIn: payload.respawnIn,
-      });
+      };
+      socket.emit("player:respawn-pending", clientPayload);
     }
   });
 
@@ -182,13 +215,13 @@ export function registerGameEventBroadcasters(
       // Find the socket for this player and emit directly to them
       const socket = io.sockets.sockets.get(payload.socketId);
       if (socket) {
-        socket.emit("role:assigned", {
-          playerId: payload.playerId,
+        const clientPayload: RoleAssignedPayload = {
           name: payload.name,
           displayName: payload.displayName,
           description: payload.description,
           difficulty: payload.difficulty,
-        });
+        };
+        socket.emit("role:assigned", clientPayload);
         logger.debug("SOCKET", `Role assigned to ${payload.playerId}`, {
           role: payload.displayName,
         });

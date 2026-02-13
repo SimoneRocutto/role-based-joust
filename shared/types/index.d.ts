@@ -1,4 +1,13 @@
-export type { GameTickPlayerState, ChargeInfo } from "@shared/types";
+export type {
+  GameStateType,
+  StatusEffectInfo,
+  RoleInfo,
+  PlayerState,
+  GameTickPlayerState,
+  ClientScoreEntry,
+  TeamScore,
+  ChargeInfo,
+} from "./common.types";
 
 export type {
   PlayerJoinPayload,
@@ -23,4 +32,4 @@ export type {
   PlayerRespawnPendingPayload,
   TapResultPayload,
   CountdownPayload,
-} from "@shared/types";
+} from "./payloads.types";

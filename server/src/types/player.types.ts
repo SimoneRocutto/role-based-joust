@@ -1,3 +1,5 @@
+export type { PlayerState, StatusEffectInfo } from "@shared/types";
+
 export interface PlayerData {
   id: string;
   name: string;
@@ -21,21 +23,4 @@ export interface MovementConfig {
   historySize: number;
   smoothingEnabled: boolean;
   oneshotMode: boolean;
-}
-
-export interface PlayerState {
-  id: string;
-  name: string;
-  role: string;
-  isAlive: boolean;
-  points: number;
-  totalPoints: number;
-  toughness: number;
-  statusEffects: StatusEffectInfo[];
-}
-
-export interface StatusEffectInfo {
-  type: string;
-  priority: number;
-  timeLeft: number | null;
 }

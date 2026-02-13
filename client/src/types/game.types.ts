@@ -1,10 +1,11 @@
 import type { PlayerState } from "./player.types";
 
-export type GameStateType = "waiting" | "countdown" | "active" | "round-ended" | "finished";
+export type { GameStateType, TeamScore } from "@shared/types";
+export type { ClientScoreEntry as ScoreEntry } from "@shared/types";
 
 export interface GameState {
   gameTime: number;
-  state: GameStateType;
+  state: import("@shared/types").GameStateType;
   currentRound: number;
   mode: string;
   playerCount: number;
@@ -30,33 +31,12 @@ export interface RoundInfo {
   gameTime: number;
 }
 
-export interface ScoreEntry {
-  playerId: string;
-  playerName: string;
-  playerNumber: number;
-  score: number;
-  roundPoints: number;
-  rank: number;
-  status: string;
-  teamId?: number | null;
-}
-
-export interface TeamScore {
-  teamId: number;
-  teamName: string;
-  teamColor: string;
-  score: number;
-  roundPoints: number;
-  rank: number;
-  players: ScoreEntry[];
-}
-
 export interface GameEndInfo {
   winner: {
     id: string;
     name: string;
     number: number;
   } | null;
-  scores: ScoreEntry[];
+  scores: import("@shared/types").ClientScoreEntry[];
   totalRounds: number;
 }

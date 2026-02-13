@@ -87,11 +87,11 @@ server/
 │   │       └── readyState.test.ts  # Ready state in lobby and between rounds
 │   │
 │   ├── types/
-│   │   ├── player.types.ts         # PlayerData, PlayerState, MovementData
-│   │   ├── game.types.ts           # GameState, RoundInfo, ScoreEntry
+│   │   ├── player.types.ts         # PlayerData, MovementData (re-exports PlayerState, StatusEffectInfo from shared/)
+│   │   ├── game.types.ts           # GameSnapshot, RoundInfo, ScoreEntry (re-exports GameStateType from shared/)
 │   │   ├── mode.types.ts           # ModeConfig, ModeInfo, RoleTheme
 │   │   ├── status.types.ts         # StatusEffectConfig
-│   │   ├── events.types.ts         # Event payload types
+│   │   ├── events.types.ts         # Internal event types (re-exports GameTickPlayerState, GameTickEvent from shared/)
 │   │   ├── bot.types.ts            # Bot behavior types
 │   │   ├── factory.types.ts        # Factory types
 │   │   ├── logger.types.ts         # Logger types

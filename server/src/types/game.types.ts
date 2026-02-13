@@ -1,10 +1,12 @@
-import { PlayerState } from ".";
+import type { PlayerState } from ".";
 
-export type GameState = "waiting" | "countdown" | "active" | "round-ended" | "finished";
+export type { GameStateType } from "@shared/types";
+// Backwards-compatible alias: server code uses `GameState` for the string union
+export type { GameStateType as GameState } from "@shared/types";
 
 export interface GameSnapshot {
   gameTime: number;
-  state: GameState;
+  state: import("@shared/types").GameStateType;
   currentRound: number;
   alivePlayers: number;
   totalPlayers: number;

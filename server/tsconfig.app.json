@@ -58,7 +58,8 @@
       "@/routes/*": ["routes/*"],
       "@/middleware/*": ["middleware/*"],
       "@/sockets/*": ["sockets/*"],
-      "@/tests/*": ["tests/*"]
+      "@/tests/*": ["tests/*"],
+      "@shared/*": ["../../shared/*"]
     }
   },
   "include": ["src/**/*"],

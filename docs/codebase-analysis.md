@@ -42,8 +42,8 @@ The three biggest server files carry too many responsibilities:
 ### 1.4 Type Safety Gaps
 
 - **84 uses of `any`** across the server codebase.
-- **Server `PlayerState`** type doesn't match the actual runtime data sent via sockets — missing `accumulatedDamage`, `deathCount`, `number`, etc.
-- **`ScoreEntry`** has `player: BasePlayer` on the server but is flattened to `playerId`/`playerName` before socket emission — types don't reflect this transformation.
+- ~~**Server `PlayerState`** type doesn't match the actual runtime data sent via sockets — missing `accumulatedDamage`, `deathCount`, `number`, etc.~~ → Fixed: shared types in `shared/types/`.
+- ~~**`ScoreEntry`** has `player: BasePlayer` on the server but is flattened to `playerId`/`playerName` before socket emission — types don't reflect this transformation.~~ → Fixed: `ClientScoreEntry` in shared types; server's internal `ScoreEntry` kept separate.
 - `useSocket.ts` uses `callback as any` in places.
 
 ### 1.5 ConnectionManager Complexity
@@ -97,9 +97,9 @@ The `isReconnecting` state in the dependency array causes effect re-runs that cl
 
 ### 2.7 Server/Client Type Divergence
 
-- **`GameState`** means different things: union string on server vs. object interface on client.
-- **`ScoreEntry`** server type has `player: BasePlayer`, client expects `playerId`/`playerName` flat fields.
-- No shared types package or validation that emitted payloads match client expectations.
+- ~~**`GameState`** means different things: union string on server vs. object interface on client.~~ → Fixed: `GameStateType` in shared types.
+- ~~**`ScoreEntry`** server type has `player: BasePlayer`, client expects `playerId`/`playerName` flat fields.~~ → Fixed: shared `ClientScoreEntry`.
+- ~~No shared types package or validation that emitted payloads match client expectations.~~ → Fixed: `shared/types/` with all socket payload types; server `broadcasters.ts` type-checked.
 
 ### 2.8 TypeScript Strictness Inconsistency
 
@@ -154,9 +154,9 @@ These features exist in code but were missing or incomplete in documentation:
 ### Fix Soon (Maintainability)
 
 3. ~~Split `GameEngine` into focused services (StateMachine, PlayerManager, ReadyStateManager)~~
-4. Split ~~`PlayerView` and~~ `AdminControls` into smaller, focused components.
+4. ~~Split `PlayerView` and `AdminControls` into smaller, focused components.~~
 5. ~~Remove global scope usage for `gameEngine`/`io` — introduce dependency injection.~~
-6. Sync server/client type definitions (`PlayerState`, `ScoreEntry`).
+6. ~~Sync server/client type definitions (`PlayerState`, `ScoreEntry`).~~ → Done: `shared/types/` directory.
 
 ### Fix When Convenient (Quality / Polish)
 

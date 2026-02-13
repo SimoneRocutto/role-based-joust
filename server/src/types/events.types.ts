@@ -1,24 +1,7 @@
 import { ScoreEntry } from ".";
 
-export interface GameTickPlayerState {
-  id: string;
-  name: string;
-  isAlive: boolean;
-  accumulatedDamage: number;
-  points: number;
-  totalPoints: number;
-  toughness: number;
-  deathCount: number;
-  isDisconnected: boolean;
-  disconnectedAt: number | null;
-  graceTimeRemaining: number;
-}
-
-export interface GameTickEvent {
-  gameTime: number;
-  roundTimeRemaining: number | null;
-  players: GameTickPlayerState[];
-}
+export type { GameTickPlayerState } from "@shared/types";
+export type { GameTickPayload as GameTickEvent } from "@shared/types";
 
 export interface PlayerDeathEvent {
   victim: import("../models/BasePlayer").BasePlayer;

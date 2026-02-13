@@ -54,6 +54,8 @@ role-based-joust/
 │       ├── store/           # Zustand gameStore.ts
 │       └── hooks/           # useSocket, useAccelerometer, useReconnect, useShakeDetection, useModeEvents, etc.
 │   └── e2e/             # Playwright end-to-end tests
+├── shared/              # Shared types (single source of truth for wire format)
+│   └── types/           # common.types.ts, payloads.types.ts, index.ts
 ├── docs/                # All documentation (see index below)
 ├── CLAUDE.md            # This file (read first)
 └── TODO.md              # Pending features/tasks

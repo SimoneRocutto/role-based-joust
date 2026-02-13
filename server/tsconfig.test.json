@@ -19,7 +19,8 @@
       "@/config/*": ["config/*"],
       "@/routes/*": ["routes/*"],
       "@/middleware/*": ["middleware/*"],
-      "@/sockets/*": ["sockets/*"]
+      "@/sockets/*": ["sockets/*"],
+      "@shared/*": ["../../shared/*"]
     }
   },
   "references": [{ "path": "./tsconfig.app.json" }],

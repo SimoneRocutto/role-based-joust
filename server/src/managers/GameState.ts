@@ -1,6 +1,7 @@
 import type { BasePlayer } from "@/models/BasePlayer";
 import type { GameSnapshot, RoundInfo } from "@/types/game.types";
 import type { PlayerState } from "@/types/player.types";
+import { ConnectionManager } from "@/managers/ConnectionManager";
 import { Logger } from "@/utils/Logger";
 
 const logger = Logger.getInstance();
@@ -84,14 +85,17 @@ export class GameState {
    * Get player state with status effects
    */
   private getPlayerState(player: BasePlayer, gameTime: number): PlayerState {
+    const connectionManager = ConnectionManager.getInstance();
     return {
       id: player.id,
       name: player.name,
+      number: connectionManager.getPlayerNumber(player.id) ?? 0,
       role: player.constructor.name,
       isAlive: player.isAlive,
       points: player.points,
       totalPoints: player.totalPoints,
       toughness: player.toughness,
+      accumulatedDamage: player.accumulatedDamage,
       statusEffects: Array.from(player.statusEffects.values()).map(
         (effect) => ({
           type: effect.constructor.name,
