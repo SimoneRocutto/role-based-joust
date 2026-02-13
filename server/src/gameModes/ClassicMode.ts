@@ -6,6 +6,7 @@ import { Logger } from "@/utils/Logger";
 import {
   applyTemporaryMovementConfig,
   restoreMovementConfig,
+  gameConfig,
 } from "@/config/gameConfig";
 import { GameEventManager } from "@/managers/GameEventManager";
 import { GameEventFactory } from "@/factories/GameEventFactory";
@@ -29,7 +30,7 @@ export class ClassicMode extends GameMode {
   override useRoles = false;
 
   private eventManager = new GameEventManager();
-  protected lastStandingBonus: number = 5;
+  protected lastStandingBonus: number = gameConfig.scoring.lastStandingBonus;
 
   constructor(options?: GameModeOptions) {
     super(options);
@@ -45,7 +46,7 @@ export class ClassicMode extends GameMode {
    */
   override onModeSelected(engine: GameEngine): void {
     super.onModeSelected(engine);
-    engine.setCountdownDuration(3);
+    engine.setCountdownDuration(gameConfig.modeDefaults.classic.countdownSeconds);
   }
 
   /**

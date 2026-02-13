@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, act } from '@testing-library/react'
 import DamageFlash from '@/components/player/DamageFlash'
+import { DAMAGE_FLASH_CONFIG } from '@/utils/constants'
 
 describe('DamageFlash', () => {
   afterEach(() => {
@@ -35,7 +36,7 @@ describe('DamageFlash', () => {
     expect(queryByTestId('damage-flash')).not.toBeNull()
 
     act(() => {
-      vi.advanceTimersByTime(400)
+      vi.advanceTimersByTime(DAMAGE_FLASH_CONFIG.DURATION_MS)
     })
 
     expect(queryByTestId('damage-flash')).toBeNull()
@@ -74,7 +75,7 @@ describe('DamageFlash', () => {
 
     // Wait for flash to end
     act(() => {
-      vi.advanceTimersByTime(400)
+      vi.advanceTimersByTime(DAMAGE_FLASH_CONFIG.DURATION_MS)
     })
     expect(queryByTestId('damage-flash')).toBeNull()
 

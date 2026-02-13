@@ -4,14 +4,14 @@ import type { BasePlayer } from "@/models/BasePlayer";
 import type { WinCondition, ScoreEntry } from "@/types/index";
 import { Logger } from "@/utils/Logger";
 import { GameEvents } from "@/utils/GameEvents";
-import { restoreMovementConfig } from "@/config/gameConfig";
+import { restoreMovementConfig, gameConfig } from "@/config/gameConfig";
 import { GameEventManager } from "@/managers/GameEventManager";
 import { GameEventFactory } from "@/factories/GameEventFactory";
 
 const logger = Logger.getInstance();
 const gameEvents = GameEvents.getInstance();
 
-const RESPAWN_DELAY = 5000; // 5 seconds
+const RESPAWN_DELAY = gameConfig.modeDefaults.deathCount.respawnDelayMs;
 
 /**
  * DeathCountMode - Time-based survival with respawns
@@ -43,7 +43,7 @@ export class DeathCountMode extends GameMode {
     if (options?.roundDuration !== undefined) {
       this.roundDuration = options.roundDuration;
     } else {
-      this.roundDuration = 90000; // 90s default in ms
+      this.roundDuration = gameConfig.modeDefaults.deathCount.defaultRoundDurationMs;
     }
     // Default to 3 rounds if not specified
     if (options?.roundCount === undefined) {
@@ -54,7 +54,7 @@ export class DeathCountMode extends GameMode {
 
   override onModeSelected(engine: GameEngine): void {
     super.onModeSelected(engine);
-    engine.setCountdownDuration(3);
+    engine.setCountdownDuration(gameConfig.modeDefaults.deathCount.countdownSeconds);
   }
 
   override getRolePool(_playerCount: number): string[] {

@@ -3,6 +3,7 @@ import type { GameEngine } from "@/managers/GameEngine";
 import type { BasePlayer } from "@/models/BasePlayer";
 import type { WinCondition, ScoreEntry, ModeInfo } from "@/types/index";
 import { roleThemes } from "@/config/roleThemes";
+import { gameConfig } from "@/config/gameConfig";
 import { Logger } from "@/utils/Logger";
 
 const logger = Logger.getInstance();
@@ -33,7 +34,7 @@ export class RoleBasedMode extends GameMode {
   override multiRound = true;
 
   protected roleTheme: string;
-  protected lastStandingBonus: number = 5;
+  protected lastStandingBonus: number = gameConfig.scoring.lastStandingBonus;
 
   constructor(options?: RoleBasedModeOptions | string) {
     // Handle legacy string argument (theme only)

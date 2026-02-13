@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { accelerometerService } from "@/services/accelerometer";
 import type { MovementData } from "@/types/player.types";
+import { SHAKE_DETECTION_CONFIG } from "@/utils/constants";
 
 interface UseShakeDetectionOptions {
   threshold?: number; // Intensity threshold to count as "shaking"
@@ -17,9 +18,9 @@ interface UseShakeDetectionReturn {
   lastIntensity: number; // Last received intensity value (for debugging)
 }
 
-const DEFAULT_THRESHOLD = 0.5;
-const DEFAULT_REQUIRED_DURATION = 500; // 500ms = 5 samples at 10Hz
-const DEFAULT_COOLDOWN = 1000;
+const DEFAULT_THRESHOLD = SHAKE_DETECTION_CONFIG.DEFAULT_THRESHOLD;
+const DEFAULT_REQUIRED_DURATION = SHAKE_DETECTION_CONFIG.DEFAULT_REQUIRED_DURATION;
+const DEFAULT_COOLDOWN = SHAKE_DETECTION_CONFIG.DEFAULT_COOLDOWN;
 
 export function useShakeDetection(
   options: UseShakeDetectionOptions = {}

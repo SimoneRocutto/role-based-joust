@@ -478,7 +478,7 @@ export class GameEngine {
 
     // Restore movement config to what user had before game started
     restoreMovementConfig();
-    this.roundSetupManager.setCountdownDuration(10);
+    this.roundSetupManager.setCountdownDuration(gameConfig.countdown.defaultDurationSeconds);
 
     // Notify clients that game was stopped
     gameEvents.emitGameStopped();

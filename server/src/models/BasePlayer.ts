@@ -12,6 +12,9 @@ import { gameConfig } from "@/config/gameConfig";
 const logger = Logger.getInstance();
 const gameEvents = GameEvents.getInstance();
 
+/** Max accelerometer magnitude: sqrt(10² + 10² + 10²). Derived from hardware limits. */
+const MAX_ACCEL_MAGNITUDE = Math.sqrt(10 * 10 + 10 * 10 + 10 * 10);
+
 /**
  * BasePlayer - Abstract base class for all players and roles
  *
@@ -37,7 +40,7 @@ export class BasePlayer {
 
   // ========== CONNECTION STATE ==========
   disconnectedAt: number | null = null; // Timestamp when player disconnected, null if connected
-  static readonly DISCONNECTION_GRACE_PERIOD = 10000; // 10 seconds
+  static readonly DISCONNECTION_GRACE_PERIOD = gameConfig.connection.disconnectionGracePeriodMs;
 
   // ========== MOVEMENT ==========
   lastMovementData: MovementData | null = null;
@@ -140,8 +143,7 @@ export class BasePlayer {
     const magnitude = Math.sqrt(x * x + y * y + z * z);
 
     // Normalize to 0-1 range
-    // Max possible magnitude is sqrt(10² + 10² + 10²) ≈ 17.32
-    const normalized = magnitude / 17.32;
+    const normalized = magnitude / MAX_ACCEL_MAGNITUDE;
 
     return Math.min(normalized, 1.0);
   }
@@ -159,7 +161,7 @@ export class BasePlayer {
     }, 0);
 
     const avgMagnitude = sum / this.movementHistory.length;
-    return Math.min(avgMagnitude / 17.32, 1.0);
+    return Math.min(avgMagnitude / MAX_ACCEL_MAGNITUDE, 1.0);
   }
 
   /**
@@ -628,10 +630,9 @@ export class BasePlayer {
       return;
     }
 
-    // Reduce cooldown using tick rate (100ms) for consistent behavior
+    // Reduce cooldown using tick rate for consistent behavior
     // This ensures fast-forward works correctly in tests
-    const tickRate = 100; // Standard tick rate
-    const effectiveDelta = tickRate * this.cooldownSpeedMultiplier;
+    const effectiveDelta = gameConfig.tick.rate * this.cooldownSpeedMultiplier;
     this.cooldownRemaining -= effectiveDelta;
 
     // Check if cooldown completed
@@ -757,8 +758,8 @@ export class BasePlayer {
     const phi = Math.random() * Math.PI; // Random angle
 
     // Convert spherical coordinates to Cartesian
-    // Scale by intensity and max magnitude (17.32)
-    const magnitude = intensity * 17.32;
+    // Scale by intensity and max magnitude
+    const magnitude = intensity * MAX_ACCEL_MAGNITUDE;
 
     const movementData: MovementData = {
       x: magnitude * Math.sin(phi) * Math.cos(theta),

@@ -31,17 +31,17 @@ export class SpeedShift extends GameEvent {
   private phase: "slow" | "fast" = "slow";
   private consecutiveChecks: number = 0;
   private lastCheckTime: number = 0;
-  private readonly CHECK_INTERVAL = 5000; // 5 seconds
+  private readonly CHECK_INTERVAL = gameConfig.speedShift.checkIntervalMs;
 
-  // Transition delay: when going fast → slow, keep high threshold for 1s
+  // Transition delay: when going fast → slow, keep high threshold for a moment
   // so players have time to react to the speed-down sound
   private pendingThresholdRestore: number | null = null;
-  private readonly TRANSITION_DELAY = 1000; // 1 second
+  private readonly TRANSITION_DELAY = gameConfig.speedShift.transitionDelayMs;
 
   // Config
-  private readonly SLOW_STAY_BASE = 3 / 4; // 75% chance to stay slow each check
-  private readonly FAST_STAY_BASE = 2 / 3; // 67% chance to stay fast each check
-  static readonly FAST_THRESHOLD_MULTIPLIER = 2; // Fast threshold = saved * multiplier
+  private readonly SLOW_STAY_BASE = gameConfig.speedShift.slowStayBase;
+  private readonly FAST_STAY_BASE = gameConfig.speedShift.fastStayBase;
+  static readonly FAST_THRESHOLD_MULTIPLIER = gameConfig.speedShift.fastThresholdMultiplier;
   private savedThreshold: number = 0; // Remember the original threshold
 
   onRoundStart(engine: GameEngine, gameTime: number): void {

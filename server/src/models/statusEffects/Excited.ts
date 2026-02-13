@@ -2,6 +2,7 @@ import { StatusEffect as ExcitedStatusEffect } from "../StatusEffect";
 import type { BasePlayer as ExcitedBasePlayer } from "../BasePlayer";
 import { Logger as ExcitedLogger } from "@/utils/Logger";
 import { Priority as ExcitedPriority } from "@/config/priorities";
+import { gameConfig } from "@/config/gameConfig";
 
 const excitedLogger = ExcitedLogger.getInstance();
 
@@ -11,8 +12,8 @@ export class Excited extends ExcitedStatusEffect {
   static override description: string = "Must keep moving or die";
 
   private lastMovementTime: number | null = null;
-  private readonly movementThreshold: number = 0.1;
-  private readonly maxIdleTime: number = 2000;
+  private readonly movementThreshold: number = gameConfig.excitedEffect.movementThreshold;
+  private readonly maxIdleTime: number = gameConfig.excitedEffect.maxIdleTimeMs;
 
   constructor(target: ExcitedBasePlayer, duration: number | null = null) {
     super(target, duration);

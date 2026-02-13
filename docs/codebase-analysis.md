@@ -160,7 +160,7 @@ These features exist in code but were missing or incomplete in documentation:
 
 ### Fix When Convenient (Quality / Polish)
 
-7. Centralize magic numbers into config files.
+7. ~~Centralize magic numbers into config files.~~ → Done: server values in `gameConfig.ts`, client values in `constants.ts`.
 8. Enable stricter TypeScript settings on server (`noUnusedLocals`, `noUnusedParameters`).
 9. Extract duplicated code (team enrichment, dev mode buttons, player state init).
 10. Move audio logic out of React hooks into a standalone service.

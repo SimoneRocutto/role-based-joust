@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { DAMAGE_FLASH_CONFIG } from "@/utils/constants";
 
 interface DamageFlashProps {
   accumulatedDamage: number;
 }
 
-const FLASH_DURATION_MS = 400;
+const FLASH_DURATION_MS = DAMAGE_FLASH_CONFIG.DURATION_MS;
 
 function DamageFlash({ accumulatedDamage }: DamageFlashProps) {
   const [flashing, setFlashing] = useState(false);

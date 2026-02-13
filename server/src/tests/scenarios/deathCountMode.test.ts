@@ -4,6 +4,8 @@ import { gameConfig, resetMovementConfig } from "@/config/gameConfig";
 import { GameEvents } from "@/utils/GameEvents";
 import type { PlayerData } from "@/types/index";
 
+const RESPAWN_DELAY = gameConfig.modeDefaults.deathCount.respawnDelayMs;
+
 const runner = new TestRunner();
 
 // ============================================================================
@@ -371,7 +373,7 @@ runner.test("Death emits player:respawn-pending event", (engine) => {
   player1.die(engine.gameTime);
 
   assertEqual(pendingCount, 1, "Should have emitted 1 respawn-pending event");
-  assertEqual(pendingRespawnIn, 5000, "respawnIn should be 5000ms");
+  assertEqual(pendingRespawnIn, RESPAWN_DELAY, `respawnIn should be ${RESPAWN_DELAY}ms`);
 
   gameEvents.removeListener("player:respawn-pending", listener);
   mode.onGameEnd(engine);

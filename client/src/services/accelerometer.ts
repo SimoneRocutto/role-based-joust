@@ -84,9 +84,9 @@ class AccelerometerService {
       ACCELEROMETER_CONFIG.MAX_VALUE
     );
 
-    // Calculate intensity as normalized magnitude (0-1 range roughly)
+    // Calculate intensity as normalized magnitude (0-1 range)
     const magnitude = Math.sqrt(x * x + y * y + z * z);
-    const intensity = Math.max(0, magnitude / 10);
+    const intensity = Math.min(1.0, Math.max(0, magnitude / ACCELEROMETER_CONFIG.MAX_MAGNITUDE));
 
     const data: MovementData = {
       x,

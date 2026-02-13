@@ -21,11 +21,54 @@ export interface TimingConfig {
   readyDelayMs: number; // Delay after round ends before players can ready up
 }
 
+export interface ConnectionConfig {
+  disconnectionGracePeriodMs: number; // How long to wait before killing a disconnected player
+}
+
+export interface CountdownConfig {
+  defaultDurationSeconds: number; // Default countdown duration when resetting after game stops
+  goDelayMs: number; // Delay after "GO!" before round actually starts
+}
+
+export interface ScoringConfig {
+  lastStandingBonus: number; // Points awarded to the last player alive in a round
+}
+
+export interface ModeDefaultsConfig {
+  classic: {
+    countdownSeconds: number; // Countdown duration for Classic mode
+  };
+  deathCount: {
+    countdownSeconds: number; // Countdown duration for DeathCount mode
+    respawnDelayMs: number; // Time before a dead player respawns
+    defaultRoundDurationMs: number; // Default round duration
+  };
+}
+
+export interface SpeedShiftConfig {
+  checkIntervalMs: number; // How often to check for phase transition
+  transitionDelayMs: number; // Delay before restoring threshold on fast→slow
+  slowStayBase: number; // Base probability to stay in slow phase per check
+  fastStayBase: number; // Base probability to stay in fast phase per check
+  fastThresholdMultiplier: number; // Danger threshold multiplier during fast phase
+}
+
+export interface ExcitedEffectConfig {
+  movementThreshold: number; // Minimum intensity to count as "moving"
+  maxIdleTimeMs: number; // How long a player can stay idle before dying
+}
+
 export interface GameConfig {
   movement: MovementConfig;
   damage: DamageConfig;
   tick: TickConfig;
   timing: TimingConfig;
+  connection: ConnectionConfig;
+  countdown: CountdownConfig;
+  scoring: ScoringConfig;
+  modeDefaults: ModeDefaultsConfig;
+  speedShift: SpeedShiftConfig;
+  excitedEffect: ExcitedEffectConfig;
 }
 
 /**
@@ -116,6 +159,43 @@ export const gameConfig: GameConfig = {
 
   timing: {
     readyDelayMs: 3000, // 3 second delay after round ends before players can ready up
+  },
+
+  connection: {
+    disconnectionGracePeriodMs: 10000, // 10 seconds
+  },
+
+  countdown: {
+    defaultDurationSeconds: 10, // Default countdown when resetting after stop
+    goDelayMs: 1000, // 1 second "GO!" delay
+  },
+
+  scoring: {
+    lastStandingBonus: 5, // 5 points for being last alive
+  },
+
+  modeDefaults: {
+    classic: {
+      countdownSeconds: 3,
+    },
+    deathCount: {
+      countdownSeconds: 3,
+      respawnDelayMs: 5000, // 5 seconds
+      defaultRoundDurationMs: 90000, // 90 seconds
+    },
+  },
+
+  speedShift: {
+    checkIntervalMs: 5000, // 5 seconds
+    transitionDelayMs: 1000, // 1 second
+    slowStayBase: 0.75, // 75% chance to stay slow each check
+    fastStayBase: 2 / 3, // ~67% chance to stay fast each check
+    fastThresholdMultiplier: 2, // Fast threshold = saved * multiplier
+  },
+
+  excitedEffect: {
+    movementThreshold: 0.1, // Minimum intensity to count as moving
+    maxIdleTimeMs: 2000, // 2 seconds idle = death
   },
 };
 

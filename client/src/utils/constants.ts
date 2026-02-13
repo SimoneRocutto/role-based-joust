@@ -29,6 +29,7 @@ export const ACCELEROMETER_CONFIG = {
   SEND_INTERVAL: 100, // 100ms = 10Hz
   MIN_VALUE: -10,
   MAX_VALUE: 10,
+  MAX_MAGNITUDE: 17.32, // sqrt(10² + 10² + 10²) ≈ 17.32
 } as const;
 
 export const RECONNECTION_CONFIG = {
@@ -70,6 +71,16 @@ export const MODE_EVENT_EFFECTS: Record<string, {
     musicRate: 1.0,
   },
 };
+
+export const SHAKE_DETECTION_CONFIG = {
+  DEFAULT_THRESHOLD: 0.5,
+  DEFAULT_REQUIRED_DURATION: 500, // 500ms = 5 samples at 10Hz
+  DEFAULT_COOLDOWN: 1000,
+} as const;
+
+export const DAMAGE_FLASH_CONFIG = {
+  DURATION_MS: 400,
+} as const;
 
 export const STATUS_ICONS = {
   INVULNERABLE: "🛡️",

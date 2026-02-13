@@ -3,6 +3,7 @@ import type { GameMode } from "@/gameModes/GameMode";
 import { GameEvents } from "@/utils/GameEvents";
 import { Logger } from "@/utils/Logger";
 import { buildTickPlayerState } from "@/utils/tickPayload";
+import { gameConfig } from "@/config/gameConfig";
 
 const logger = Logger.getInstance();
 const gameEvents = GameEvents.getInstance();
@@ -28,7 +29,7 @@ export class RoundSetupManager {
   private countdownTimer: NodeJS.Timeout | null = null;
   private completionTimer: ReturnType<typeof setTimeout> | null = null;
   private countdownSeconds: number = 0;
-  private countdownDuration: number = 10;
+  private countdownDuration: number = gameConfig.countdown.defaultDurationSeconds;
 
   /**
    * Set the countdown duration (in seconds).
@@ -147,7 +148,7 @@ export class RoundSetupManager {
         this.completionTimer = setTimeout(() => {
           this.completionTimer = null;
           ctx.onCountdownComplete();
-        }, 1000);
+        }, gameConfig.countdown.goDelayMs);
       }
     }, 1000);
   }
