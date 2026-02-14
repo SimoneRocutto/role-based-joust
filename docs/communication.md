@@ -67,8 +67,10 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
 #### `player:ready`
 
 **When**: Player shakes device (or clicks in dev mode) to indicate readiness. Used in two phases:
-- **Lobby**: Before game starts, players ready up so the admin can start the game
-- **Between rounds**: Players ready up to trigger the next round automatically
+- **Pre-game**: After admin launches the game, players shake to ready up. Game auto-starts when all players are ready, or admin can force-start via `POST /api/game/proceed`.
+- **Between rounds**: Players ready up to trigger the next round automatically.
+
+**Note**: `player:ready` events are ignored during the `"waiting"` (lobby) state. They are only handled during `"pre-game"` and `"round-ended"` states.
 
 **Payload**:
 
@@ -173,7 +175,7 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
 
 #### `lobby:update`
 
-**When**: A player joins, disconnects, reconnects, changes ready state, or switches team in the lobby. Disconnected players remain in the list for 1 minute (grace period) before being auto-removed.
+**When**: A player joins, disconnects, reconnects, or switches team in the lobby. Also emitted during the pre-game phase when a player's ready state changes. Disconnected players remain in the list for 1 minute (grace period) before being auto-removed.
 
 **Payload**:
 
@@ -411,6 +413,22 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
 
 ---
 
+#### `game:start`
+
+**When**: Game transitions to pre-game phase (after admin launches the game). Sent to all clients.
+
+**Payload**:
+
+```typescript
+{
+  mode: string,              // Game mode key (e.g., "classic", "role-based")
+  totalRounds: number,       // Total rounds in the game
+  sensitivity: string        // Sensitivity preset label (e.g., "low", "medium", "high")
+}
+```
+
+---
+
 #### `game:stopped`
 
 **When**: Admin stops the game via dashboard
@@ -574,6 +592,26 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
 
 ---
 
+### `POST /api/game/proceed`
+
+**Purpose**: Force-start the game from the pre-game phase (skipping the requirement for all players to be ready). Only valid when engine state is `pre-game`.
+
+**Request**: None
+
+**Response**:
+
+```typescript
+{
+  success: boolean,
+  error?: string              // Present when success is false (e.g., "Game is not in pre-game state")
+}
+```
+
+**Errors**:
+- `400` — Game is not in pre-game state
+
+---
+
 ### `POST /api/game/next-round`
 
 **Purpose**: Start the next round (re-assigns roles, starts countdown). Only valid when engine state is `round-ended`.
@@ -663,7 +701,7 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
   success: boolean,
   state: {
     gameTime: number,
-    state: 'waiting' | 'countdown' | 'active' | 'round-ended' | 'finished',
+    state: 'waiting' | 'pre-game' | 'countdown' | 'active' | 'round-ended' | 'finished',
     currentRound: number,
     mode: string,
     playerCount: number,

@@ -109,6 +109,13 @@ class ApiService {
     return this.request("/game/state");
   }
 
+  // POST /api/game/proceed (force-start from pre-game)
+  async proceedFromPreGame(): Promise<{ success: boolean; error?: string }> {
+    return this.request("/game/proceed", {
+      method: "POST",
+    });
+  }
+
   // POST /api/game/stop
   async stopGame(): Promise<{
     success: boolean;

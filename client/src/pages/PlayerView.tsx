@@ -11,6 +11,7 @@ import { getTeamColor } from "@/utils/teamColors";
 import PortraitLock from "@/components/player/PortraitLock";
 import TeamSelectionScreen from "@/components/player/screens/TeamSelectionScreen";
 import LobbyScreen from "@/components/player/screens/LobbyScreen";
+import PreGameScreen from "@/components/player/screens/PreGameScreen";
 import CountdownScreen from "@/components/player/screens/CountdownScreen";
 import RoundEndedScreen from "@/components/player/screens/RoundEndedScreen";
 import ActiveGameScreen from "@/components/player/screens/ActiveGameScreen";
@@ -27,6 +28,7 @@ function PlayerView() {
     myPlayer,
     myTarget,
     isWaiting,
+    isPreGame,
     isCountdown,
     isRoundEnded,
     isFinished,
@@ -42,6 +44,7 @@ function PlayerView() {
     myIsReady,
     setMyReady,
     teamSelectionActive,
+    modeRecap,
   } = useGameStore();
 
   const { permissionsGranted, showPortraitLock } = usePlayerDevice(myPlayerId);
@@ -77,9 +80,9 @@ function PlayerView() {
     socketService.sendMovement(movementPayload);
   }, [myPlayerId]);
 
-  // Shake detection for ready state
+  // Shake detection for ready state (pre-game, between rounds, game end)
   const shouldDetectShake =
-    (isWaiting || (isRoundEnded && readyEnabled) || isFinished) &&
+    (isPreGame || (isRoundEnded && readyEnabled) || isFinished) &&
     !myIsReady &&
     permissionsGranted;
 
@@ -148,6 +151,14 @@ function PlayerView() {
         <LobbyScreen
           playerNumber={myPlayerNumber}
           playerName={playerName}
+        />
+      )}
+
+      {isPreGame && !isCountdown && (
+        <PreGameScreen
+          playerNumber={myPlayerNumber}
+          playerName={playerName}
+          modeRecap={modeRecap}
           {...shakeProps}
         />
       )}

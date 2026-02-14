@@ -4,6 +4,7 @@ import { ConnectionManager } from "@/managers/ConnectionManager";
 import { TeamManager } from "@/managers/TeamManager";
 import { GameEvents } from "@/utils/GameEvents";
 import { Logger } from "@/utils/Logger";
+import { userPreferences } from "@/config/gameConfig";
 import { formatScoresForClient, buildTeamScores } from "./helpers";
 import type {
   GameTickPlayerState,
@@ -94,6 +95,7 @@ export function registerGameEventBroadcasters(
     const clientPayload: GameStartPayload = {
       mode: gameEngine.lastModeKey,
       totalRounds: payload.totalRounds,
+      sensitivity: userPreferences.sensitivity,
     };
     io.emit("game:start", clientPayload);
   });

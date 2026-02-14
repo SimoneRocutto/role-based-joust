@@ -178,9 +178,23 @@ export function registerSocketHandlers(
 
       // Determine which state to update based on game state
       if (gameEngine.gameState === "waiting") {
-        // Lobby phase - use ConnectionManager
-        connectionManager.setPlayerReady(data.playerId, true);
-        const readyCount = connectionManager.getReadyCount();
+        // Lobby phase - no ready state tracking (players just wait)
+        logger.debug("SOCKET", "Ignoring ready event in lobby phase", {
+          playerId: data.playerId,
+        });
+        return;
+      } else if (gameEngine.gameState === "pre-game") {
+        // Pre-game phase - use GameEngine (same as between rounds)
+        const accepted = gameEngine.setPlayerReady(data.playerId, true);
+
+        if (!accepted) {
+          logger.debug("SOCKET", "Ready rejected during delay period", {
+            playerId: data.playerId,
+          });
+          return;
+        }
+
+        const readyCount = gameEngine.getReadyCount();
 
         // Emit ready events
         gameEvents.emitPlayerReady({
@@ -190,11 +204,6 @@ export function registerSocketHandlers(
           isReady: true,
         });
         gameEvents.emitReadyCountUpdate(readyCount);
-
-        // Broadcast updated lobby list
-        io.emit("lobby:update", {
-          players: connectionManager.getLobbyPlayers(),
-        });
       } else if (gameEngine.gameState === "round-ended") {
         // Between rounds - use GameEngine
         const accepted = gameEngine.setPlayerReady(data.playerId, true);
@@ -261,7 +270,8 @@ export function registerSocketHandlers(
               name: p.name,
               socketId: connectionManager.getSocketId(p.id) || "",
             }));
-            gameEngine.startGame(playerData);
+            // Skip pre-game on auto-relaunch since all players already confirmed ready
+            gameEngine.startGame(playerData, undefined, true);
 
             logger.info("SOCKET", "New game auto-launched", {
               mode: modeKey,

@@ -8,6 +8,7 @@ import PlayerGrid from "@/components/dashboard/PlayerGrid";
 import GameState from "@/components/dashboard/GameState";
 import EventFeed from "@/components/dashboard/EventFeed";
 import AdminControls from "@/components/dashboard/AdminControls";
+import PreGameControls from "@/components/dashboard/PreGameControls";
 import Scoreboard from "@/components/dashboard/Scoreboard";
 import CountdownDisplay from "@/components/dashboard/CountdownDisplay";
 import { useAudioStore } from "@/store/audioStore";
@@ -16,6 +17,7 @@ import { audioManager } from "@/services/audio";
 function DashboardView() {
   const {
     isWaiting,
+    isPreGame,
     isCountdown,
     isActive,
     isRoundEnded,
@@ -166,7 +168,7 @@ function DashboardView() {
     // Only play music after user interaction (browser autoplay policy)
     if (!isAudioUnlocked) return;
 
-    if (isWaiting) {
+    if (isWaiting || isPreGame) {
       audioManager.playMusic("lobby-music", { loop: true, volume: 0.4 });
     } else if (isCountdown) {
       // Play tension buildup music during countdown
@@ -188,6 +190,7 @@ function DashboardView() {
     }
   }, [
     isWaiting,
+    isPreGame,
     isCountdown,
     isActive,
     isRoundEnded,
@@ -241,16 +244,26 @@ function DashboardView() {
 
       {/* Main Content */}
       <div className="p-6">
-        {(isWaiting || isCountdown || isActive || isRoundEnded) && (
-          <>
-            {/* Admin Controls (only show in waiting) */}
-            {isWaiting && (
-              <div className="mb-6">
-                <AdminControls />
-              </div>
-            )}
+        {/* Admin Controls (only show in waiting/lobby) */}
+        {isWaiting && (
+          <div className="mb-6">
+            <AdminControls />
+          </div>
+        )}
 
-            {/* Player Grid */}
+        {/* Pre-game ready phase */}
+        {isPreGame && (
+          <>
+            <div className="mb-6">
+              <PreGameControls />
+            </div>
+            <PlayerGrid />
+          </>
+        )}
+
+        {/* Active gameplay phases */}
+        {(isCountdown || isActive || isRoundEnded) && (
+          <>
             <PlayerGrid />
 
             {/* Stop Game button during active gameplay */}

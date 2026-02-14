@@ -156,11 +156,6 @@ describe("LobbyScreen", () => {
       <LobbyScreen
         playerNumber={3}
         playerName="Bob"
-        isReady={false}
-        isShaking={false}
-        shakeProgress={0}
-        onReadyClick={vi.fn()}
-        isDevMode={false}
       />
     );
 
@@ -168,41 +163,15 @@ describe("LobbyScreen", () => {
     expect(screen.getByText("Bob")).toBeInTheDocument();
   });
 
-  it("passes correct labels to ShakeToReady", () => {
+  it("shows waiting message instead of shake to ready", () => {
     render(
       <LobbyScreen
         playerNumber={1}
         playerName="Bob"
-        isReady={false}
-        isShaking={false}
-        shakeProgress={0}
-        onReadyClick={vi.fn()}
-        isDevMode={false}
       />
     );
 
-    expect(screen.getByTestId("shake-label")).toHaveTextContent(
-      "SHAKE TO READY"
-    );
-    expect(screen.getByTestId("button-label")).toHaveTextContent(
-      "CLICK TO READY"
-    );
-  });
-
-  it("shows ready state via ShakeToReady", () => {
-    render(
-      <LobbyScreen
-        playerNumber={1}
-        playerName="Bob"
-        isReady={true}
-        isShaking={false}
-        shakeProgress={0}
-        onReadyClick={vi.fn()}
-        isDevMode={false}
-      />
-    );
-
-    expect(screen.getByTestId("is-ready")).toBeInTheDocument();
+    expect(screen.getByText("Waiting for game to start...")).toBeInTheDocument();
   });
 });
 

@@ -280,6 +280,34 @@ router.post(
 );
 
 /**
+ * POST /api/game/proceed
+ * Force-start from pre-game phase (admin action)
+ * Proceeds from pre-game ready phase directly to countdown
+ */
+router.post(
+  "/proceed",
+  asyncHandler(async (req: Request, res: Response) => {
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
+
+    const result = gameEngine.proceedFromPreGame();
+
+    if (!result.success) {
+      res.status(400).json({
+        success: false,
+        error: result.message,
+      });
+      return;
+    }
+
+    logger.info("GAME", "Proceeded from pre-game by admin request");
+
+    res.json({
+      success: true,
+    });
+  })
+);
+
+/**
  * POST /api/game/stop
  * Stop/end the current game
  */

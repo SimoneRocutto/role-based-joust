@@ -31,6 +31,7 @@ export interface RoundEndEvent {
 export interface GameStartEvent {
   mode: string;
   totalRounds: number;
+  sensitivity: string;
 }
 
 export interface GameEndEvent {

@@ -13,10 +13,8 @@ interface LobbyActionBarProps {
   disconnectedPlayers: LobbyPlayer[];
   teamsEnabled: boolean;
   isDevMode: boolean;
-  allPlayersReady: boolean;
   loading: boolean;
   error: string | null;
-  readyCount: { ready: number; total: number };
   qrDataUrl: string | null;
   joinUrl: string;
   handleStartClick: () => void;
@@ -28,10 +26,8 @@ function LobbyActionBar({
   disconnectedPlayers,
   teamsEnabled,
   isDevMode,
-  allPlayersReady,
   loading,
   error,
-  readyCount,
   qrDataUrl,
   joinUrl,
   handleStartClick,
@@ -89,36 +85,13 @@ function LobbyActionBar({
 
       {/* Action Button + QR Code */}
       <div className="flex gap-4 items-center">
-        {/* In dev mode: always show start button */}
-        {isDevMode && (
-          <button
-            onClick={handleStartClick}
-            disabled={loading || connectedPlayers.length < 2}
-            className="px-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg font-bold text-xl transition-colors"
-          >
-            {loading ? "Starting..." : `Start Game (${connectedPlayers.length} players)`}
-          </button>
-        )}
-
-        {/* In production mode: show status or start button when all ready */}
-        {!isDevMode && (
-          <>
-            {allPlayersReady ? (
-              <button
-                onClick={handleStartClick}
-                disabled={loading || connectedPlayers.length < 2}
-                className="px-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg font-bold text-xl transition-colors animate-pulse"
-              >
-                {loading ? "Starting..." : `All Ready! Start Game`}
-              </button>
-            ) : (
-              <div className="px-8 py-4 bg-gray-700 rounded-lg text-gray-400 text-xl">
-                Waiting for all players to shake ready... ({readyCount.ready}/
-                {readyCount.total})
-              </div>
-            )}
-          </>
-        )}
+        <button
+          onClick={handleStartClick}
+          disabled={loading || connectedPlayers.length < 2}
+          className="px-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg font-bold text-xl transition-colors"
+        >
+          {loading ? "Starting..." : `Start Game (${connectedPlayers.length} players)`}
+        </button>
 
         {/* QR Code for joining */}
         {qrDataUrl && (

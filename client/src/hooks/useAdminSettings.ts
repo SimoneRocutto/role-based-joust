@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { useGameState } from "@/hooks/useGameState";
 import { useGameStore } from "@/store/gameStore";
 import { apiService } from "@/services/api";
+import { getCombinedModeKey, parseCombinedMode } from "@/utils/modeMapping";
 import type { GameMode } from "@/types/game.types";
 
 export function useAdminSettings() {
@@ -182,6 +183,32 @@ export function useAdminSettings() {
     }
   };
 
+  const combinedModeKey = getCombinedModeKey(selectedMode, teamsEnabled);
+
+  const handleCombinedModeChange = async (combinedKey: string) => {
+    const { serverMode, teams } = parseCombinedMode(combinedKey);
+    setSelectedMode(serverMode);
+    setTeamsEnabled(teams);
+    useGameStore.getState().setTeamsEnabled(teams);
+
+    // Auto-switch sensitivity: classic → oneshot, others → medium
+    const targetSensitivity = serverMode === "classic" ? "oneshot" : "medium";
+    const sensitivityChanged = targetSensitivity !== selectedSensitivity;
+    if (sensitivityChanged) {
+      setSelectedSensitivity(targetSensitivity);
+    }
+
+    try {
+      await apiService.updateSettings({
+        gameMode: serverMode,
+        teamsEnabled: teams,
+        ...(sensitivityChanged ? { sensitivity: targetSensitivity } : {}),
+      });
+    } catch (err) {
+      console.error("Failed to update combined mode:", err);
+    }
+  };
+
   const handleShuffleTeams = async () => {
     try {
       await apiService.shuffleTeams();
@@ -272,6 +299,7 @@ export function useAdminSettings() {
     roundDuration,
     teamsEnabled,
     teamCount,
+    combinedModeKey,
     loading,
     error,
     qrDataUrl,
@@ -282,6 +310,7 @@ export function useAdminSettings() {
     readyCount,
     // Handlers
     handleModeChange,
+    handleCombinedModeChange,
     handleThemeChange,
     handleSensitivityChange,
     handleThresholdChange,

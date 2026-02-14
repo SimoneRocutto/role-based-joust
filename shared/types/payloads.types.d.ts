@@ -86,6 +86,7 @@ export interface RoundEndPayload {
 export interface GameStartPayload {
   mode: string;
   totalRounds: number;
+  sensitivity: string;
 }
 
 export interface GameEndPayload {

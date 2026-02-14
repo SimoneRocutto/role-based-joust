@@ -159,13 +159,14 @@ describe('AdminControls', () => {
       expect(screen.getByText('Classic')).toBeInTheDocument()
     })
 
-    // Select classic mode
-    fireEvent.change(screen.getByDisplayValue('Role Based'), { target: { value: 'classic' } })
+    // Select classic mode from combined mode dropdown (default is "role-based" = "Roles")
+    fireEvent.change(screen.getByDisplayValue('Roles'), { target: { value: 'classic' } })
 
     await waitFor(() => {
-      // Mode change persists both the mode and the auto-switched sensitivity
+      // Combined mode change persists the mode, teams, and auto-switched sensitivity
       expect(apiService.updateSettings).toHaveBeenCalledWith({
         gameMode: 'classic',
+        teamsEnabled: false,
         sensitivity: 'oneshot',
       })
     })
@@ -179,11 +180,12 @@ describe('AdminControls', () => {
     })
 
     // Select classic mode first
-    fireEvent.change(screen.getByDisplayValue('Role Based'), { target: { value: 'classic' } })
+    fireEvent.change(screen.getByDisplayValue('Roles'), { target: { value: 'classic' } })
 
     await waitFor(() => {
       expect(apiService.updateSettings).toHaveBeenCalledWith({
         gameMode: 'classic',
+        teamsEnabled: false,
         sensitivity: 'oneshot',
       })
     })
@@ -194,9 +196,10 @@ describe('AdminControls', () => {
     fireEvent.change(screen.getByDisplayValue('Classic'), { target: { value: 'role-based' } })
 
     await waitFor(() => {
-      // Mode change persists both the mode and the auto-switched sensitivity
+      // Combined mode change persists the mode, teams, and auto-switched sensitivity
       expect(apiService.updateSettings).toHaveBeenCalledWith({
         gameMode: 'role-based',
+        teamsEnabled: false,
         sensitivity: 'medium',
       })
     })

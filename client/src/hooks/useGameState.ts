@@ -20,6 +20,7 @@ export function useGameState() {
 
   // Computed values for game state
   const isWaiting = store.gameState === "waiting";
+  const isPreGame = store.gameState === "pre-game";
   const isCountdown = store.gameState === "countdown";
   const isActive = store.gameState === "active";
   const isRoundEnded = store.gameState === "round-ended";
@@ -52,6 +53,7 @@ export function useGameState() {
 
     // Computed game state
     isWaiting,
+    isPreGame,
     isCountdown,
     isActive,
     isRoundEnded,

@@ -130,18 +130,25 @@ Backend serves everything on port 4000:
 1. Admin opens dashboard (`/dashboard`)
 2. Players navigate to host's IP (`http://192.168.x.x:5173`)
 3. Players enter names and join (`/join` → `/player`)
-4. Dashboard shows connected players and their ready status
-5. Players shake their device to ready up (or click in dev mode — controlled by URL parameter, not Node environment)
-6. Once all players are ready, admin clicks "Start Game" and selects mode
+4. Dashboard shows connected players (no ready state in lobby)
+5. Admin configures game settings (mode, sensitivity, theme) and clicks "Start Game"
 
-### 2. Countdown + Role Assignment
+### 2. Pre-Game Phase
+
+1. Game enters `pre-game` state. Players see a mode recap screen (mode name, round count, sensitivity label) and their player number/name.
+2. Players shake their device (or click in dev mode) to indicate readiness.
+3. Game auto-starts (transitions to countdown) when all players are ready.
+4. Alternatively, the admin can force-start the game at any time via the dashboard's "START GAME" button (calls `POST /api/game/proceed`).
+5. In test mode and during auto-relaunch (between rounds), the pre-game phase is skipped automatically.
+
+### 3. Countdown + Role Assignment
 
 1. Server assigns roles randomly based on theme
 2. Each player receives private `role:assigned` event with role name, description, and difficulty
 3. **TTS plays in earbud**: "You are the Vampire." + role description
 4. Dashboard shows countdown (default 10 seconds, configurable)
 
-### 3. Active Gameplay
+### 4. Active Gameplay
 
 1. Game loop ticks every 100ms
 2. Phones send accelerometer data at 10Hz (every 100ms)
@@ -151,7 +158,7 @@ Backend serves everything on port 4000:
 6. Death → phone screen goes gray
 7. Round continues until 0-1 players remain alive
 
-### 4. Round End
+### 5. Round End
 
 1. Last standing player gets +5 points
 2. Dashboard transitions to leaderboard showing round scores + cumulative totals
@@ -159,7 +166,7 @@ Backend serves everything on port 4000:
 4. Once all players are ready, the next round starts automatically (no admin action needed between rounds)
 5. Roles are re-assigned randomly each round. Points carry through.
 
-### 5. Game End (After 3 rounds)
+### 6. Game End (After 3 rounds)
 
 1. Final leaderboard displayed ranked by total points
 2. Winner announced

@@ -9,6 +9,7 @@ import {
   gameConfig,
   restoreMovementConfig,
   saveMovementConfig,
+  userPreferences,
 } from "@/config/gameConfig";
 import { ReadyStateManager } from "@/managers/ReadyStateManager";
 import { RoundSetupManager } from "@/managers/RoundSetupManager";
@@ -65,11 +66,14 @@ export class GameEngine {
   constructor() {
     this.tickRate = gameConfig.tick.rate;
 
-    // Wire up auto-start: when all players are ready between rounds, start next round
+    // Wire up auto-start: when all players are ready, proceed
     this.readyStateManager.onAllReady = () => {
       if (this.gameState === "round-ended") {
         logger.info("ENGINE", "All players ready - auto-starting next round");
         this.startNextRound();
+      } else if (this.gameState === "pre-game") {
+        logger.info("ENGINE", "All players ready - proceeding from pre-game");
+        this.proceedFromPreGame();
       }
     };
 
@@ -118,11 +122,12 @@ export class GameEngine {
 
   /**
    * Start the game with player data
-   * Creates players, assigns roles, starts first round
+   * Creates players, assigns roles, enters pre-game ready phase
    * @param playerData - Array of player data
    * @param overrideRolePool - Optional role pool to override mode's default (used by createTestGame)
+   * @param skipPreGame - If true, skip pre-game phase and go directly to countdown (used by auto-relaunch)
    */
-  startGame(playerData: PlayerData[], overrideRolePool?: string[]): void {
+  startGame(playerData: PlayerData[], overrideRolePool?: string[], skipPreGame = false): void {
     if (!this.currentMode) {
       throw new Error("Game mode must be set before starting");
     }
@@ -150,18 +155,52 @@ export class GameEngine {
     // Set first round
     this.currentRound = 1;
 
-    // Emit round start event
+    // Emit game start event
     gameEvents.emitGameStart({
       mode: this.lastModeKey,
       totalRounds: this.currentMode?.roundCount || 1,
+      sensitivity: userPreferences.sensitivity,
     });
 
-    // In test mode, skip countdown and start immediately
+    // In test mode, skip everything and start immediately
     if (this.testMode) {
       this.startRound();
-    } else {
+    } else if (skipPreGame) {
+      // Skip pre-game (auto-relaunch), go directly to countdown
       this.startCountdown();
+    } else {
+      // Normal flow: enter pre-game ready phase
+      this.enterPreGame();
     }
+  }
+
+  /**
+   * Enter the pre-game ready phase
+   * Players must shake/click to ready up before the game starts
+   */
+  private enterPreGame(): void {
+    this.gameState = "pre-game";
+    this.resetReadyState();
+    this.readyStateManager.startReadyDelay(this.testMode);
+
+    logger.info("ENGINE", "Entered pre-game ready phase");
+  }
+
+  /**
+   * Proceed from pre-game to countdown
+   * Called when admin force-starts or when all players are ready
+   */
+  proceedFromPreGame(): { success: boolean; message?: string } {
+    if (this.gameState !== "pre-game") {
+      return {
+        success: false,
+        message: `Cannot proceed from state: ${this.gameState}`,
+      };
+    }
+
+    logger.info("ENGINE", "Proceeding from pre-game to countdown");
+    this.startCountdown();
+    return { success: true };
   }
 
   /**

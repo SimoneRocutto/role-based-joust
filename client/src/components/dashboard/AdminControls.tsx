@@ -32,7 +32,6 @@ function AdminControls() {
       </div>
 
       <GameSettingsPanel
-        modes={settings.modes}
         selectedMode={settings.selectedMode}
         selectedTheme={settings.selectedTheme}
         selectedSensitivity={settings.selectedSensitivity}
@@ -40,16 +39,16 @@ function AdminControls() {
         dangerThreshold={settings.dangerThreshold}
         roundCount={settings.roundCount}
         roundDuration={settings.roundDuration}
+        combinedModeKey={settings.combinedModeKey}
         teamsEnabled={settings.teamsEnabled}
         teamCount={settings.teamCount}
         loading={settings.loading}
-        handleModeChange={settings.handleModeChange}
+        handleCombinedModeChange={settings.handleCombinedModeChange}
         handleThemeChange={settings.handleThemeChange}
         handleSensitivityChange={settings.handleSensitivityChange}
         handleThresholdChange={settings.handleThresholdChange}
         handleRoundCountChange={settings.handleRoundCountChange}
         handleRoundDurationChange={settings.handleRoundDurationChange}
-        handleTeamsEnabledChange={settings.handleTeamsEnabledChange}
         handleTeamCountChange={settings.handleTeamCountChange}
       />
 
@@ -59,10 +58,8 @@ function AdminControls() {
         disconnectedPlayers={settings.disconnectedPlayers}
         teamsEnabled={settings.teamsEnabled}
         isDevMode={settings.isDevMode}
-        allPlayersReady={settings.allPlayersReady}
         loading={settings.loading}
         error={settings.error}
-        readyCount={settings.readyCount}
         qrDataUrl={settings.qrDataUrl}
         joinUrl={settings.joinUrl}
         handleStartClick={settings.handleStartClick}

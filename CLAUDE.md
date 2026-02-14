@@ -20,11 +20,12 @@ The game adds role-based mechanics on top of this core loop. Each player is secr
 
 ### Game Flow
 
-1. **Lobby**: Admin opens dashboard at `/dashboard`. Players join at `/join`, enter a name, and land on `/player`. Players shake their device to ready up (or click in dev mode). The dashboard shows who's connected and who's ready.
-2. **Game Start**: Once all players are ready, the admin clicks "Start Game" on the dashboard. A countdown plays, during which each player is secretly assigned a role.
-3. **Active Round**: Players try to stay still. Moving too much deals damage. Roles grant special abilities. The round ends when only one player is alive.
-4. **Round End**: The last player alive earns 5 points. Points accumulate across rounds. Players shake to ready up for the next round. Once all ready, the next round starts automatically (no admin action needed between rounds).
-5. **Game End**: After 3 rounds (will be configurable), the game ends. The dashboard shows a leaderboard ranked by total points. The admin clicks to return to the main dashboard to start a new game.
+1. **Lobby**: Admin opens dashboard at `/dashboard`. Players join at `/join`, enter a name, and land on `/player`. The dashboard shows who's connected. Players wait for the admin to start.
+2. **Pre-Game**: Admin clicks "Start Game" on the dashboard. The game enters the `pre-game` state. Players see a mode recap (mode name, round count, sensitivity) and shake their device to ready up (or click in dev mode). The game auto-starts when all players are ready, or the admin can force-start at any time via the dashboard.
+3. **Countdown + Role Assignment**: A countdown plays, during which each player is secretly assigned a role.
+4. **Active Round**: Players try to stay still. Moving too much deals damage. Roles grant special abilities. The round ends when only one player is alive.
+5. **Round End**: The last player alive earns 5 points. Points accumulate across rounds. Players shake to ready up for the next round. Once all ready, the next round starts automatically (no admin action needed between rounds).
+6. **Game End**: After 3 rounds (will be configurable), the game ends. The dashboard shows a leaderboard ranked by total points. The admin clicks to return to the main dashboard to start a new game.
 
 Roles are re-assigned randomly each round. Points carry through all rounds. The player with the most total points wins.
 
@@ -111,7 +112,9 @@ Phones are "dumb terminals" — they only send raw accelerometer data. All game 
 Game loop ticks every 100ms. All timing uses `gameTime` (milliseconds since round start). Never use `setTimeout` for game logic.
 
 ### Game Engine States
-`waiting` → `countdown` → `active` → `round-ended` → `finished`
+`waiting` → `pre-game` → `countdown` → `active` → `round-ended` → `finished`
+
+Note: The `pre-game` state is skipped in test mode and during auto-relaunch (between rounds).
 
 ### Auto-Discovery Pattern
 New roles, status effects, game modes, and game events are auto-discovered from the filesystem:
@@ -149,7 +152,7 @@ Game events are temporary, game-wide effects that alter gameplay for all players
 ### Ready State System
 
 The ready state system handles two phases:
-- **Lobby**: Players shake (or click in dev mode) to indicate they're ready. The admin can only start the game when all players are ready.
+- **Pre-game**: After the admin launches the game, players shake (or click in dev mode) to indicate they're ready. The game auto-starts when all are ready, or the admin can force-start via `POST /api/game/proceed`. Ready events are ignored in the lobby (`waiting` state).
 - **Between rounds**: Players shake to ready up for the next round. Once all are ready, the next round starts automatically.
 
 Dev mode is controlled by a URL parameter, not the Node environment.
@@ -158,7 +161,7 @@ Dev mode is controlled by a URL parameter, not the Node environment.
 
 **Client → Server:** `player:join`, `player:reconnect`, `player:move`, `player:ready`, `player:tap`, `team:switch`, `ping`
 
-**Server → Client:** `player:joined`, `player:reconnected`, `game:tick`, `player:death`, `player:respawn`, `player:respawn-pending`, `round:start`, `round:end`, `game:end`, `game:countdown`, `game:stopped`, `vampire:bloodlust`, `role:assigned`, `lobby:update`, `player:ready`, `ready:update`, `player:tap:result`, `player:kicked`, `team:update`, `team:selection`, `mode:event`, `pong`, `error`
+**Server → Client:** `player:joined`, `player:reconnected`, `game:start`, `game:tick`, `player:death`, `player:respawn`, `player:respawn-pending`, `round:start`, `round:end`, `game:end`, `game:countdown`, `game:stopped`, `vampire:bloodlust`, `role:assigned`, `lobby:update`, `player:ready`, `ready:update`, `player:tap:result`, `player:kicked`, `team:update`, `team:selection`, `mode:event`, `pong`, `error`
 
 Full payloads and details: see `docs/communication.md`.
 
@@ -166,6 +169,7 @@ Full payloads and details: see `docs/communication.md`.
 
 **Primary endpoints:**
 - `POST /api/game/launch` — Create and start a game (primary way to start games)
+- `POST /api/game/proceed` — Force-start from pre-game phase (bypasses all-ready requirement)
 - `POST /api/game/next-round` — Start next round
 - `POST /api/game/team-selection` — Enter team selection phase (teams enabled only)
 - `POST /api/game/kick/:playerId` — Kick a player from the lobby

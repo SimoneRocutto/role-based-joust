@@ -3,10 +3,13 @@
 Here are all the things this game is missing to be complete. PRIORITIES shows next todo points in priority order from top (highest priority) to bottom (lowest). Feel free to remove them once one of them is done. Below are the future tasks divided by their subject.
 
 - PRIORITIES:
+    - pregame screen always shows 0/0 players ready
+    - team mode selection doesn't make sense now: team composition should be visible immediately. The following screen is ok
+    - selecting team mode from dropdown makes players disappear (they show up again in the following sections)
+    - lack of feedback when player puts ready before the first round: he shouldn't already see his life. He should see on his screen that he is ready. But most importantly, there should be a visible tick on the dashboard next to players that put ready
 
 - IMPROVEMENTS:
     - victory music
-    - start game button: this should not be locked by ready state of players. But ready state of players should still be tracked. In this case, ready count acts as a sort of indicator that everyone wants to start playing, but sometimes it's just better to make it start anyway. Maybe the color of the button could be green when everyone is ready, otherwise it can be yellow if someone is still not ready
     - introduce the possibility of having different background music tracks that are picked at random for a certain mode
 
 - FEATURES:
@@ -14,7 +17,8 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 
 - BUGS:
     - sometimes all players have the skull at the end of the round. Points are not cumulative. I have to track down when this happens
-    - no sound on iOS chrome: it's fine, iOS users can use safari
+    - in classic mode, it happened that game didn't start even though everyone put ready
+    - TTS doesn't work on iOS -> it's fine, we'll replace it with real voice
 
 - Classic mode specific:
 
@@ -28,7 +32,6 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
     - optional through config (and useful for role): hear a sound whenever another player is dead (useful when fighting another one with the earbud on -> without earbuds you would hear his death sound from his phone) 
     - charges should be hidden from the screen. Actually right now we have this bug but we can bypass it. I'll leave it here as history: charges are shown on player screen even though he has no charges (0/1). Maybe this happens when being ironclad in the first round and beast/beasthunter in the second.
     - sound from dashboard with player number: it should say 7 eliminated
-    - TTS doesn't work on iOS -> it's fine, we'll replace it with real voice
 
 - New roles (E = easy, M = medium, H = hard):
     - (E) survivor: gain 1 point every 30s alive. Time should be adjusted depending on player number -> lame but good as an introductory role

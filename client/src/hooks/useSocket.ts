@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { socketService } from "@/services/socket";
 import { useGameStore } from "@/store/gameStore";
 import { audioManager } from "@/services/audio";
+import { getModeDisplayName } from "@/utils/modeMapping";
 
 export function useSocket() {
   const respawnTtsTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]).current;
@@ -98,8 +99,16 @@ export function useSocket() {
       }
     });
 
-    socketService.onGameStart(({ mode, totalRounds }) => {
+    socketService.onGameStart(({ mode, totalRounds, sensitivity }) => {
       setMode(mode);
+      // Determine if teams are enabled from store
+      const teamsEnabled = useGameStore.getState().teamsEnabled;
+      useGameStore.getState().setModeRecap({
+        modeName: getModeDisplayName(mode, teamsEnabled),
+        roundCount: totalRounds,
+        sensitivity: sensitivity || "medium",
+      });
+      setGameState("pre-game");
     });
 
     // Round start
@@ -212,10 +221,10 @@ export function useSocket() {
 
     // Lobby update (players joining/leaving before game starts)
     socketService.onLobbyUpdate(({ players }) => {
-      // Only process lobby updates in waiting state - ignore during active gameplay
+      // Only process lobby updates in waiting/pre-game state - ignore during active gameplay
       // Otherwise, disconnect events would reset points/totalPoints to 0
       const currentState = useGameStore.getState().gameState;
-      if (currentState !== "waiting") {
+      if (currentState !== "waiting" && currentState !== "pre-game") {
         return;
       }
 

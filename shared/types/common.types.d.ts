@@ -11,6 +11,7 @@
 
 export type GameStateType =
   | "waiting"
+  | "pre-game"
   | "countdown"
   | "active"
   | "round-ended"

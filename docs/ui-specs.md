@@ -146,24 +146,52 @@ Main game interface displayed on player's phone (chest-mounted, portrait mode).
 │ ● Connected 75% │ ← Status bar
 ├─────────────────┤
 │                 │
-│   Alice         │ ← Player name
 │   #7            │ ← Player number (large)
+│   Alice         │ ← Player name
 │                 │
-│  WAITING FOR    │
-│  GAME START     │
+│  Waiting for    │
+│  game to start…│
 │                 │
 └─────────────────┘
 ```
 
 **Display**:
 
-- Player name (24px)
-- Player number (80px, bold)
-- "Waiting for game start" message
+- Player number (large, prominent)
+- Player name
+- "Waiting for game to start..." message
 - Connection indicator
 - Battery percentage
+- No shake-to-ready in lobby — ready state has moved to the pre-game phase
 
-#### 2.2 Active Game State (Playing)
+#### 2.2 Pre-Game State (After Admin Launches Game)
+
+```
+┌─────────────────┐
+│ ● Connected 75% │ ← Status bar
+├─────────────────┤
+│                 │
+│  MODE RECAP     │
+│  Role-Based     │ ← Mode name
+│  3 rounds       │ ← Round count
+│  Medium         │ ← Sensitivity label
+│                 │
+│   #7  Alice     │ ← Player number + name
+│                 │
+│  SHAKE TO READY │ ← Shake prompt (or click in dev mode)
+│  ✓ READY        │ ← Shown after shaking
+│                 │
+└─────────────────┘
+```
+
+**Display**:
+
+- Mode recap: mode name, round count, sensitivity label
+- Player number and name
+- Shake-to-ready prompt (or click in dev mode)
+- Ready confirmation once the player has readied up
+
+#### 2.3 Active Game State (Playing)
 
 ```
 ┌─────────────────┐
@@ -206,7 +234,7 @@ Main game interface displayed on player's phone (chest-mounted, portrait mode).
 | Invulnerable | `#e5e5e5 → #ffffff` (white)    | Black  | Glow pulse      | Angel ability, etc. |
 | Bloodlust    | `#450a0a → #dc2626` (deep red) | White  | Heartbeat pulse | Vampire role        |
 
-#### 2.3 Dead State
+#### 2.4 Dead State
 
 ```
 ┌─────────────────┐
@@ -513,16 +541,47 @@ Full-screen leaderboard:
 
 Manual button to start next round (no auto-advance).
 
+### Dashboard Pre-Game Panel
+
+When the admin launches the game, the dashboard transitions to a pre-game panel:
+
+```
+┌─────────────────────────────────────────────────────┐
+│              PRE-GAME                                │
+│                                                     │
+│  Mode: Role-Based                                   │
+│  Rounds: 3                                          │
+│  Sensitivity: Medium                                │
+│                                                     │
+│  Ready: 5 / 8 players                               │
+│                                                     │
+│      [START GAME]        [STOP GAME]                │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+**Display**:
+
+- Mode recap: mode name, round count, sensitivity label
+- Ready count: X/Y players ready (updates in real time)
+- "START GAME" button: force-starts the game (calls `POST /api/game/proceed`), bypassing the all-ready requirement
+- "STOP GAME" button: cancels back to lobby (calls `POST /api/game/stop`)
+
+The game auto-starts when all players are ready. The admin can force-start at any time without waiting.
+
 ### Admin Controls
 
-**Before Game Starts**:
+**Lobby (Before Game Starts)**:
 
 ```tsx
 <div className="p-8 space-y-4">
   <select onChange={handleModeChange}>
     <option value="classic">Classic</option>
-    <option value="role-based-standard">Role-Based (Standard)</option>
-    <option value="role-based-halloween">Role-Based (Halloween)</option>
+    <option value="death-count">Death Count</option>
+    <option value="role-based">Roles</option>
+    <option value="classic-team">Classic Team</option>
+    <option value="death-count-team">Death Count Team</option>
+    <option value="role-based-team">Roles Team</option>
   </select>
 
   <div>
@@ -539,6 +598,8 @@ Manual button to start next round (no auto-advance).
   <button onClick={startGame}>START GAME</button>
 </div>
 ```
+
+**Note**: The game mode dropdown combines solo and team variants into a single "Game Mode" dropdown with 6 options (Classic, Death Count, Roles, Classic Team, Death Count Team, Roles Team), replacing the previous separate mode dropdown + team toggle.
 
 **During Game**:
 
