@@ -108,6 +108,8 @@ export function useSocket() {
         roundCount: totalRounds,
         sensitivity: sensitivity || "medium",
       });
+      // Ensure ready is enabled — no delay for pre-game, players can ready immediately
+      useGameStore.getState().setReadyEnabled(true);
       setGameState("pre-game");
     });
 

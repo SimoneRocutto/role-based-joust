@@ -92,6 +92,10 @@ export function registerGameEventBroadcasters(
 
   // Broadcast game start
   gameEvents.onGameStart((payload) => {
+    // Emit reset ready count so pre-game screen starts at 0/N
+    const playerCount = gameEngine.players.length;
+    gameEvents.emitReadyCountUpdate({ ready: 0, total: playerCount });
+
     const clientPayload: GameStartPayload = {
       mode: gameEngine.lastModeKey,
       totalRounds: payload.totalRounds,

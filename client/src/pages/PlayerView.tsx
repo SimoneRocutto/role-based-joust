@@ -81,8 +81,9 @@ function PlayerView() {
   }, [myPlayerId]);
 
   // Shake detection for ready state (pre-game, between rounds, game end)
+  // Pre-game and round-ended both use a ready delay — only allow shaking when enabled
   const shouldDetectShake =
-    (isPreGame || (isRoundEnded && readyEnabled) || isFinished) &&
+    (((isPreGame || isRoundEnded) && readyEnabled) || isFinished) &&
     !myIsReady &&
     permissionsGranted;
 

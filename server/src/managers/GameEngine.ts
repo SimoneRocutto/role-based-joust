@@ -181,7 +181,7 @@ export class GameEngine {
   private enterPreGame(): void {
     this.gameState = "pre-game";
     this.resetReadyState();
-    this.readyStateManager.startReadyDelay(this.testMode);
+    // No ready delay for pre-game — players can ready immediately
 
     logger.info("ENGINE", "Entered pre-game ready phase");
   }
