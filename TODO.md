@@ -3,10 +3,7 @@
 Here are all the things this game is missing to be complete. PRIORITIES shows next todo points in priority order from top (highest priority) to bottom (lowest). Feel free to remove them once one of them is done. Below are the future tasks divided by their subject.
 
 - PRIORITIES:
-    - pregame screen always shows 0/0 players ready
-    - team mode selection doesn't make sense now: team composition should be visible immediately. The following screen is ok
     - selecting team mode from dropdown makes players disappear (they show up again in the following sections)
-    - lack of feedback when player puts ready before the first round: he shouldn't already see his life. He should see on his screen that he is ready. But most importantly, there should be a visible tick on the dashboard next to players that put ready
 
 - IMPROVEMENTS:
     - victory music

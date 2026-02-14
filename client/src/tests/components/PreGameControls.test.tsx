@@ -8,6 +8,7 @@ vi.mock("@/services/api", () => ({
   apiService: {
     proceedFromPreGame: vi.fn().mockResolvedValue({ success: true }),
     stopGame: vi.fn().mockResolvedValue({ success: true, message: "stopped" }),
+    shuffleTeams: vi.fn().mockResolvedValue({ success: true, teams: {} }),
   },
 }));
 
@@ -55,6 +56,27 @@ describe("PreGameControls", () => {
     fireEvent.click(screen.getByText("STOP GAME"));
     await waitFor(() => {
       expect(apiService.stopGame).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("does not show shuffle button when teams are disabled", () => {
+    render(<PreGameControls />);
+    expect(screen.queryByTestId("shuffle-teams-button")).not.toBeInTheDocument();
+  });
+
+  it("shows shuffle button when teams are enabled", () => {
+    useGameStore.getState().setTeamsEnabled(true);
+    render(<PreGameControls />);
+    expect(screen.getByTestId("shuffle-teams-button")).toBeInTheDocument();
+    expect(screen.getByText("SHUFFLE TEAMS")).toBeInTheDocument();
+  });
+
+  it("calls shuffleTeams when SHUFFLE TEAMS is clicked", async () => {
+    useGameStore.getState().setTeamsEnabled(true);
+    render(<PreGameControls />);
+    fireEvent.click(screen.getByText("SHUFFLE TEAMS"));
+    await waitFor(() => {
+      expect(apiService.shuffleTeams).toHaveBeenCalledTimes(1);
     });
   });
 });

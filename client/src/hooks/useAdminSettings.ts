@@ -8,7 +8,7 @@ import type { GameMode } from "@/types/game.types";
 
 export function useAdminSettings() {
   const { players } = useGameState();
-  const { isDevMode, readyCount, teamSelectionActive } = useGameStore();
+  const { isDevMode, readyCount } = useGameStore();
   const [modes, setModes] = useState<GameMode[]>([]);
   const [selectedMode, setSelectedMode] = useState("role-based");
   const [selectedTheme, setSelectedTheme] = useState("standard");
@@ -217,42 +217,6 @@ export function useAdminSettings() {
     }
   };
 
-  const handleStartTeamSelection = async () => {
-    if (connectedPlayers.length < 2) {
-      setError("Need at least 2 players to start");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const result = await apiService.startTeamSelection();
-      if (!result.success) {
-        throw new Error("Failed to start team selection");
-      }
-    } catch (err) {
-      console.error("Failed to start team selection:", err);
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCancelTeamSelection = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      await apiService.stopGame();
-    } catch (err) {
-      console.error("Failed to cancel team selection:", err);
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleLaunchGame = async () => {
     if (connectedPlayers.length < 2) {
       setError("Need at least 2 players to start");
@@ -279,16 +243,12 @@ export function useAdminSettings() {
     }
   };
 
-  const handleStartClick =
-    teamsEnabled && !teamSelectionActive
-      ? handleStartTeamSelection
-      : handleLaunchGame;
+  const handleStartClick = handleLaunchGame;
 
   return {
     // State
     players,
     isDevMode,
-    teamSelectionActive,
     modes,
     selectedMode,
     selectedTheme,
@@ -319,7 +279,6 @@ export function useAdminSettings() {
     handleTeamsEnabledChange,
     handleTeamCountChange,
     handleShuffleTeams,
-    handleCancelTeamSelection,
     handleLaunchGame,
     handleStartClick,
   };

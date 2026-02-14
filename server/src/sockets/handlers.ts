@@ -340,7 +340,7 @@ export function registerSocketHandlers(
      */
     socket.on("team:switch", () => {
       if (!teamManager.isEnabled()) return;
-      if (gameEngine.gameState !== "waiting") return; // Only in lobby
+      if (gameEngine.gameState !== "waiting" && gameEngine.gameState !== "pre-game") return;
 
       const playerId = connectionManager.getPlayerId(socket.id);
       if (!playerId || !connectionManager.isConnected(playerId)) return;

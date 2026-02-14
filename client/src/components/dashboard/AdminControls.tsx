@@ -1,24 +1,9 @@
 import { useAdminSettings } from "@/hooks/useAdminSettings";
-import TeamSelectionPanel from "./TeamSelectionPanel";
 import GameSettingsPanel from "./GameSettingsPanel";
 import LobbyActionBar from "./LobbyActionBar";
 
 function AdminControls() {
   const settings = useAdminSettings();
-
-  if (settings.teamSelectionActive) {
-    return (
-      <TeamSelectionPanel
-        teamCount={settings.teamCount}
-        loading={settings.loading}
-        error={settings.error}
-        connectedPlayers={settings.connectedPlayers}
-        handleShuffleTeams={settings.handleShuffleTeams}
-        handleLaunchGame={settings.handleLaunchGame}
-        handleCancelTeamSelection={settings.handleCancelTeamSelection}
-      />
-    );
-  }
 
   return (
     <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">

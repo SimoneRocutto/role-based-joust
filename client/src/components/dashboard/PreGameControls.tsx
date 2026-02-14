@@ -6,9 +6,10 @@ import ModeRecap from "@/components/shared/ModeRecap";
 
 function PreGameControls() {
   const { readyCount } = useGameState();
-  const { modeRecap } = useGameStore();
+  const { modeRecap, teamsEnabled } = useGameStore();
   const [isStarting, setIsStarting] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
+  const [isShuffling, setIsShuffling] = useState(false);
 
   const handleForceStart = async () => {
     if (isStarting) return;
@@ -31,6 +32,18 @@ function PreGameControls() {
       console.error("Failed to stop game:", err);
     } finally {
       setIsStopping(false);
+    }
+  };
+
+  const handleShuffleTeams = async () => {
+    if (isShuffling) return;
+    setIsShuffling(true);
+    try {
+      await apiService.shuffleTeams();
+    } catch (err) {
+      console.error("Failed to shuffle teams:", err);
+    } finally {
+      setIsShuffling(false);
     }
   };
 
@@ -64,6 +77,20 @@ function PreGameControls() {
         >
           {isStarting ? "STARTING..." : "START GAME"}
         </button>
+        {teamsEnabled && (
+          <button
+            onClick={handleShuffleTeams}
+            disabled={isShuffling}
+            data-testid="shuffle-teams-button"
+            className={`px-8 py-3 rounded-lg text-lg font-bold transition-colors ${
+              isShuffling
+                ? "bg-gray-600 cursor-not-allowed"
+                : "bg-yellow-600 hover:bg-yellow-700"
+            }`}
+          >
+            {isShuffling ? "SHUFFLING..." : "SHUFFLE TEAMS"}
+          </button>
+        )}
         <button
           onClick={handleStopGame}
           disabled={isStopping}

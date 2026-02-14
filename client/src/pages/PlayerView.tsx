@@ -9,7 +9,6 @@ import { socketService } from "@/services/socket";
 import { audioManager } from "@/services/audio";
 import { getTeamColor } from "@/utils/teamColors";
 import PortraitLock from "@/components/player/PortraitLock";
-import TeamSelectionScreen from "@/components/player/screens/TeamSelectionScreen";
 import LobbyScreen from "@/components/player/screens/LobbyScreen";
 import PreGameScreen from "@/components/player/screens/PreGameScreen";
 import CountdownScreen from "@/components/player/screens/CountdownScreen";
@@ -38,14 +37,8 @@ function PlayerView() {
     respawnCountdown,
   } = useGameState();
 
-  const {
-    countdownSeconds,
-    countdownPhase,
-    myIsReady,
-    setMyReady,
-    teamSelectionActive,
-    modeRecap,
-  } = useGameStore();
+  const { countdownSeconds, countdownPhase, myIsReady, setMyReady, modeRecap } =
+    useGameStore();
 
   const { permissionsGranted, showPortraitLock } = usePlayerDevice(myPlayerId);
   const { chargeInfo, handleTap } = usePlayerAbility(myPlayerId);
@@ -54,11 +47,12 @@ function PlayerView() {
   const myTeamColor = getTeamColor(myTeamId);
   const playerName = myPlayer?.name || "Player";
 
-  // Handle tap to switch team during team selection
+  // Handle tap to switch team during pre-game
   const handleTeamSwitch = useCallback(() => {
-    if (!isWaiting || !teamSelectionActive) return;
+    console.log("here");
+    if (!isPreGame) return;
     socketService.sendTeamSwitch();
-  }, [isWaiting, teamSelectionActive]);
+  }, [isPreGame]);
 
   const handleShakeDetected = useCallback(() => {
     if (!myPlayerId || myIsReady) return;
@@ -139,20 +133,8 @@ function PlayerView() {
     <div className="player-view relative w-screen h-screen overflow-hidden">
       {showPortraitLock && <PortraitLock />}
 
-      {isWaiting && !isCountdown && teamSelectionActive && (
-        <TeamSelectionScreen
-          playerNumber={myPlayerNumber}
-          playerName={playerName}
-          teamColor={myTeamColor}
-          onTeamSwitch={handleTeamSwitch}
-        />
-      )}
-
-      {isWaiting && !isCountdown && !teamSelectionActive && (
-        <LobbyScreen
-          playerNumber={myPlayerNumber}
-          playerName={playerName}
-        />
+      {isWaiting && !isCountdown && (
+        <LobbyScreen playerNumber={myPlayerNumber} playerName={playerName} />
       )}
 
       {isPreGame && !isCountdown && (
@@ -160,6 +142,8 @@ function PlayerView() {
           playerNumber={myPlayerNumber}
           playerName={playerName}
           modeRecap={modeRecap}
+          teamColor={myTeamColor}
+          onTeamSwitch={handleTeamSwitch}
           {...shakeProps}
         />
       )}
@@ -184,18 +168,22 @@ function PlayerView() {
         />
       )}
 
-      {!isWaiting && !isRoundEnded && !isMyPlayerDead && myPlayer && (
-        <ActiveGameScreen
-          player={myPlayer}
-          playerNumber={myPlayerNumber}
-          teamId={myTeamId}
-          target={myTarget}
-          chargeInfo={chargeInfo}
-          onTap={handleTap}
-          onTakeDamage={takeDamage}
-          isDevMode={isDevMode}
-        />
-      )}
+      {!isPreGame &&
+        !isWaiting &&
+        !isRoundEnded &&
+        !isMyPlayerDead &&
+        myPlayer && (
+          <ActiveGameScreen
+            player={myPlayer}
+            playerNumber={myPlayerNumber}
+            teamId={myTeamId}
+            target={myTarget}
+            chargeInfo={chargeInfo}
+            onTap={handleTap}
+            onTakeDamage={takeDamage}
+            isDevMode={isDevMode}
+          />
+        )}
 
       {isMyPlayerDead &&
         !isCountdown &&

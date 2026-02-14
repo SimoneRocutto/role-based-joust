@@ -1,16 +1,23 @@
 import ConnectionStatus from "@/components/player/ConnectionStatus";
 import ShakeToReady from "@/components/player/ShakeToReady";
 import ModeRecap from "@/components/shared/ModeRecap";
+import type { TeamColorScheme } from "@/utils/teamColors";
 
 interface PreGameScreenProps {
   playerNumber: number;
   playerName: string;
-  modeRecap: { modeName: string; roundCount: number; sensitivity: string } | null;
+  modeRecap: {
+    modeName: string;
+    roundCount: number;
+    sensitivity: string;
+  } | null;
   isReady: boolean;
   isShaking: boolean;
   shakeProgress: number;
   onReadyClick: () => void;
   isDevMode: boolean;
+  teamColor?: TeamColorScheme | null;
+  onTeamSwitch?: () => void;
 }
 
 export default function PreGameScreen({
@@ -22,11 +29,14 @@ export default function PreGameScreen({
   shakeProgress,
   onReadyClick,
   isDevMode,
+  teamColor,
+  onTeamSwitch,
 }: PreGameScreenProps) {
   return (
     <div
       className="fullscreen flex flex-col items-center justify-center gap-8 p-8"
-      style={{ backgroundColor: "#1f2937" }}
+      style={{ backgroundColor: teamColor ? teamColor.dark : "#1f2937" }}
+      onClick={onTeamSwitch}
     >
       <ConnectionStatus />
 
@@ -39,6 +49,18 @@ export default function PreGameScreen({
       )}
 
       <div className="text-center">
+        {teamColor && (
+          <div
+            className="text-lg font-bold mb-2 px-4 py-1 rounded-full inline-block"
+            style={{
+              backgroundColor: teamColor.tint,
+              color: teamColor.primary,
+              border: `2px solid ${teamColor.primary}`,
+            }}
+          >
+            {teamColor.name}
+          </div>
+        )}
         <div className="text-8xl font-bold text-white mb-4">
           #{playerNumber}
         </div>
@@ -54,6 +76,10 @@ export default function PreGameScreen({
           waitingMessage="Waiting for other players..."
           isDevMode={isDevMode}
         />
+
+        {teamColor && (
+          <div className="mt-4 text-sm text-gray-400">Tap to switch team</div>
+        )}
       </div>
     </div>
   );

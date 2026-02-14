@@ -258,6 +258,13 @@ router.post(
       socketId: connectionManager.getSocketId(p.id) || "",
     }));
 
+    // Broadcast team info before starting so clients get initial assignments
+    if (teamManager.isEnabled()) {
+      const io: SocketIOServer = req.app.locals.io;
+      broadcastLobbyUpdate(io);
+      broadcastTeamUpdate(io);
+    }
+
     // Start game (will enter countdown then active)
     gameEngine.startGame(playerData);
 
@@ -644,10 +651,10 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const gameEngine: GameEngine = req.app.locals.gameEngine;
 
-    if (gameEngine.gameState !== "waiting") {
+    if (gameEngine.gameState !== "waiting" && gameEngine.gameState !== "pre-game") {
       res.status(400).json({
         success: false,
-        error: "Can only shuffle teams in the lobby",
+        error: "Can only shuffle teams in the lobby or pre-game",
       });
       return;
     }

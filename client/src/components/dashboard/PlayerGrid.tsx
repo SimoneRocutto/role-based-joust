@@ -6,7 +6,7 @@ import { apiService } from '@/services/api'
 
 function PlayerGrid() {
   const { sortedPlayers, players } = useGameState()
-  const teamSelectionActive = useGameStore((state) => state.teamSelectionActive)
+  const teamsEnabled = useGameStore((state) => state.teamsEnabled)
 
   if (players.length === 0) {
     return (
@@ -18,8 +18,8 @@ function PlayerGrid() {
     )
   }
 
-  // Team lobby layout during team selection phase
-  if (teamSelectionActive) {
+  // Team lobby layout when teams are enabled and players have team assignments
+  if (teamsEnabled && players.some((p) => p.teamId != null)) {
     return <TeamLobbyGrid players={players} />
   }
 
