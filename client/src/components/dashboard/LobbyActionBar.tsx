@@ -25,7 +25,6 @@ function LobbyActionBar({
   connectedPlayers,
   disconnectedPlayers,
   teamsEnabled,
-  isDevMode,
   loading,
   error,
   qrDataUrl,
@@ -34,8 +33,8 @@ function LobbyActionBar({
 }: LobbyActionBarProps) {
   return (
     <>
-      {/* Connected Players (only when teams disabled — team lobby grid handles team display) */}
-      {!teamsEnabled && (
+      {/* Connected Players */}
+      {
         <div className="mb-4">
           <h3 className="text-lg font-semibold mb-2">
             Connected Players: {connectedPlayers.length}
@@ -51,13 +50,15 @@ function LobbyActionBar({
                 <div
                   key={p.id}
                   className={`px-3 py-2 bg-gray-700 rounded text-sm flex items-center justify-between ${
-                    p.isConnected === false ? 'opacity-40' : ''
+                    p.isConnected === false ? "opacity-40" : ""
                   }`}
                 >
                   <span>
                     #{p.number} {p.name}
                     {p.isConnected === false && (
-                      <span className="text-gray-500 text-xs ml-1">OFFLINE</span>
+                      <span className="text-gray-500 text-xs ml-1">
+                        OFFLINE
+                      </span>
                     )}
                   </span>
                   <button
@@ -74,7 +75,7 @@ function LobbyActionBar({
             <p className="text-gray-500">No players connected yet...</p>
           )}
         </div>
-      )}
+      }
 
       {/* Error Message */}
       {error && (
@@ -90,7 +91,9 @@ function LobbyActionBar({
           disabled={loading || connectedPlayers.length < 2}
           className="px-8 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg font-bold text-xl transition-colors"
         >
-          {loading ? "Starting..." : `Start Game (${connectedPlayers.length} players)`}
+          {loading
+            ? "Starting..."
+            : `Start Game (${connectedPlayers.length} players)`}
         </button>
 
         {/* QR Code for joining */}

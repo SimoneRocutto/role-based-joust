@@ -3,7 +3,6 @@
 Here are all the things this game is missing to be complete. PRIORITIES shows next todo points in priority order from top (highest priority) to bottom (lowest). Feel free to remove them once one of them is done. Below are the future tasks divided by their subject.
 
 - PRIORITIES:
-    - selecting a team mode from dropdown makes players disappear (they show up again in the following sections)
 
 - IMPROVEMENTS:
     - victory music
