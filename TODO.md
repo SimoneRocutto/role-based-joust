@@ -23,7 +23,6 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 - Classic mode specific:
 
 - Death count mode specific:
-    - starting screen should be blue (it is gray)
 
 - Team mode specific:
     - end of round scoreboard is confusing: it should list players in order of round points. We should also find a way to represent total points for the entire teams

@@ -116,8 +116,9 @@ export function useSocket() {
     });
 
     // Round start
-    socketService.onRoundStart(({ roundNumber, totalRounds }) => {
+    socketService.onRoundStart(({ roundNumber, totalRounds, gameEvents }) => {
       setRound(roundNumber, totalRounds);
+      useGameStore.getState().setActiveGameEvents(gameEvents ?? []);
       setGameState("active");
     });
 

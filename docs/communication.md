@@ -338,7 +338,8 @@ Note: The server obtains the new socket ID from the socket connection itself. Do
 {
   roundNumber: number,
   totalRounds: number,
-  gameTime: number
+  gameTime: number,
+  gameEvents: string[]   // e.g. ["speed-shift"]
 }
 ```
 

@@ -73,6 +73,7 @@ export interface RoundStartPayload {
   roundNumber: number;
   totalRounds: number;
   gameTime: number;
+  gameEvents: string[];
 }
 
 export interface RoundEndPayload {

@@ -176,7 +176,7 @@ export abstract class GameMode {
    * Return the names of game events to register each round.
    * Override in subclasses to opt in to specific events.
    */
-  protected getGameEvents(): string[] {
+  getGameEvents(): string[] {
     return [];
   }
 

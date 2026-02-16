@@ -302,6 +302,7 @@ export class GameEngine {
       roundNumber: this.currentRound,
       totalRounds: this.currentMode?.roundCount || 1,
       gameTime: this.gameTime,
+      gameEvents: this.currentMode?.getGameEvents() || [],
     });
 
     // Set state and start loop

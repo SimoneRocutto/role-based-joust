@@ -53,6 +53,7 @@ interface GameStore {
   latestEvent: string | null;
   scores: ScoreEntry[];
   activeModeEvent: string | null;
+  activeGameEvents: string[];
 
   // Actions
   setConnected: (connected: boolean) => void;
@@ -76,6 +77,7 @@ interface GameStore {
   setReadyEnabled: (enabled: boolean) => void;
   setRoundWinnerId: (winnerId: string | null) => void;
   setActiveModeEvent: (event: string | null) => void;
+  setActiveGameEvents: (events: string[]) => void;
   setRoundTimeRemaining: (time: number | null) => void;
   setRespawnCountdown: (countdown: number | null) => void;
   setTeamsEnabled: (enabled: boolean) => void;
@@ -128,6 +130,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   latestEvent: null,
   scores: [],
   activeModeEvent: null,
+  activeGameEvents: [],
 
   // Actions
   setConnected: (connected) => set({ isConnected: connected }),
@@ -221,6 +224,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setActiveModeEvent: (event) => set({ activeModeEvent: event }),
 
+  setActiveGameEvents: (events) => set({ activeGameEvents: events }),
+
   setRoundTimeRemaining: (time) => set({ roundTimeRemaining: time }),
 
   setRespawnCountdown: (countdown) => set({ respawnCountdown: countdown }),
@@ -241,6 +246,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       readyEnabled: true,
       roundWinnerId: null,
       activeModeEvent: null,
+      activeGameEvents: [],
       roundTimeRemaining: null,
       respawnCountdown: null,
       modeRecap: null,
@@ -275,5 +281,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       latestEvent: null,
       scores: [],
       activeModeEvent: null,
+      activeGameEvents: [],
     }),
 }));

@@ -19,6 +19,7 @@ export interface RoundStartEvent {
   roundNumber: number;
   totalRounds: number;
   gameTime: number;
+  gameEvents: string[];
 }
 
 export interface RoundEndEvent {

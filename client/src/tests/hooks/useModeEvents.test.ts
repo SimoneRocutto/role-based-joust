@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useModeEvents } from '@/hooks/useModeEvents'
 import { useGameStore } from '@/store/gameStore'
-import { MODE_EVENT_EFFECTS, DASHBOARD_MODE_BACKGROUNDS } from '@/utils/constants'
+import { MODE_EVENT_EFFECTS, GAME_EVENT_DEFAULTS } from '@/utils/constants'
 
 // Capture the callback registered with onModeEvent
 let modeEventCallback: ((data: { eventType: string }) => void) | null = null
@@ -126,26 +126,26 @@ describe('useModeEvents', () => {
       expect(result.current.background).toBe('#111827')
     })
 
-    it('returns mode default when game is active with known mode', () => {
+    it('returns game event default background when activeGameEvents is set and game is active', () => {
       useGameStore.getState().setGameState('active')
-      useGameStore.getState().setMode('classic')
+      useGameStore.getState().setActiveGameEvents(['speed-shift'])
 
       const { result } = renderHook(() => useModeEvents())
-      expect(result.current.background).toBe(DASHBOARD_MODE_BACKGROUNDS['classic'].background)
+      expect(result.current.background).toBe(GAME_EVENT_DEFAULTS['speed-shift'].background)
     })
 
-    it('returns event background, overriding mode default', () => {
+    it('returns event background, overriding game event default', () => {
       useGameStore.getState().setGameState('active')
-      useGameStore.getState().setMode('classic')
+      useGameStore.getState().setActiveGameEvents(['speed-shift'])
       useGameStore.getState().setActiveModeEvent('speed-shift:start')
 
       const { result } = renderHook(() => useModeEvents())
       expect(result.current.background).toBe(MODE_EVENT_EFFECTS['speed-shift:start'].background)
     })
 
-    it('does not apply mode background when game is not active', () => {
+    it('does not apply game event background when game is not active', () => {
       useGameStore.getState().setGameState('waiting')
-      useGameStore.getState().setMode('classic')
+      useGameStore.getState().setActiveGameEvents(['speed-shift'])
 
       const { result } = renderHook(() => useModeEvents())
       expect(result.current.background).toBe('#111827')

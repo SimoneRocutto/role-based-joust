@@ -49,7 +49,7 @@ export class ClassicMode extends GameMode {
   /**
    * Return game events for this mode
    */
-  protected override getGameEvents(): string[] {
+  override getGameEvents(): string[] {
     return ["speed-shift"];
   }
 

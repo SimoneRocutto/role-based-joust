@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, act } from '@testing-library/react'
 import DashboardView from '@/pages/DashboardView'
 import { useGameStore } from '@/store/gameStore'
-import { DASHBOARD_MODE_BACKGROUNDS, MODE_EVENT_EFFECTS } from '@/utils/constants'
+import { GAME_EVENT_DEFAULTS, MODE_EVENT_EFFECTS } from '@/utils/constants'
 
 // Mock all dependencies
 vi.mock('@/services/api', () => ({
@@ -75,19 +75,19 @@ describe('DashboardView - Background color', () => {
     expect(root.style.background).toBe('#111827')
   })
 
-  it('applies mode default background when game is active in classic mode', () => {
+  it('applies game event default background when active with speed-shift event', () => {
     useGameStore.getState().setGameState('active')
-    useGameStore.getState().setMode('classic')
+    useGameStore.getState().setActiveGameEvents(['speed-shift'])
 
     const { container } = render(<DashboardView />)
     const root = getRootDiv(container)
 
-    expect(root.style.background).toBe(DASHBOARD_MODE_BACKGROUNDS['classic'].background)
+    expect(root.style.background).toBe(GAME_EVENT_DEFAULTS['speed-shift'].background)
   })
 
-  it('applies event background on speed-shift:start, overriding mode default', () => {
+  it('applies event background on speed-shift:start, overriding game event default', () => {
     useGameStore.getState().setGameState('active')
-    useGameStore.getState().setMode('classic')
+    useGameStore.getState().setActiveGameEvents(['speed-shift'])
     useGameStore.getState().setActiveModeEvent('speed-shift:start')
 
     const { container } = render(<DashboardView />)
@@ -96,9 +96,9 @@ describe('DashboardView - Background color', () => {
     expect(root.style.background).toBe(MODE_EVENT_EFFECTS['speed-shift:start'].background)
   })
 
-  it('returns to mode default background on speed-shift:end', () => {
+  it('returns to game event default background on speed-shift:end', () => {
     useGameStore.getState().setGameState('active')
-    useGameStore.getState().setMode('classic')
+    useGameStore.getState().setActiveGameEvents(['speed-shift'])
     useGameStore.getState().setActiveModeEvent('speed-shift:end')
 
     const { container } = render(<DashboardView />)
@@ -109,7 +109,7 @@ describe('DashboardView - Background color', () => {
 
   it('resets to gray-900 fallback when game is no longer active', () => {
     useGameStore.getState().setGameState('active')
-    useGameStore.getState().setMode('classic')
+    useGameStore.getState().setActiveGameEvents(['speed-shift'])
     useGameStore.getState().setActiveModeEvent('speed-shift:start')
 
     const { container, rerender } = render(<DashboardView />)
@@ -128,9 +128,9 @@ describe('DashboardView - Background color', () => {
     expect(root.style.background).toBe('#111827')
   })
 
-  it('does not apply mode background when game is in waiting state', () => {
+  it('does not apply game event background when game is in waiting state', () => {
     useGameStore.getState().setGameState('waiting')
-    useGameStore.getState().setMode('classic')
+    useGameStore.getState().setActiveGameEvents(['speed-shift'])
 
     const { container } = render(<DashboardView />)
     const root = getRootDiv(container)
@@ -138,9 +138,8 @@ describe('DashboardView - Background color', () => {
     expect(root.style.background).toBe('#111827')
   })
 
-  it('uses gray-900 fallback for unknown mode with no event', () => {
+  it('uses gray-900 fallback when no game events and no mode event', () => {
     useGameStore.getState().setGameState('active')
-    useGameStore.getState().setMode('UnknownMode')
 
     const { container } = render(<DashboardView />)
     const root = getRootDiv(container)

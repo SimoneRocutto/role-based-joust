@@ -3,7 +3,7 @@ import { useGameStore } from "@/store/gameStore";
 import { useGameState } from "@/hooks/useGameState";
 import { socketService } from "@/services/socket";
 import {
-  DASHBOARD_MODE_BACKGROUNDS,
+  GAME_EVENT_DEFAULTS,
   MODE_EVENT_EFFECTS,
 } from "@/utils/constants";
 import { audioManager } from "@/services/audio";
@@ -18,7 +18,7 @@ export function useModeEvents() {
 
   const setActiveModeEvent = useGameStore((s) => s.setActiveModeEvent);
   const activeModeEvent = useGameStore((s) => s.activeModeEvent);
-  const mode = useGameStore((s) => s.mode);
+  const activeGameEvents = useGameStore((s) => s.activeGameEvents);
 
   // Listen for mode:event and apply effects
   useEffect(() => {
@@ -48,13 +48,14 @@ export function useModeEvents() {
     }
   }, [isActive, setActiveModeEvent]);
 
-  // Resolve background: event override > mode default > fallback
+  // Resolve background: active mode event override > game event default > fallback
   const eventBg = activeModeEvent
     ? MODE_EVENT_EFFECTS[activeModeEvent]?.background
     : null;
-  const modeBg =
-    mode && isActive ? DASHBOARD_MODE_BACKGROUNDS[mode]?.background : null;
-  const background = eventBg ?? modeBg ?? "#111827";
+  const defaultBg = isActive
+    ? activeGameEvents.map((key) => GAME_EVENT_DEFAULTS[key]?.background).find(Boolean) ?? null
+    : null;
+  const background = eventBg ?? defaultBg ?? "#111827";
 
   return { background };
 }
