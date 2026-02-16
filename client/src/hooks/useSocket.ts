@@ -5,7 +5,9 @@ import { audioManager } from "@/services/audio";
 import { getModeDisplayName } from "@/utils/modeMapping";
 
 export function useSocket() {
-  const respawnTtsTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]).current;
+  const respawnTtsTimeouts = useRef<ReturnType<typeof setTimeout>[]>(
+    []
+  ).current;
   const {
     setConnected,
     updatePlayer,
@@ -268,7 +270,6 @@ export function useSocket() {
           }));
           updatePlayers(resetPlayers);
         }
-
       }
     );
 
@@ -317,17 +318,11 @@ export function useSocket() {
       // TODO: replace with real voice
       respawnTtsTimeouts.push(
         setTimeout(() => {
-          audioManager.speak("respawning in");
+          audioManager.playSfx("respawning-in", { volume: 1 });
         }, Math.max(0, respawnIn - 4000)),
         setTimeout(() => {
-          audioManager.speak("3");
-        }, Math.max(0, respawnIn - 3000)),
-        setTimeout(() => {
-          audioManager.speak("2");
-        }, Math.max(0, respawnIn - 2000)),
-        setTimeout(() => {
-          audioManager.speak("1");
-        }, Math.max(0, respawnIn - 1000))
+          audioManager.playSfx("countdown", { volume: 0.5 });
+        }, Math.max(0, respawnIn - 3000))
       );
     });
 
