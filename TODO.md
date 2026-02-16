@@ -3,10 +3,11 @@
 Here are all the things this game is missing to be complete. PRIORITIES shows next todo points in priority order from top (highest priority) to bottom (lowest). Feel free to remove them once one of them is done. Below are the future tasks divided by their subject.
 
 - PRIORITIES:
-    - selecting team mode from dropdown makes players disappear (they show up again in the following sections)
+    - selecting a team mode from dropdown makes players disappear (they show up again in the following sections)
 
 - IMPROVEMENTS:
     - victory music
+    - numbers of deaths in death count mode should be highly visible from a distance. We could also consider showing them on the player screen (or maybe showing a trophy or somthing like that on the player ahead)
     - introduce the possibility of having different background music tracks that are picked at random for a certain mode
 
 - FEATURES:
@@ -20,15 +21,18 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 - Classic mode specific:
 
 - Death count mode specific:
+    - starting screen should be blue (it is gray)
     - all players have a trophy at the end of the round. This should only show up for the player with the most points in this round
 
 - Team mode specific:
     - end of round scoreboard is confusing: it should list players in order of round points. We should also find a way to represent total points for the entire teams
+    - points at the end of round should exclude points made by the lowest scoring players. This doesn't happen when all team have the same amount of players. Though, when we have 3, 2 and 2 in teams, team with 3 players will statistically score +50% points compared to other teams. So, we'll just exclude the worst player from their score count as a way to lower the disparity. We can think of other ways to compensate
 
 - Role mode specific:
     - optional through config (and useful for role): hear a sound whenever another player is dead (useful when fighting another one with the earbud on -> without earbuds you would hear his death sound from his phone) 
     - charges should be hidden from the screen. Actually right now we have this bug but we can bypass it. I'll leave it here as history: charges are shown on player screen even though he has no charges (0/1). Maybe this happens when being ironclad in the first round and beast/beasthunter in the second.
     - sound from dashboard with player number: it should say 7 eliminated
+    - record sounds for audio to avoid using tts on iPhone (doesn't work)
 
 - New roles (E = easy, M = medium, H = hard):
     - (E) survivor: gain 1 point every 30s alive. Time should be adjusted depending on player number -> lame but good as an introductory role
