@@ -8,6 +8,7 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
     - victory music
     - numbers of deaths in death count mode should be highly visible from a distance. We could also consider showing them on the player screen (or maybe showing a trophy or somthing like that on the player ahead)
     - introduce the possibility of having different background music tracks that are picked at random for a certain mode
+    - teams mode should not be able to start with empty teams
 
 - FEATURES:
     - UI: add a settings screen (accessible from the UI) where all the more complex settings (like sensibility of movement detection) can be accessed. In the future, other settings will be accessed through this screen

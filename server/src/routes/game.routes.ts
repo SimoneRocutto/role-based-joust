@@ -217,16 +217,6 @@ router.post(
       if (!hasAssignments) {
         teamManager.assignSequential(playerIds);
       }
-
-      // Validate: at least 1 player per team
-      const validation = teamManager.validateTeams();
-      if (!validation.valid) {
-        res.status(400).json({
-          success: false,
-          error: validation.message,
-        });
-        return;
-      }
     }
 
     // Use persisted preferences as defaults

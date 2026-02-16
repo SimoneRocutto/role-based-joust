@@ -24,7 +24,6 @@ function LobbyActionBar({
   players,
   connectedPlayers,
   disconnectedPlayers,
-  teamsEnabled,
   loading,
   error,
   qrDataUrl,
