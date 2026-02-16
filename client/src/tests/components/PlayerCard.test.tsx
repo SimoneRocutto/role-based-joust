@@ -125,6 +125,48 @@ describe('PlayerCard', () => {
     })
   })
 
+  describe('death count mode', () => {
+    beforeEach(() => {
+      act(() => {
+        useGameStore.getState().setModeRecap({
+          modeName: 'Death Count',
+          roundCount: 3,
+          sensitivity: 'medium',
+        })
+        useGameStore.getState().setGameState('round-ended')
+      })
+    })
+
+    it('does not show trophy for alive player at round end', () => {
+      const player = createMockPlayer({ isAlive: true })
+      render(<PlayerCard player={player} />)
+
+      expect(screen.queryByText('🏆')).not.toBeInTheDocument()
+    })
+
+    it('does not show skull for dead player at round end', () => {
+      const player = createMockPlayer({ isAlive: false })
+      render(<PlayerCard player={player} />)
+
+      expect(screen.queryByText('💀')).not.toBeInTheDocument()
+    })
+
+    it('also applies to Death Count Team mode', () => {
+      act(() => {
+        useGameStore.getState().setModeRecap({
+          modeName: 'Death Count Team',
+          roundCount: 3,
+          sensitivity: 'medium',
+        })
+      })
+
+      const player = createMockPlayer({ isAlive: true })
+      render(<PlayerCard player={player} />)
+
+      expect(screen.queryByText('🏆')).not.toBeInTheDocument()
+    })
+  })
+
   describe('status effects icons', () => {
     it('shows shield icon for invulnerable player', () => {
       const player = createMockPlayer({

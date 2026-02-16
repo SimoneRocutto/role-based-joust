@@ -66,6 +66,8 @@ function PlayerCard({ player }: PlayerCardProps) {
   const statusIcon = getStatusIcon();
 
   const gameState = useGameStore((state) => state.gameState);
+  const modeRecap = useGameStore((state) => state.modeRecap);
+  const isDeathCountMode = modeRecap?.modeName?.includes("Death Count") ?? false;
   const showReadyBadge = player.isReady && (gameState === 'waiting' || gameState === 'pre-game' || gameState === 'round-ended');
 
   // Build border/tint styles: round winner > team color > health-based
@@ -137,9 +139,10 @@ function PlayerCard({ player }: PlayerCardProps) {
       </div>
 
       {/* Status Icon: Trophy for winner, Skull for dead, or status effect */}
-      {isRoundWinner ? (
+      {/* In death count mode, skip trophy/skull since everyone respawns */}
+      {isRoundWinner && !isDeathCountMode ? (
         <div className="text-6xl">🏆</div>
-      ) : isDead ? (
+      ) : isDead && !isDeathCountMode ? (
         <div className="text-6xl">💀</div>
       ) : statusIcon ? (
         <div className="text-4xl">{statusIcon}</div>

@@ -15,6 +15,8 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 
 - BUGS:
     - sometimes all players have the skull at the end of the round. Points are not cumulative. I have to track down when this happens
+    - when phone page is inactive, it says "reconnecting...". But in reality, it will never reconnect. I'd rather see a "refresh page" button
+    - make it so both /join and /player screens are unified under /player
     - in classic mode, it happened that game didn't start even though everyone put ready
     - TTS doesn't work on iOS -> it's fine, we'll replace it with real voice
 
@@ -22,7 +24,6 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 
 - Death count mode specific:
     - starting screen should be blue (it is gray)
-    - all players have a trophy at the end of the round. This should only show up for the player with the most points in this round
 
 - Team mode specific:
     - end of round scoreboard is confusing: it should list players in order of round points. We should also find a way to represent total points for the entire teams
