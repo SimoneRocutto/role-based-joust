@@ -215,6 +215,10 @@ export function useSocket() {
       }, 500);
     });
 
+    socketService.onTeamUpdate(({ teams }) => {
+      useGameStore.getState().setTeams(teams);
+    });
+
     // Team selection phase
     socketService.onTeamSelection(({ active }) => {
       useGameStore.getState().setTeamSelectionActive(active);

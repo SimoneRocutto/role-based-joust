@@ -43,11 +43,16 @@ interface GameStore {
 
   // Team state
   teamsEnabled: boolean;
+  teams: Record<number, string[]>;
   teamSelectionActive: boolean;
   teamScores: TeamScore[] | null;
 
   // Mode recap (shown during pre-game)
-  modeRecap: { modeName: string; roundCount: number; sensitivity: string } | null;
+  modeRecap: {
+    modeName: string;
+    roundCount: number;
+    sensitivity: string;
+  } | null;
 
   // UI state
   latestEvent: string | null;
@@ -81,9 +86,12 @@ interface GameStore {
   setRoundTimeRemaining: (time: number | null) => void;
   setRespawnCountdown: (countdown: number | null) => void;
   setTeamsEnabled: (enabled: boolean) => void;
+  setTeams: (teams: Record<number, string[]>) => void;
   setTeamSelectionActive: (active: boolean) => void;
   setTeamScores: (scores: TeamScore[] | null) => void;
-  setModeRecap: (recap: { modeName: string; roundCount: number; sensitivity: string } | null) => void;
+  setModeRecap: (
+    recap: { modeName: string; roundCount: number; sensitivity: string } | null
+  ) => void;
   resetReadyState: () => void;
   reset: () => void;
 }
@@ -122,6 +130,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   respawnCountdown: null,
 
   teamsEnabled: false,
+  teams: {},
   teamSelectionActive: false,
   teamScores: null,
 
@@ -231,6 +240,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setRespawnCountdown: (countdown) => set({ respawnCountdown: countdown }),
 
   setTeamsEnabled: (enabled) => set({ teamsEnabled: enabled }),
+
+  setTeams: (teams) => set({ teams: teams }),
 
   setTeamSelectionActive: (active) => set({ teamSelectionActive: active }),
 

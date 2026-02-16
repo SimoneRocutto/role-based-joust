@@ -1,45 +1,43 @@
-import { useGameState } from '@/hooks/useGameState'
-import { useGameStore } from '@/store/gameStore'
-import PlayerCard from './PlayerCard'
-import CompactPlayerCard from './CompactPlayerCard'
-import { TEAM_COLORS, getTeamName } from '@/utils/teamColors'
+import { useGameState } from "@/hooks/useGameState";
+import { useGameStore } from "@/store/gameStore";
+import PlayerCard from "./PlayerCard";
+import CompactPlayerCard from "./CompactPlayerCard";
+import { TEAM_COLORS, getTeamName } from "@/utils/teamColors";
 
 function PlayerGrid() {
-  const { sortedPlayers, players } = useGameState()
-  const teamsEnabled = useGameStore((state) => state.teamsEnabled)
+  const { sortedPlayers, players } = useGameState();
+  const { teamsEnabled, teams } = useGameStore();
 
   if (players.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-2xl text-gray-500">
-          Waiting for players to join...
-        </p>
+        <p className="text-2xl text-gray-500">Waiting for players to join...</p>
       </div>
-    )
+    );
   }
 
   // Team lobby layout when teams are enabled and players have team assignments
   if (teamsEnabled && players.some((p) => p.teamId != null)) {
-    return <TeamLobbyGrid players={players} />
+    return <TeamLobbyGrid teams={teams} players={players} />;
   }
 
   // Determine grid layout based on player count
-  const playerCount = players.length
-  const gridCols = playerCount <= 12 ? 4 : playerCount <= 16 ? 4 : 5
-  const gap = playerCount <= 16 ? 4 : 3
+  const playerCount = players.length;
+  const gridCols = playerCount <= 12 ? 4 : playerCount <= 16 ? 4 : 5;
+  const gap = playerCount <= 16 ? 4 : 3;
 
   return (
     <div
       className={`grid gap-${gap}`}
       style={{
-        gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`
+        gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
       }}
     >
       {sortedPlayers.map((player) => (
         <PlayerCard key={player.id} player={player} />
       ))}
     </div>
-  )
+  );
 }
 
 /**
@@ -48,40 +46,52 @@ function PlayerGrid() {
  * - 3 teams: 3 columns
  * - 4 teams: 2x2 grid
  */
-function TeamLobbyGrid({ players }: { players: ReturnType<typeof useGameState>['players'] }) {
+function TeamLobbyGrid({
+  teams,
+  players,
+}: {
+  teams: Record<number, string[]>;
+  players: ReturnType<typeof useGameState>["players"];
+}) {
   // Group players by team
-  const teamGroups = new Map<number, typeof players>()
-  const unassigned: typeof players = []
+  const teamGroups = new Map<number, typeof players>();
+
+  // TODO maybe grab player's team info from team:update event
+  for (const teamId of Object.keys(teams)) {
+    teamGroups.set(Number(teamId), []);
+  }
+  const unassigned: typeof players = [];
 
   for (const player of players) {
-    const teamId = player.teamId
+    const teamId = player.teamId;
     if (teamId != null && teamId >= 0) {
       if (!teamGroups.has(teamId)) {
-        teamGroups.set(teamId, [])
+        teamGroups.set(teamId, []);
       }
-      teamGroups.get(teamId)!.push(player)
+      teamGroups.get(teamId)!.push(player);
     } else {
-      unassigned.push(player)
+      unassigned.push(player);
     }
   }
 
   // Sort teams by ID
-  const sortedTeamIds = [...teamGroups.keys()].sort((a, b) => a - b)
-  const teamCount = sortedTeamIds.length || 2
+  const sortedTeamIds = [...teamGroups.keys()].sort((a, b) => a - b);
+  const teamCount = sortedTeamIds.length || 2;
 
   return (
     <div
       className="grid gap-4"
       style={{
-        gridTemplateColumns: teamCount <= 3
-          ? `repeat(${teamCount}, minmax(0, 1fr))`
-          : 'repeat(2, minmax(0, 1fr))',
+        gridTemplateColumns:
+          teamCount <= 3
+            ? `repeat(${teamCount}, minmax(0, 1fr))`
+            : "repeat(2, minmax(0, 1fr))",
       }}
     >
       {sortedTeamIds.map((teamId) => {
-        const teamPlayers = teamGroups.get(teamId) || []
-        const teamColor = TEAM_COLORS[teamId] || TEAM_COLORS[0]
-        const teamName = getTeamName(teamId)
+        const teamPlayers = teamGroups.get(teamId) || [];
+        const teamColor = TEAM_COLORS[teamId] || TEAM_COLORS[0];
+        const teamName = getTeamName(teamId);
 
         return (
           <div
@@ -114,7 +124,7 @@ function TeamLobbyGrid({ players }: { players: ReturnType<typeof useGameState>['
                 ))}
             </div>
           </div>
-        )
+        );
       })}
 
       {/* Show unassigned players if any */}
@@ -138,7 +148,7 @@ function TeamLobbyGrid({ players }: { players: ReturnType<typeof useGameState>['
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default PlayerGrid
+export default PlayerGrid;
