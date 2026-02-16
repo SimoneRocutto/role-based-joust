@@ -65,7 +65,8 @@ function PlayerCard({ player }: PlayerCardProps) {
 
   const statusIcon = getStatusIcon();
 
-  const showReadyBadge = player.isReady;
+  const gameState = useGameStore((state) => state.gameState);
+  const showReadyBadge = player.isReady && (gameState === 'waiting' || gameState === 'pre-game' || gameState === 'round-ended');
 
   // Build border/tint styles: round winner > team color > health-based
   const getCardStyles = () => {
