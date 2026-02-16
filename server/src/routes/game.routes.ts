@@ -200,7 +200,10 @@ router.post(
 
     // Configure teams based on current settings
     const teamManager = TeamManager.getInstance();
-    teamManager.configure(userPreferences.teamsEnabled, userPreferences.teamCount);
+    teamManager.configure(
+      userPreferences.teamsEnabled,
+      userPreferences.teamCount
+    );
     // End team selection phase if it was active
     teamManager.endSelection();
 
@@ -208,7 +211,9 @@ router.post(
     if (teamManager.isEnabled()) {
       const playerIds = lobbyPlayers.map((p) => p.id);
       // Only assign if not already assigned (players may have manually switched)
-      const hasAssignments = playerIds.some((id) => teamManager.getPlayerTeam(id) !== null);
+      const hasAssignments = playerIds.some(
+        (id) => teamManager.getPlayerTeam(id) !== null
+      );
       if (!hasAssignments) {
         teamManager.assignSequential(playerIds);
       }
@@ -231,7 +236,9 @@ router.post(
 
     // Create mode instance with options
     const factory = GameModeFactory.getInstance();
-    const modeOptions: Record<string, any> = { roundCount: effectiveRoundCount };
+    const modeOptions: Record<string, any> = {
+      roundCount: effectiveRoundCount,
+    };
     if (effectiveMode === "role-based") {
       modeOptions.theme = effectiveTheme;
     }
@@ -321,11 +328,15 @@ router.post(
 router.post(
   "/stop",
   asyncHandler(async (req: Request, res: Response) => {
+    const ioInstance: SocketIOServer = req.app.locals.io;
     const gameEngine: GameEngine = req.app.locals.gameEngine;
 
     gameEngine.stopGame();
     connectionManager.resetAllReadyState();
     TeamManager.getInstance().reset();
+    // Ready players are not ready anymore -> avoid pregame not refreshing it.
+    // This logic could be moved to the frontend
+    broadcastLobbyUpdate(ioInstance);
 
     logger.info("GAME", "Game stopped by request");
 
@@ -417,8 +428,17 @@ router.post(
   "/settings",
   validate("gameSettings"),
   asyncHandler(async (req: Request, res: Response) => {
-    const { sensitivity, gameMode, theme, roundCount, roundDuration, teamsEnabled, teamCount, dangerThreshold, damageMultiplier } =
-      req.body;
+    const {
+      sensitivity,
+      gameMode,
+      theme,
+      roundCount,
+      roundDuration,
+      teamsEnabled,
+      teamCount,
+      dangerThreshold,
+      damageMultiplier,
+    } = req.body;
     const updates: string[] = [];
 
     // Update sensitivity preset
@@ -442,7 +462,9 @@ router.post(
       if (!availableModes.includes(gameMode)) {
         res.status(400).json({
           success: false,
-          error: `Unknown game mode: ${gameMode}. Available: ${availableModes.join(", ")}`,
+          error: `Unknown game mode: ${gameMode}. Available: ${availableModes.join(
+            ", "
+          )}`,
         });
         return;
       }
@@ -456,7 +478,9 @@ router.post(
         const availableThemes = getAvailableThemes();
         res.status(400).json({
           success: false,
-          error: `Unknown theme: ${theme}. Available: ${availableThemes.join(", ")}`,
+          error: `Unknown theme: ${theme}. Available: ${availableThemes.join(
+            ", "
+          )}`,
         });
         return;
       }
@@ -479,7 +503,11 @@ router.post(
 
     // Update round duration preference
     if (roundDuration !== undefined) {
-      if (typeof roundDuration !== "number" || roundDuration < 30 || roundDuration > 300) {
+      if (
+        typeof roundDuration !== "number" ||
+        roundDuration < 30 ||
+        roundDuration > 300
+      ) {
         res.status(400).json({
           success: false,
           error: "roundDuration must be a number between 30 and 300",
@@ -602,7 +630,10 @@ router.post(
     }
 
     const teamManager = TeamManager.getInstance();
-    teamManager.configure(userPreferences.teamsEnabled, userPreferences.teamCount);
+    teamManager.configure(
+      userPreferences.teamsEnabled,
+      userPreferences.teamCount
+    );
 
     if (!teamManager.isEnabled()) {
       res.status(400).json({
@@ -633,7 +664,9 @@ router.post(
     broadcastLobbyUpdate(io);
     broadcastTeamUpdate(io);
 
-    logger.info("GAME", "Team selection started", { playerCount: lobbyPlayers.length });
+    logger.info("GAME", "Team selection started", {
+      playerCount: lobbyPlayers.length,
+    });
 
     res.json({
       success: true,
@@ -651,7 +684,10 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const gameEngine: GameEngine = req.app.locals.gameEngine;
 
-    if (gameEngine.gameState !== "waiting" && gameEngine.gameState !== "pre-game") {
+    if (
+      gameEngine.gameState !== "waiting" &&
+      gameEngine.gameState !== "pre-game"
+    ) {
       res.status(400).json({
         success: false,
         error: "Can only shuffle teams in the lobby or pre-game",
@@ -720,7 +756,9 @@ router.post(
     if (socketId) {
       const socket = io.sockets.sockets.get(socketId);
       if (socket) {
-        socket.emit("player:kicked", { reason: "You were removed from the game" });
+        socket.emit("player:kicked", {
+          reason: "You were removed from the game",
+        });
         socket.disconnect(true);
       }
     }
