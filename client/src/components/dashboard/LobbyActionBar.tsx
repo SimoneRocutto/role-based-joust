@@ -1,4 +1,5 @@
-import { apiService } from "@/services/api";
+import CompactPlayerCard from "./CompactPlayerCard";
+import QrCode from "./QrCode";
 
 interface LobbyPlayer {
   id: string;
@@ -46,28 +47,12 @@ function LobbyActionBar({
           {players.length > 0 ? (
             <div className="grid grid-cols-4 gap-2">
               {players.map((p) => (
-                <div
+                <CompactPlayerCard
                   key={p.id}
-                  className={`px-3 py-2 bg-gray-700 rounded text-sm flex items-center justify-between ${
-                    p.isConnected === false ? "opacity-40" : ""
-                  }`}
-                >
-                  <span>
-                    #{p.number} {p.name}
-                    {p.isConnected === false && (
-                      <span className="text-gray-500 text-xs ml-1">
-                        OFFLINE
-                      </span>
-                    )}
-                  </span>
-                  <button
-                    onClick={() => apiService.kickPlayer(p.id)}
-                    className="ml-2 text-red-400 hover:text-red-300 text-xs font-bold px-1"
-                    title={`Kick ${p.name}`}
-                  >
-                    X
-                  </button>
-                </div>
+                  player={p}
+                  teamColor="#9ca3af"
+                  showKick
+                />
               ))}
             </div>
           ) : (
@@ -96,12 +81,7 @@ function LobbyActionBar({
         </button>
 
         {/* QR Code for joining */}
-        {qrDataUrl && (
-          <div className="flex flex-col items-center gap-1 ml-auto">
-            <img src={qrDataUrl} alt="Scan to join" width={120} height={120} />
-            <span className="text-xs text-gray-400 select-all">{joinUrl}</span>
-          </div>
-        )}
+        {qrDataUrl && <QrCode qrDataUrl={qrDataUrl} joinUrl={joinUrl} />}
       </div>
     </>
   );

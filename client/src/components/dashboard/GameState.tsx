@@ -5,8 +5,14 @@ import ReadyCounter from "./ReadyCounter";
 import { useAudioStore } from "@/store/audioStore";
 
 function GameState() {
-  const { mode, currentRound, totalRounds, isActive, isWaiting, roundTimeRemaining } =
-    useGameState();
+  const {
+    mode,
+    currentRound,
+    totalRounds,
+    isActive,
+    isWaiting,
+    roundTimeRemaining,
+  } = useGameState();
 
   const isPlayingMusic = useAudioStore((state) => state.isSpeaking);
 
