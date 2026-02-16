@@ -11,6 +11,7 @@ function GameState() {
     totalRounds,
     isActive,
     isWaiting,
+    isPreGame,
     roundTimeRemaining,
   } = useGameState();
 
@@ -22,12 +23,12 @@ function GameState() {
         {/* Left: Title + Round */}
         <div className="flex items-center gap-8">
           <h1 className="text-4xl font-bold tracking-wider">EXTENDED JOUST</h1>
-          {!isWaiting && (
+          {!isWaiting && !isPreGame && (
             <div className="text-xl text-gray-300">
               Round {currentRound}/{totalRounds}
             </div>
           )}
-          {isWaiting && <ReadyCounter />}
+          {isPreGame && <ReadyCounter />}
         </div>
 
         {/* Center: Timer (only during active game with timed mode) */}

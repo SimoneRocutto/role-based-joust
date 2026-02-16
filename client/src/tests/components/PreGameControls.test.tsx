@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import PreGameControls from "@/components/dashboard/PreGameControls";
+import ReadyCounter from "@/components/dashboard/ReadyCounter";
 import { useGameStore } from "@/store/gameStore";
 
 // Mock the api service
@@ -28,8 +29,8 @@ describe("PreGameControls", () => {
 
   it("shows ready count", () => {
     useGameStore.getState().setReadyCount({ ready: 2, total: 4 });
-    render(<PreGameControls />);
-    expect(screen.getByTestId("pre-game-ready-count")).toHaveTextContent("2/4 players ready");
+    render(<ReadyCounter />);
+    expect(screen.getByText("2/4 Ready")).toBeInTheDocument();
   });
 
   it("renders mode recap when set in store", () => {

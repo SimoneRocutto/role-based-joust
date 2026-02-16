@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { useGameState } from "@/hooks/useGameState";
 import { useGameStore } from "@/store/gameStore";
 import { apiService } from "@/services/api";
 import ModeRecap from "@/components/shared/ModeRecap";
 
 function PreGameControls() {
-  const { readyCount } = useGameState();
   const { modeRecap, teamsEnabled } = useGameStore();
   const [isStarting, setIsStarting] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
@@ -58,12 +56,6 @@ function PreGameControls() {
           />
         </div>
       )}
-
-      <div className="text-center mb-4">
-        <p className="text-xl text-gray-300" data-testid="pre-game-ready-count">
-          {readyCount.ready}/{readyCount.total} players ready
-        </p>
-      </div>
 
       <div className="flex justify-center gap-4">
         <button
