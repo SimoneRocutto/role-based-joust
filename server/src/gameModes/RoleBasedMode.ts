@@ -158,6 +158,7 @@ export class RoleBasedMode extends GameMode {
       "MODE",
       `${victim.name} (${victim.constructor.name}) eliminated. ${alive} remaining.`
     );
+    super.onPlayerDeath(victim, engine);
   }
 
   /**

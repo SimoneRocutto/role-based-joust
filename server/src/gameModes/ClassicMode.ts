@@ -8,8 +8,6 @@ import {
   restoreMovementConfig,
   gameConfig,
 } from "@/config/gameConfig";
-import { GameEventManager } from "@/managers/GameEventManager";
-import { GameEventFactory } from "@/factories/GameEventFactory";
 
 const logger = Logger.getInstance();
 
@@ -29,7 +27,6 @@ export class ClassicMode extends GameMode {
   override maxPlayers = 20;
   override useRoles = false;
 
-  private eventManager = new GameEventManager();
   protected lastStandingBonus: number = gameConfig.scoring.lastStandingBonus;
 
   constructor(options?: GameModeOptions) {
@@ -50,31 +47,16 @@ export class ClassicMode extends GameMode {
   }
 
   /**
-   * Register game events on round start
+   * Return game events for this mode
    */
-  override onRoundStart(engine: GameEngine, roundNumber: number): void {
-    super.onRoundStart(engine, roundNumber);
-
-    const factory = GameEventFactory.getInstance();
-    if (factory.eventExists("speed-shift")) {
-      this.eventManager.registerEvent(factory.createEvent("speed-shift"));
-    }
-
-    this.eventManager.onRoundStart(engine, 0);
+  protected override getGameEvents(): string[] {
+    return ["speed-shift"];
   }
 
   /**
-   * Tick game events each frame
-   */
-  override onTick(engine: GameEngine, gameTime: number): void {
-    this.eventManager.tick(engine, gameTime, engine.tickRate);
-  }
-
-  /**
-   * Clean up events and accumulate points on round end
+   * Accumulate points on round end
    */
   override onRoundEnd(engine: GameEngine): void {
-    this.eventManager.cleanup(engine, engine.gameTime);
     super.onRoundEnd(engine);
 
     // Transfer round points to total points
@@ -92,10 +74,9 @@ export class ClassicMode extends GameMode {
   }
 
   /**
-   * Restore movement config and clean up events on game end
+   * Restore movement config on game end
    */
   override onGameEnd(engine: GameEngine): void {
-    this.eventManager.cleanup(engine, engine.gameTime);
     super.onGameEnd(engine);
     restoreMovementConfig();
   }
@@ -171,7 +152,7 @@ export class ClassicMode extends GameMode {
   }
 
   /**
-   * Log elimination and notify game events
+   * Log elimination
    */
   override onPlayerDeath(victim: BasePlayer, engine: GameEngine): void {
     const alive = this.getAliveCount(engine);
@@ -181,6 +162,6 @@ export class ClassicMode extends GameMode {
         alive !== 1 ? "s" : ""
       } remaining.`
     );
-    this.eventManager.onPlayerDeath(victim, engine, engine.gameTime);
+    super.onPlayerDeath(victim, engine);
   }
 }

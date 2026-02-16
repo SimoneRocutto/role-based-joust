@@ -2,6 +2,8 @@ import type { GameEngine } from "@/managers/GameEngine";
 import type { BasePlayer } from "@/models/BasePlayer";
 import type { WinCondition, ScoreEntry, ModeInfo } from "@/types/index";
 import { Logger } from "@/utils/Logger";
+import { GameEventManager } from "@/managers/GameEventManager";
+import { GameEventFactory } from "@/factories/GameEventFactory";
 
 const logger = Logger.getInstance();
 
@@ -37,6 +39,9 @@ export abstract class GameMode {
   multiRound: boolean = false;
   roundCount: number = 1;
   roundDuration: number | null = null; // null = no time limit
+
+  // Game events
+  protected eventManager = new GameEventManager();
 
   constructor(options?: GameModeOptions) {
     if (options?.roundCount !== undefined) {
@@ -94,6 +99,15 @@ export abstract class GameMode {
       totalRounds: this.roundCount,
       playerCount: engine.players.length,
     });
+
+    // Register game events from subclass configuration
+    const factory = GameEventFactory.getInstance();
+    for (const eventName of this.getGameEvents()) {
+      if (factory.eventExists(eventName)) {
+        this.eventManager.registerEvent(factory.createEvent(eventName));
+      }
+    }
+    this.eventManager.onRoundStart(engine, 0);
   }
 
   /**
@@ -107,7 +121,7 @@ export abstract class GameMode {
    * Called every game tick
    */
   onTick(engine: GameEngine, gameTime: number): void {
-    // Override if needed (e.g., for timed events)
+    this.eventManager.tick(engine, gameTime, engine.tickRate);
   }
 
   /**
@@ -132,13 +146,14 @@ export abstract class GameMode {
    * Called when a player dies
    */
   onPlayerDeath(victim: BasePlayer, engine: GameEngine): void {
-    // Override if needed
+    this.eventManager.onPlayerDeath(victim, engine, engine.gameTime);
   }
 
   /**
    * Called at the end of each round
    */
   onRoundEnd(engine: GameEngine): void {
+    this.eventManager.cleanup(engine, engine.gameTime);
     logger.info("MODE", `${this.name} round ended`, {
       currentRound: engine.currentRound,
       totalRounds: this.roundCount,
@@ -149,7 +164,20 @@ export abstract class GameMode {
    * Called when entire game ends
    */
   onGameEnd(engine: GameEngine): void {
+    this.eventManager.cleanup(engine, engine.gameTime);
     logger.info("MODE", `${this.name} game ended`);
+  }
+
+  // ========================================================================
+  // GAME EVENTS CONFIGURATION
+  // ========================================================================
+
+  /**
+   * Return the names of game events to register each round.
+   * Override in subclasses to opt in to specific events.
+   */
+  protected getGameEvents(): string[] {
+    return [];
   }
 
   // ========================================================================

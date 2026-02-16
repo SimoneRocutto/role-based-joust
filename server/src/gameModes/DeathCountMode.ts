@@ -5,8 +5,6 @@ import type { WinCondition, ScoreEntry } from "@/types/index";
 import { Logger } from "@/utils/Logger";
 import { GameEvents } from "@/utils/GameEvents";
 import { restoreMovementConfig, gameConfig } from "@/config/gameConfig";
-import { GameEventManager } from "@/managers/GameEventManager";
-import { GameEventFactory } from "@/factories/GameEventFactory";
 
 const logger = Logger.getInstance();
 const gameEvents = GameEvents.getInstance();
@@ -33,7 +31,6 @@ export class DeathCountMode extends GameMode {
   private deathCounts: Map<string, number> = new Map();
   private pendingRespawns: Map<string, number> = new Map(); // playerId → respawnAtTime
 
-  private eventManager = new GameEventManager();
   private deathListener:
     | ((payload: { victim: BasePlayer; gameTime: number }) => void)
     | null = null;
@@ -61,6 +58,13 @@ export class DeathCountMode extends GameMode {
     return [];
   }
 
+  /**
+   * Return game events for this mode
+   */
+  protected override getGameEvents(): string[] {
+    return ["speed-shift"];
+  }
+
   override onRoundStart(engine: GameEngine, roundNumber: number): void {
     super.onRoundStart(engine, roundNumber);
 
@@ -81,19 +85,10 @@ export class DeathCountMode extends GameMode {
       this.onPlayerDeath(payload.victim, engine);
     };
     gameEvents.onPlayerDeath(this.deathListener);
-
-    // Register SpeedShift event (same as ClassicMode)
-    const factory = GameEventFactory.getInstance();
-    if (factory.eventExists("speed-shift")) {
-      this.eventManager.registerEvent(factory.createEvent("speed-shift"));
-    }
-
-    this.eventManager.onRoundStart(engine, 0);
   }
 
   override onTick(engine: GameEngine, gameTime: number): void {
-    // Tick game events (SpeedShift etc.)
-    this.eventManager.tick(engine, gameTime, engine.tickRate);
+    super.onTick(engine, gameTime);
 
     // Check pending respawns
     for (const [playerId, respawnAt] of this.pendingRespawns) {
@@ -116,7 +111,7 @@ export class DeathCountMode extends GameMode {
       } remaining.`
     );
 
-    this.eventManager.onPlayerDeath(victim, engine, engine.gameTime);
+    super.onPlayerDeath(victim, engine);
 
     // Schedule respawn if there's enough time left
     if (
@@ -224,7 +219,6 @@ export class DeathCountMode extends GameMode {
 
   override onRoundEnd(engine: GameEngine): void {
     this.removeDeathListener();
-    this.eventManager.cleanup(engine, engine.gameTime);
     super.onRoundEnd(engine);
 
     // Transfer round points to total points
@@ -246,7 +240,6 @@ export class DeathCountMode extends GameMode {
 
   override onGameEnd(engine: GameEngine): void {
     this.removeDeathListener();
-    this.eventManager.cleanup(engine, engine.gameTime);
     super.onGameEnd(engine);
     restoreMovementConfig();
   }
