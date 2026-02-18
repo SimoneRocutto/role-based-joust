@@ -280,6 +280,13 @@ export class GameEngine {
     this.gameTime = 0;
     this.lastTickTime = Date.now();
 
+    // Let target-based roles set up targets (idempotent — also called in
+    // RoundSetupManager for role:assigned emission, but needed here for test mode
+    // which skips countdown)
+    this.players.forEach((player) => {
+      player.onPreRoundSetup(this.players);
+    });
+
     // Initialize players for the round (basic reset already done in startCountdown)
     this.players.forEach((player) => {
       player.onInit(0);

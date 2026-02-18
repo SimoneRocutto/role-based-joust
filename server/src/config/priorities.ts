@@ -57,6 +57,12 @@ export const ROLE_PRIORITIES = {
   BEAST: Priority.MEDIUM_LOW, // 10 - Passive ability
   BEAST_HUNTER: Priority.LOW, // 5  - Reactive ability
   IRONCLAD: Priority.LOW, // 5  - Defensive ability (activated)
+  SURVIVOR: Priority.LOW, // 5  - Passive point generation
+  EXECUTIONER: Priority.MEDIUM_LOW, // 10 - Target tracking
+  BODYGUARD: Priority.MEDIUM_LOW, // 10 - Target observation
+  NEW_BERSERKER: Priority.MEDIUM_LOW, // 10 - Reactive defense
+  NINJA: Priority.MEDIUM_LOW, // 10 - Modified damage behavior
+  MASOCHIST: Priority.LOW, // 5  - Passive point generation
 } as const;
 
 /**

@@ -16,12 +16,6 @@ export interface AngelConfig {
   invulnerabilityDuration: number; // Divine protection duration
 }
 
-export interface BerserkerConfig {
-  dangerThreshold: number; // Custom movement threshold
-  damageMultiplier: number; // Custom damage multiplier
-  aggressiveMovementsForPoint: number; // High intensity movements for 1 point
-}
-
 export interface MedicConfig {
   healCooldown: number; // Time between heals
   healDuration: number; // Duration of regeneration effect
@@ -41,15 +35,50 @@ export interface IroncladConfig {
   abilityDuration: number; // Duration of toughened effect
 }
 
+export interface SurvivorConfig {
+  pointInterval: number; // ms between point awards
+  pointsPerTick: number; // Points awarded each interval
+}
+
+export interface ExecutionerConfig {
+  targetKillPoints: number; // Points for target dying
+}
+
+export interface BodyguardConfig {
+  protectionBonus: number; // Points if target finishes in top N
+  topN: number; // Target must finish in top N alive
+  lastStandingBonus: number; // Reduced last-standing bonus
+}
+
+export interface BerserkerConfig {
+  toughnessDuration: number; // Duration of tough skin after taking damage
+  toughnessValue: number; // Toughness value during tough skin
+}
+
+export interface NinjaConfig {
+  dangerThresholdMultiplier: number; // Multiplier on global dangerThreshold
+}
+
+export interface MasochistConfig {
+  hpThresholdPercent: number; // HP percentage below which points are earned (0-1)
+  pointInterval: number; // ms between point awards
+  pointsPerTick: number; // Points awarded each interval
+}
+
 export interface RoleConfigs {
   vampire: VampireConfig;
   beast: BeastConfig;
   beastHunter: BeastHunterConfig;
   angel: AngelConfig;
-  berserker: BerserkerConfig;
   medic: MedicConfig;
   assassin: AssassinConfig;
   ironclad: IroncladConfig;
+  survivor: SurvivorConfig;
+  executioner: ExecutionerConfig;
+  bodyguard: BodyguardConfig;
+  berserker: BerserkerConfig;
+  ninja: NinjaConfig;
+  masochist: MasochistConfig;
 }
 
 export const roleConfigs: RoleConfigs = {
@@ -71,12 +100,6 @@ export const roleConfigs: RoleConfigs = {
     invulnerabilityDuration: 3000, // 3 seconds
   },
 
-  berserker: {
-    dangerThreshold: 0.9, // Can move more wildly
-    damageMultiplier: 50, // Takes less damage
-    aggressiveMovementsForPoint: 10,
-  },
-
   medic: {
     healCooldown: 15000, // 15 seconds
     healDuration: 5000, // 5 seconds
@@ -94,5 +117,35 @@ export const roleConfigs: RoleConfigs = {
     cooldownDuration: 0, // No regen
     toughnessValue: 2.0, // Double damage resistance
     abilityDuration: 5000, // 5 seconds
+  },
+
+  survivor: {
+    pointInterval: 30000, // 30 seconds
+    pointsPerTick: 1,
+  },
+
+  executioner: {
+    targetKillPoints: 2,
+  },
+
+  bodyguard: {
+    protectionBonus: 4, // Points if target finishes in top N
+    topN: 3, // Top 3 alive
+    lastStandingBonus: 2, // Reduced from default 5
+  },
+
+  berserker: {
+    toughnessDuration: 3000, // 3 seconds of tough skin
+    toughnessValue: 3.0, // Very high toughness
+  },
+
+  ninja: {
+    dangerThresholdMultiplier: 2.0, // 2x harder to trigger damage
+  },
+
+  masochist: {
+    hpThresholdPercent: 0.3, // Below 30% HP
+    pointInterval: 10000, // 10 seconds
+    pointsPerTick: 1,
   },
 };

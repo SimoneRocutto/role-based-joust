@@ -65,6 +65,13 @@ export class BasePlayer {
   readonly behavior: BotBehavior;
   private autoPlayEnabled: boolean = false;
 
+  // ========== SCORING OVERRIDES ==========
+  lastStandingBonusOverride: number | null = null; // null = use mode default
+
+  // ========== TARGET INFO ==========
+  targetPlayerId: string | null = null;
+  targetPlayerName: string | null = null;
+
   // ========== ABILITY CHARGES ==========
   maxCharges: number = 0;
   currentCharges: number = 0;
@@ -398,6 +405,14 @@ export class BasePlayer {
   onInit(gameTime: number): void {
     logger.logPlayerAction(this, "INIT", { role: this.constructor.name });
     this.initializeCharges();
+  }
+
+  /**
+   * Called after all players are created but before role assignments are emitted.
+   * Used by target-based roles (Executioner, Bodyguard) to pick targets.
+   */
+  onPreRoundSetup(allPlayers: BasePlayer[]): void {
+    // Override in subclasses
   }
 
   /**

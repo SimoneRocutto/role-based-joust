@@ -42,6 +42,8 @@ vi.mock("@/services/socket", () => ({
       socketEventHandlers.set("player:respawn", cb),
     onPlayerRespawnPending: (cb: Function) =>
       socketEventHandlers.set("player:respawn-pending", cb),
+    onTeamUpdate: (cb: Function) =>
+      socketEventHandlers.set("team:update", cb),
     onTeamSelection: (cb: Function) =>
       socketEventHandlers.set("team:selection", cb),
     onPlayerKicked: (cb: Function) =>

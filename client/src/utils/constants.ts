@@ -95,6 +95,5 @@ export const STATUS_ICONS = {
   INVULNERABLE: "🛡️",
   BLOODLUST: "🧛",
   HUNTED: "🎯",
-  BERSERKER: "🔥",
   STUNNED: "❄️",
 } as const;

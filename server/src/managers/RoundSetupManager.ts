@@ -72,6 +72,11 @@ export class RoundSetupManager {
       player.clearStatusEffects(0);
     });
 
+    // Let target-based roles pick their targets before emitting assignments
+    for (const player of ctx.players) {
+      player.onPreRoundSetup(ctx.players);
+    }
+
     // Emit role assignments to each player
     this.emitRoleAssignments(ctx.players, ctx.currentMode);
 
@@ -170,7 +175,7 @@ export class RoundSetupManager {
     }
 
     for (const player of players) {
-      const roleInfo = {
+      const roleInfo: Record<string, any> = {
         playerId: player.id,
         name: player.constructor.name.toLowerCase(),
         displayName:
@@ -178,6 +183,11 @@ export class RoundSetupManager {
         description: (player.constructor as any).description || "",
         difficulty: (player.constructor as any).difficulty || "normal",
       };
+
+      // Include target info if the role has a target
+      if (player.targetPlayerName) {
+        roleInfo.targetName = player.targetPlayerName;
+      }
 
       logger.debug(
         "ENGINE",

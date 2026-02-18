@@ -217,6 +217,7 @@ export function registerGameEventBroadcasters(
       displayName: string;
       description: string;
       difficulty: string;
+      targetName?: string;
     }) => {
       // Find the socket for this player and emit directly to them
       const socket = io.sockets.sockets.get(payload.socketId);
@@ -226,6 +227,7 @@ export function registerGameEventBroadcasters(
           displayName: payload.displayName,
           description: payload.description,
           difficulty: payload.difficulty,
+          targetName: payload.targetName,
         };
         socket.emit("role:assigned", clientPayload);
         logger.debug("SOCKET", `Role assigned to ${payload.playerId}`, {

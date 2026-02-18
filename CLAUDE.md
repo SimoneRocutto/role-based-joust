@@ -135,7 +135,7 @@ Status effects and roles execute in priority order (higher = earlier):
 
 ### Roles (Work in Progress)
 
-Roles extend `BasePlayer` and override lifecycle hooks (`onInit`, `onTick`, `beforeDeath`, `die`, `onDeath`, `onAbilityUse`) to implement special abilities. Currently implemented: **Vampire**, **Beast**, **BeastHunter**, **Angel**, **Ironclad**. Role mechanics are still being developed and may change.
+Roles extend `BasePlayer` and override lifecycle hooks (`onInit`, `onTick`, `beforeDeath`, `die`, `onDeath`, `onAbilityUse`) to implement special abilities. Currently implemented: **Vampire**, **Beast**, **BeastHunter**, **Angel**, **Ironclad**, **Survivor**, **Executioner**, **Bodyguard**, **Berserker**, **Ninja**, **Masochist**. Role mechanics are still being developed and may change.
 
 Status effects (buffs/debuffs) are applied to players by roles or game events. Currently implemented: **Invulnerability**, **Shielded**, **Strengthened**, **Weakened**, **Excited**, **Toughened**.
 

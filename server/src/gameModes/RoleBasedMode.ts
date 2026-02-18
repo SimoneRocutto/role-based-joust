@@ -106,7 +106,8 @@ export class RoleBasedMode extends GameMode {
     // Award last standing bonus if there's a survivor
     if (effectivelyAlive.length === 1) {
       const [winner] = effectivelyAlive;
-      winner.addPoints(this.lastStandingBonus, "last_standing");
+      const bonus = winner.lastStandingBonusOverride ?? this.lastStandingBonus;
+      winner.addPoints(bonus, "last_standing");
       logger.info(
         "MODE",
         `${winner.name} is last standing! +${this.lastStandingBonus} points`

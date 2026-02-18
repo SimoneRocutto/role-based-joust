@@ -448,7 +448,6 @@ const sortPlayers = (players: Player[]) => {
 1. 🛡️ Invulnerable
 2. 🧛 Vampire bloodlust
 3. 🎯 Being hunted (Beast shows crosshair)
-4. 🔥 Berserker rage
 5. ❄️ Frozen/stunned
 
 **Card Component**:

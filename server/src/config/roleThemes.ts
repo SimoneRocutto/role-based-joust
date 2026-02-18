@@ -4,7 +4,17 @@ export interface RoleThemes {
 
 export const roleThemes: RoleThemes = {
   // Standard theme - balanced roles
-  standard: ["ironclad", "beast", "beastHunter", "angel"],
+  standard: [
+    "ironclad",
+    "beast",
+    "beastHunter",
+    "survivor",
+    "executioner",
+    "bodyguard",
+    "berserker",
+    "ninja",
+    "masochist",
+  ],
 
   // Halloween theme - spooky roles
   halloween: ["witch", "werewolf", "ghost", "zombie", "vampire"],
