@@ -2,10 +2,13 @@ import type { GameEngine } from "@/managers/GameEngine";
 import type { BasePlayer } from "@/models/BasePlayer";
 import type { WinCondition, ScoreEntry, ModeInfo } from "@/types/index";
 import { Logger } from "@/utils/Logger";
+import { GameEvents } from "@/utils/GameEvents";
 import { GameEventManager } from "@/managers/GameEventManager";
 import { GameEventFactory } from "@/factories/GameEventFactory";
+import { gameConfig } from "@/config/gameConfig";
 
 const logger = Logger.getInstance();
+const gameEvents = GameEvents.getInstance();
 
 /**
  * Options for creating a game mode instance.
@@ -39,6 +42,10 @@ export abstract class GameMode {
   multiRound: boolean = false;
   roundCount: number = 1;
   roundDuration: number | null = null; // null = no time limit
+
+  // Placement scoring
+  protected placementBonuses: number[] = gameConfig.scoring.placementBonuses;
+  protected deathOrder: BasePlayer[] = [];
 
   // Game events
   protected eventManager = new GameEventManager();
@@ -100,6 +107,14 @@ export abstract class GameMode {
       playerCount: engine.players.length,
     });
 
+    // Reset death tracking
+    this.deathOrder = [];
+
+    // Listen for player deaths (round-scoped, auto-cleaned)
+    gameEvents.onPlayerDeath((payload) => {
+      this.onPlayerDeath(payload.victim, engine);
+    });
+
     // Register game events from subclass configuration
     const factory = GameEventFactory.getInstance();
     for (const eventName of this.getGameEvents()) {
@@ -146,6 +161,7 @@ export abstract class GameMode {
    * Called when a player dies
    */
   onPlayerDeath(victim: BasePlayer, engine: GameEngine): void {
+    this.deathOrder.push(victim);
     this.eventManager.onPlayerDeath(victim, engine, engine.gameTime);
   }
 
@@ -178,6 +194,51 @@ export abstract class GameMode {
    */
   getGameEvents(): string[] {
     return [];
+  }
+
+  // ========================================================================
+  // PLACEMENT SCORING
+  // ========================================================================
+
+  /**
+   * Award points based on placement.
+   * Alive players share 1st place, then dead players in reverse death order.
+   */
+  protected awardPlacementBonuses(alive: BasePlayer[]): void {
+    let position = 0;
+
+    // Alive players all get 1st place
+    for (const player of alive) {
+      const bonus =
+        player.placementBonusOverrides?.[position] ??
+        this.placementBonuses[position] ??
+        0;
+      if (bonus > 0) {
+        player.addPoints(bonus, `placement_${position + 1}`);
+        logger.info(
+          "MODE",
+          `${player.name} placed #${position + 1}! +${bonus} points`
+        );
+      }
+    }
+
+    // Dead players in reverse death order (last to die = 2nd place, etc.)
+    position = 1;
+    for (let i = this.deathOrder.length - 1; i >= 0; i--) {
+      const player = this.deathOrder[i];
+      const bonus =
+        player.placementBonusOverrides?.[position] ??
+        this.placementBonuses[position] ??
+        0;
+      if (bonus > 0) {
+        player.addPoints(bonus, `placement_${position + 1}`);
+        logger.info(
+          "MODE",
+          `${player.name} placed #${position + 1}! +${bonus} points`
+        );
+      }
+      position++;
+    }
   }
 
   // ========================================================================

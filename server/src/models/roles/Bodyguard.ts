@@ -31,7 +31,7 @@ export class Bodyguard extends BasePlayer {
     const config = roleConfigs.bodyguard;
     this.protectionBonus = config.protectionBonus;
     this.topN = config.topN;
-    this.lastStandingBonusOverride = config.lastStandingBonus;
+    this.placementBonusOverrides = config.placementBonusOverrides;
   }
 
   override onPreRoundSetup(allPlayers: BasePlayer[]): void {

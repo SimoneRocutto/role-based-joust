@@ -72,11 +72,7 @@ export class DeathCountMode extends GameMode {
     for (const player of engine.players) {
       this.deathCounts.set(player.id, 0);
     }
-
-    // Listen for player deaths via GameEvents (round-scoped, auto-cleaned)
-    gameEvents.onPlayerDeath((payload) => {
-      this.onPlayerDeath(payload.victim, engine);
-    });
+    // Death events are handled by base class GameMode.onRoundStart listener
   }
 
   override onTick(engine: GameEngine, gameTime: number): void {

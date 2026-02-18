@@ -66,7 +66,7 @@ export class BasePlayer {
   private autoPlayEnabled: boolean = false;
 
   // ========== SCORING OVERRIDES ==========
-  lastStandingBonusOverride: number | null = null; // null = use mode default
+  placementBonusOverrides: number[] | null = null; // Per-placement point overrides (null = use mode defaults)
   victoryGroupId: string | null = null; // Players with same non-null ID can win together
 
   // ========== TARGET INFO ==========

@@ -323,9 +323,9 @@ runner.test("Classic mode awards points to last standing player", (engine) => {
   // Fast-forward to let game detect win
   engine.fastForward(200);
 
-  // Player 1 should have earned the last standing bonus (5 points)
-  assertEqual(player1.points, 5, "Last standing player should earn 5 points");
-  assertEqual(player2.points, 0, "Dead player should have 0 points");
+  // Player 1 should have earned 1st place (5 points), Player 2 gets 2nd place (3 points)
+  assertEqual(player1.points, 5, "1st place should earn 5 points");
+  assertEqual(player2.points, 3, "2nd place should earn 3 points");
 
   resetMovementConfig();
 });
@@ -350,9 +350,10 @@ runner.test("Classic mode accumulates points across rounds", (engine) => {
 
   assertEqual(engine.currentRound, 2, "Should be on round 2");
 
-  // After round 1, player 1 should have 5 total points
+  // After round 1: p1 gets 5 (1st), p2 gets 3 (2nd)
   let player1 = engine.getPlayerById("p1")!;
   assertEqual(player1.totalPoints, 5, "Player 1 should have 5 total points after round 1");
+  assertEqual(player2.totalPoints, 3, "Player 2 should have 3 total points after round 1");
 
   // Round 2: Kill player 1 this time
   player1 = engine.getPlayerById("p1")!;
@@ -361,13 +362,12 @@ runner.test("Classic mode accumulates points across rounds", (engine) => {
 
   assertEqual(engine.currentRound, 3, "Should be on round 3");
 
-  // After round 2, player 2 should have 5 total points
+  // After round 2: p2 gets 5 (1st) + 3 = 8, p1 gets 3 (2nd) + 5 = 8
   player2 = engine.getPlayerById("p2")!;
-  assertEqual(player2.totalPoints, 5, "Player 2 should have 5 total points after round 2");
+  assertEqual(player2.totalPoints, 8, "Player 2 should have 8 total points after round 2");
 
-  // Player 1 should still have 5 total points
   player1 = engine.getPlayerById("p1")!;
-  assertEqual(player1.totalPoints, 5, "Player 1 should still have 5 total points");
+  assertEqual(player1.totalPoints, 8, "Player 1 should have 8 total points after round 2");
 
   resetMovementConfig();
 });
@@ -397,17 +397,18 @@ runner.test("Classic mode final scores use total points", (engine) => {
 
   assertEqual(engine.gameState, "finished", "Game should be finished after 2 rounds");
 
-  // Both players should have 5 total points (tie)
+  // Round 1: p1=5, p2=3 → total p1=5, p2=3
+  // Round 2: p2=5, p1=3 → total p1=8, p2=8
   player1 = engine.getPlayerById("p1")!;
   player2 = engine.getPlayerById("p2")!;
-  assertEqual(player1.totalPoints, 5, "Player 1 should have 5 total points");
-  assertEqual(player2.totalPoints, 5, "Player 2 should have 5 total points");
+  assertEqual(player1.totalPoints, 8, "Player 1 should have 8 total points");
+  assertEqual(player2.totalPoints, 8, "Player 2 should have 8 total points");
 
   // Final scores should reflect total points
   const scores = mode.calculateFinalScores(engine);
   assertEqual(scores.length, 2, "Should have 2 score entries");
-  assertEqual(scores[0].score, 5, "First player's score should be 5");
-  assertEqual(scores[1].score, 5, "Second player's score should be 5");
+  assertEqual(scores[0].score, 8, "First player's score should be 8");
+  assertEqual(scores[1].score, 8, "Second player's score should be 8");
 
   resetMovementConfig();
 });
@@ -449,15 +450,16 @@ runner.test("calculateFinalScores returns roundPoints distinct from total score"
   const scores = mode.calculateFinalScores(engine);
   assertEqual(scores.length, 2, "Should have 2 score entries");
 
-  // Player 1 won rounds 1 and 2 (10 total), lost round 3 (0 round points)
+  // Round 1: p1=5, p2=3 → total p1=5, p2=3
+  // Round 2: p1=5, p2=3 → total p1=10, p2=6
+  // Round 3: p2=5, p1=3 → total p1=13, p2=11
   const p1Score = scores.find((s) => s.player.id === "p1")!;
-  assertEqual(p1Score.score, 10, "Player 1 total score should be 10");
-  assertEqual(p1Score.roundPoints, 0, "Player 1 round points should be 0 (lost last round)");
+  assertEqual(p1Score.score, 13, "Player 1 total score should be 13");
+  assertEqual(p1Score.roundPoints, 3, "Player 1 round points should be 3 (2nd place last round)");
 
-  // Player 2 lost rounds 1 and 2 (0 total from those), won round 3 (5 round points, 5 total)
   const p2Score = scores.find((s) => s.player.id === "p2")!;
-  assertEqual(p2Score.score, 5, "Player 2 total score should be 5");
-  assertEqual(p2Score.roundPoints, 5, "Player 2 round points should be 5 (won last round)");
+  assertEqual(p2Score.score, 11, "Player 2 total score should be 11");
+  assertEqual(p2Score.roundPoints, 5, "Player 2 round points should be 5 (1st place last round)");
 
   resetMovementConfig();
 });

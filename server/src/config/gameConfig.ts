@@ -31,7 +31,7 @@ export interface CountdownConfig {
 }
 
 export interface ScoringConfig {
-  lastStandingBonus: number; // Points awarded to the last player alive in a round
+  placementBonuses: number[]; // Points by placement: index 0 = 1st, 1 = 2nd, etc. (ClassicMode, RoleBasedMode)
 }
 
 export interface ModeDefaultsConfig {
@@ -171,7 +171,7 @@ export const gameConfig: GameConfig = {
   },
 
   scoring: {
-    lastStandingBonus: 5, // 5 points for being last alive
+    placementBonuses: [5, 3, 1], // 1st: 5pts, 2nd: 3pts, 3rd: 1pt (RoleBasedMode)
   },
 
   modeDefaults: {
@@ -259,7 +259,9 @@ export function restoreMovementConfig(): void {
  * Temporarily modify movement config without persisting or updating sensitivity.
  * Used by game modes to apply temporary rules during gameplay.
  */
-export function applyTemporaryMovementConfig(partial: Partial<MovementConfig>): void {
+export function applyTemporaryMovementConfig(
+  partial: Partial<MovementConfig>
+): void {
   Object.assign(gameConfig.movement, partial);
   // Don't persist, don't update sensitivity - this is temporary
 }

@@ -47,7 +47,7 @@ export interface ExecutionerConfig {
 export interface BodyguardConfig {
   protectionBonus: number; // Points if target finishes in top N
   topN: number; // Target must finish in top N alive
-  lastStandingBonus: number; // Reduced last-standing bonus
+  placementBonusOverrides: number[]; // Reduced last-standing bonus
 }
 
 export interface BerserkerConfig {
@@ -143,7 +143,7 @@ export const roleConfigs: RoleConfigs = {
   bodyguard: {
     protectionBonus: 4, // Points if target finishes in top N
     topN: 3, // Top 3 alive
-    lastStandingBonus: 2, // Reduced from default 5
+    placementBonusOverrides: [2, 2, 1], // Reduced from default [5, 3, 1]
   },
 
   berserker: {

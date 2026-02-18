@@ -3,7 +3,6 @@ import type { GameEngine } from "@/managers/GameEngine";
 import type { BasePlayer } from "@/models/BasePlayer";
 import type { WinCondition, ScoreEntry, ModeInfo } from "@/types/index";
 import { roleThemes } from "@/config/roleThemes";
-import { gameConfig } from "@/config/gameConfig";
 import { Logger } from "@/utils/Logger";
 
 const logger = Logger.getInstance();
@@ -34,7 +33,6 @@ export class RoleBasedMode extends GameMode {
   override multiRound = true;
 
   protected roleTheme: string;
-  protected lastStandingBonus: number = gameConfig.scoring.lastStandingBonus;
 
   constructor(options?: RoleBasedModeOptions | string) {
     // Handle legacy string argument (theme only)
@@ -83,11 +81,10 @@ export class RoleBasedMode extends GameMode {
 
   /**
    * Round ends when 1 or 0 players remain effectively alive
-   * (considers disconnection grace period)
-   * Game ends after configured number of rounds
+   * (or when all remaining share a victory group).
+   * Game ends after configured number of rounds.
    */
   checkWinCondition(engine: GameEngine): WinCondition {
-    // Use effectively alive to handle disconnections
     const effectivelyAlive = this.getEffectivelyAlivePlayers(engine);
 
     // Multiple players alive - check if they share a victory group
@@ -98,47 +95,15 @@ export class RoleBasedMode extends GameMode {
         effectivelyAlive.every((p) => p.victoryGroupId === groupId);
 
       if (!allShareGroup) {
-        return {
-          roundEnded: false,
-          gameEnded: false,
-          winner: null,
-        };
+        return { roundEnded: false, gameEnded: false, winner: null };
       }
-
-      // All remaining players share a victory group - they win together
-      const gameEnded = engine.currentRound >= this.roundCount;
-      for (const player of effectivelyAlive) {
-        const bonus =
-          player.lastStandingBonusOverride ?? this.lastStandingBonus;
-        player.addPoints(bonus, "last_standing");
-        logger.info(
-          "MODE",
-          `${player.name} is last standing (shared victory)! +${bonus} points`
-        );
-      }
-      return { roundEnded: true, gameEnded, winner: null };
     }
 
-    // Round is over (0 or 1 players effectively alive)
-    const roundEnded = true;
+    // Round is over — award placement bonuses
     const gameEnded = engine.currentRound >= this.roundCount;
+    this.awardPlacementBonuses(effectivelyAlive);
 
-    // Award last standing bonus if there's a survivor
-    if (effectivelyAlive.length === 1) {
-      const [winner] = effectivelyAlive;
-      const bonus = winner.lastStandingBonusOverride ?? this.lastStandingBonus;
-      winner.addPoints(bonus, "last_standing");
-      logger.info(
-        "MODE",
-        `${winner.name} is last standing! +${this.lastStandingBonus} points`
-      );
-    }
-
-    return {
-      roundEnded,
-      gameEnded,
-      winner: null, // Winner determined by total points
-    };
+    return { roundEnded: true, gameEnded, winner: null };
   }
 
   /**
@@ -171,15 +136,15 @@ export class RoleBasedMode extends GameMode {
   }
 
   /**
-   * Log player death with role info
+   * Log elimination with role info
    */
   override onPlayerDeath(victim: BasePlayer, engine: GameEngine): void {
+    super.onPlayerDeath(victim, engine);
     const alive = this.getAliveCount(engine);
     logger.info(
       "MODE",
       `${victim.name} (${victim.constructor.name}) eliminated. ${alive} remaining.`
     );
-    super.onPlayerDeath(victim, engine);
   }
 
   /**

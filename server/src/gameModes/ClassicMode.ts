@@ -4,7 +4,6 @@ import type { BasePlayer } from "@/models/BasePlayer";
 import type { WinCondition, ScoreEntry } from "@/types/index";
 import { Logger } from "@/utils/Logger";
 import {
-  applyTemporaryMovementConfig,
   restoreMovementConfig,
   gameConfig,
 } from "@/config/gameConfig";
@@ -26,8 +25,6 @@ export class ClassicMode extends GameMode {
   override minPlayers = 2;
   override maxPlayers = 20;
   override useRoles = false;
-
-  protected lastStandingBonus: number = gameConfig.scoring.lastStandingBonus;
 
   constructor(options?: GameModeOptions) {
     super(options);
@@ -94,43 +91,24 @@ export class ClassicMode extends GameMode {
    * Game ends after configured number of rounds
    */
   checkWinCondition(engine: GameEngine): WinCondition {
-    // Use effectively alive to handle disconnections
     const effectivelyAlive = this.getEffectivelyAlivePlayers(engine);
 
-    // Multiple players alive - continue round
     if (effectivelyAlive.length > 1) {
-      return {
-        roundEnded: false,
-        gameEnded: false,
-        winner: null,
-      };
+      return { roundEnded: false, gameEnded: false, winner: null };
     }
 
-    // Round is over (0 or 1 players effectively alive)
-    const roundEnded = true;
     const gameEnded = engine.currentRound >= this.roundCount;
 
-    // Award last standing bonus if there's a survivor
-    if (effectivelyAlive.length === 1) {
-      const [winner] = effectivelyAlive;
-      winner.addPoints(this.lastStandingBonus, "last_standing");
-      logger.info(
-        "MODE",
-        `${winner.name} is last standing! +${this.lastStandingBonus} points`
-      );
-    } else {
-      // No players remain - draw
+    if (effectivelyAlive.length === 0) {
       logger.info(
         "MODE",
         "Classic mode round ended in a draw - all players eliminated or disconnected"
       );
     }
 
-    return {
-      roundEnded,
-      gameEnded,
-      winner: null, // Winner determined by total points at game end
-    };
+    this.awardPlacementBonuses(effectivelyAlive);
+
+    return { roundEnded: true, gameEnded, winner: null };
   }
 
   /**
@@ -155,6 +133,7 @@ export class ClassicMode extends GameMode {
    * Log elimination
    */
   override onPlayerDeath(victim: BasePlayer, engine: GameEngine): void {
+    super.onPlayerDeath(victim, engine);
     const alive = this.getAliveCount(engine);
     logger.info(
       "MODE",
@@ -162,6 +141,5 @@ export class ClassicMode extends GameMode {
         alive !== 1 ? "s" : ""
       } remaining.`
     );
-    super.onPlayerDeath(victim, engine);
   }
 }

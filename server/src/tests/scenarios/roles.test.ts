@@ -344,7 +344,8 @@ runner.test("Survivor stops earning points when dead", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["survivor", "beast"]);
+  // 3 players so round doesn't end when survivor dies
+  engine.createTestGame(["survivor", "beast", "ninja"]);
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const survivor = engine.players.find((p) => p instanceof Survivor);
@@ -360,7 +361,7 @@ runner.test("Survivor stops earning points when dead", (engine) => {
   // Fast-forward another 30s
   engine.fastForward(30000);
 
-  // Should not have gained more points
+  // Should not have gained more points (only survival points, no placement yet)
   assertEqual(survivor!.points, 1, "Should still have 1 point after death");
 });
 
@@ -534,7 +535,7 @@ runner.test("Bodyguard earns bonus when target in top 3", (engine) => {
   );
 });
 
-runner.test("Bodyguard has reduced last-standing bonus", (engine) => {
+runner.test("Bodyguard has reduced placement bonus", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
@@ -544,10 +545,14 @@ runner.test("Bodyguard has reduced last-standing bonus", (engine) => {
   const bodyguard = engine.players.find((p) => p instanceof Bodyguard);
   assert(bodyguard !== undefined, "Should have bodyguard");
 
+  assert(
+    bodyguard!.placementBonusOverrides !== null,
+    "Bodyguard should have placement bonus overrides"
+  );
   assertEqual(
-    bodyguard!.lastStandingBonusOverride,
-    roleConfigs.bodyguard.lastStandingBonus,
-    "Bodyguard should have reduced last-standing bonus"
+    bodyguard!.placementBonusOverrides![0],
+    roleConfigs.bodyguard.placementBonusOverrides[0],
+    "Bodyguard should have reduced 1st place bonus"
   );
 });
 
@@ -901,15 +906,14 @@ runner.test("Two siblings win together when all others die", (engine) => {
   }
   engine.fastForward(100);
 
-  // Both siblings should have received last standing bonus
-  const lastStandingBonus = 5; // default from gameConfig
+  // Both siblings should have received 1st place bonus (5 pts)
   assert(
-    siblings[0].points >= lastStandingBonus,
-    "Sibling 1 should have last standing bonus"
+    siblings[0].points >= 5,
+    "Sibling 1 should have 1st place bonus"
   );
   assert(
-    siblings[1].points >= lastStandingBonus,
-    "Sibling 2 should have last standing bonus"
+    siblings[1].points >= 5,
+    "Sibling 2 should have 1st place bonus"
   );
 });
 
@@ -1023,7 +1027,8 @@ runner.test("Vulture's own death doesn't trigger points", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["vulture", "beast", "survivor"]);
+  // 4 players so round doesn't end when vulture dies
+  engine.createTestGame(["vulture", "beast", "survivor", "ninja"]);
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const vulture = engine.players.find((p) => p instanceof Vulture);
@@ -1064,6 +1069,76 @@ runner.test("Dead vulture doesn't gain points", (engine) => {
   engine.fastForward(100);
 
   assertEqual(vulture!.points, 0, "Dead vulture should not gain points");
+});
+
+// ============================================================================
+// PLACEMENT BONUS TESTS
+// ============================================================================
+
+runner.test("1st place gets 5 points, 2nd gets 3, 3rd gets 1", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
+  engine.createTestGame(["beast", "survivor", "ninja", "berserker"]);
+  engine.players.forEach((p) => p.disableAutoPlay());
+
+  const [p1, p2, p3, p4] = engine.players;
+
+  // Kill in order: p1 first (4th place), p2 second (3rd), p3 third (2nd)
+  p1.die(engine.gameTime);
+  engine.fastForward(100);
+  p2.die(engine.gameTime);
+  engine.fastForward(100);
+  p3.die(engine.gameTime);
+  engine.fastForward(100);
+
+  // p4 is last standing (1st place: 5pts)
+  assertEqual(p4.points, 5, "1st place should get 5 points");
+  // p3 died last among dead (2nd place: 3pts)
+  assertEqual(p3.points, 3, "2nd place should get 3 points");
+  // p2 (3rd place: 1pt)
+  assertEqual(p2.points, 1, "3rd place should get 1 point");
+  // p1 died first (4th place: 0pts)
+  assertEqual(p1.points, 0, "4th place should get 0 points");
+});
+
+runner.test("Placement bonus respects role overrides", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
+  engine.createTestGame(["bodyguard", "beast"]);
+  engine.players.forEach((p) => p.disableAutoPlay());
+
+  const bodyguard = engine.players.find((p) => p instanceof Bodyguard);
+  const beast = engine.players.find((p) => p instanceof Beast);
+  assert(bodyguard !== undefined, "Should have bodyguard");
+
+  // Kill beast, bodyguard survives
+  beast!.die(engine.gameTime);
+  engine.fastForward(100);
+
+  // Bodyguard's 1st place override is 2 (from roleConfigs.bodyguard.placementBonusOverrides[0])
+  assertEqual(
+    bodyguard!.points,
+    roleConfigs.bodyguard.placementBonusOverrides[0],
+    "Bodyguard 1st place should use overridden bonus"
+  );
+});
+
+runner.test("2-player game awards correct placements", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
+  engine.createTestGame(["beast", "ninja"]);
+  engine.players.forEach((p) => p.disableAutoPlay());
+
+  const [p1, p2] = engine.players;
+
+  p1.die(engine.gameTime);
+  engine.fastForward(100);
+
+  assertEqual(p2.points, 5, "Winner should get 5 points");
+  assertEqual(p1.points, 3, "2nd place should get 3 points");
 });
 
 // ============================================================================
