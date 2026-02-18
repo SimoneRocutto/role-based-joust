@@ -34,10 +34,12 @@ import type {
  */
 export class GameEvents extends EventEmitter {
   private static instance: GameEvents;
+  private roundEmitter = new EventEmitter();
 
   private constructor() {
     super();
     this.setMaxListeners(100); // Increase listener limit for multiple roles
+    this.roundEmitter.setMaxListeners(100);
   }
 
   static getInstance(): GameEvents {
@@ -54,7 +56,8 @@ export class GameEvents extends EventEmitter {
   }
 
   emitPlayerDeath(payload: PlayerDeathEvent): void {
-    this.emit("player:death", payload);
+    this.emit("player:death", payload);              // permanent (broadcaster)
+    this.roundEmitter.emit("player:death", payload); // round-scoped (roles/modes)
   }
 
   emitPlayerEliminated(payload: PlayerEliminatedEvent): void {
@@ -123,7 +126,13 @@ export class GameEvents extends EventEmitter {
     this.on("game:tick", listener);
   }
 
+  // Round-scoped — auto-cleaned at round/game end
   onPlayerDeath(listener: (payload: PlayerDeathEvent) => void): void {
+    this.roundEmitter.on("player:death", listener);
+  }
+
+  // Permanent — survives across rounds (broadcaster only)
+  onPlayerDeathPermanent(listener: (payload: PlayerDeathEvent) => void): void {
     this.on("player:death", listener);
   }
 
@@ -210,9 +219,17 @@ export class GameEvents extends EventEmitter {
   }
 
   /**
+   * Clear round-scoped listeners (called at round/game end)
+   */
+  clearRoundListeners(): void {
+    this.roundEmitter.removeAllListeners();
+  }
+
+  /**
    * Clear all event listeners
    */
   clearAll(): void {
     this.removeAllListeners();
+    this.roundEmitter.removeAllListeners();
   }
 }

@@ -20,9 +20,6 @@ export class Vampire extends BasePlayer {
   private bloodlustActive: boolean = false;
   private nextBloodlustTime: number;
   private bloodlustEndTime: number | null = null;
-  private deathListener:
-    | ((event: { victim: BasePlayer; gameTime: number }) => void)
-    | null = null;
 
   constructor(data: PlayerData) {
     super(data);
@@ -73,13 +70,11 @@ export class Vampire extends BasePlayer {
       timeRemaining: this.bloodlustDuration,
     });
 
-    this.deathListener = (event) => {
+    gameEvents.onPlayerDeath((event) => {
       if (this.bloodlustActive && event.victim.id !== this.id && this.isAlive) {
         this.onBloodlustKill(event.gameTime);
       }
-    };
-
-    gameEvents.on("player:death", this.deathListener);
+    });
     gameEvents.emitVampireBloodlustStart({ vampire: this, active: true });
   }
 
@@ -97,11 +92,6 @@ export class Vampire extends BasePlayer {
     this.bloodlustActive = false;
     this.bloodlustEndTime = null;
 
-    if (this.deathListener) {
-      gameEvents.off("player:death", this.deathListener);
-      this.deathListener = null;
-    }
-
     logger.logRoleAbility(this, "BLOODLUST_END", {
       successful,
       pointsGained: successful ? this.bloodlustPoints : 0,
@@ -118,10 +108,5 @@ export class Vampire extends BasePlayer {
 
   override onDeath(gameTime: number): void {
     super.onDeath(gameTime);
-
-    if (this.deathListener) {
-      gameEvents.off("player:death", this.deathListener);
-      this.deathListener = null;
-    }
   }
 }

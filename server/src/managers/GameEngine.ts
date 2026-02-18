@@ -396,6 +396,9 @@ export class GameEngine {
 
     this.gameState = "round-ended";
 
+    // Clean up round-scoped event listeners (roles, modes)
+    gameEvents.clearRoundListeners();
+
     // Reset ready state so between-rounds screen starts at 0/N
     this.resetReadyState();
 
@@ -476,6 +479,9 @@ export class GameEngine {
 
     this.gameState = "finished";
 
+    // Clean up round-scoped event listeners (roles, modes)
+    gameEvents.clearRoundListeners();
+
     // Reset ready state so winner screen starts at 0/N
     this.resetReadyState();
 
@@ -516,6 +522,9 @@ export class GameEngine {
 
     this.roundSetupManager.cancel();
     this.readyStateManager.cleanup();
+
+    // Clean up round-scoped event listeners (roles, modes)
+    gameEvents.clearRoundListeners();
 
     this.gameState = "waiting";
     this.players = [];

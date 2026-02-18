@@ -31,10 +31,6 @@ export class DeathCountMode extends GameMode {
   private deathCounts: Map<string, number> = new Map();
   private pendingRespawns: Map<string, number> = new Map(); // playerId → respawnAtTime
 
-  private deathListener:
-    | ((payload: { victim: BasePlayer; gameTime: number }) => void)
-    | null = null;
-
   constructor(options?: GameModeOptions) {
     super(options);
     if (options?.roundDuration !== undefined) {
@@ -68,9 +64,6 @@ export class DeathCountMode extends GameMode {
   override onRoundStart(engine: GameEngine, roundNumber: number): void {
     super.onRoundStart(engine, roundNumber);
 
-    // Clean up any prior death listener (e.g. from previous round)
-    this.removeDeathListener();
-
     // Clear state for new round
     this.deathCounts.clear();
     this.pendingRespawns.clear();
@@ -80,11 +73,10 @@ export class DeathCountMode extends GameMode {
       this.deathCounts.set(player.id, 0);
     }
 
-    // Listen for player deaths via GameEvents
-    this.deathListener = (payload) => {
+    // Listen for player deaths via GameEvents (round-scoped, auto-cleaned)
+    gameEvents.onPlayerDeath((payload) => {
       this.onPlayerDeath(payload.victim, engine);
-    };
-    gameEvents.onPlayerDeath(this.deathListener);
+    });
   }
 
   override onTick(engine: GameEngine, gameTime: number): void {
@@ -210,15 +202,7 @@ export class DeathCountMode extends GameMode {
     logger.info("MODE", `Round ${engine.currentRound} scores: ${roundScores}`);
   }
 
-  private removeDeathListener(): void {
-    if (this.deathListener) {
-      gameEvents.removeListener("player:death", this.deathListener);
-      this.deathListener = null;
-    }
-  }
-
   override onRoundEnd(engine: GameEngine): void {
-    this.removeDeathListener();
     super.onRoundEnd(engine);
 
     // Transfer round points to total points
@@ -239,7 +223,6 @@ export class DeathCountMode extends GameMode {
   }
 
   override onGameEnd(engine: GameEngine): void {
-    this.removeDeathListener();
     super.onGameEnd(engine);
     restoreMovementConfig();
   }

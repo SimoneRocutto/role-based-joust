@@ -25,9 +25,6 @@ export class Bodyguard extends BasePlayer {
   private readonly topN: number;
   private allPlayers: BasePlayer[] = [];
   private bonusAwarded: boolean = false;
-  private deathListener:
-    | ((event: { victim: BasePlayer; gameTime: number }) => void)
-    | null = null;
 
   constructor(data: PlayerData) {
     super(data);
@@ -48,11 +45,10 @@ export class Bodyguard extends BasePlayer {
     super.onInit(gameTime);
     this.bonusAwarded = false;
 
-    this.deathListener = (event) => {
+    gameEvents.onPlayerDeath(() => {
       if (this.bonusAwarded) return;
       this.checkProtectionBonus();
-    };
-    gameEvents.on("player:death", this.deathListener);
+    });
 
     logger.logRoleAbility(this, "BODYGUARD_INIT", {
       targetName: this.targetPlayerName,

@@ -25,12 +25,9 @@ export class BeastHunter extends HunterBasePlayer {
   override onInit(gameTime: number): void {
     super.onInit(gameTime);
 
-    hunterGameEvents.on(
-      "player:death",
-      (event: { victim: HunterBasePlayer; gameTime: number }) => {
-        this.onPlayerDeath(event.victim, event.gameTime);
-      }
-    );
+    hunterGameEvents.onPlayerDeath((event) => {
+      this.onPlayerDeath(event.victim, event.gameTime);
+    });
 
     hunterLogger.logRoleAbility(this, "BEASTHUNTER_INIT", {
       bonus: `${this.beastKillPoints} points for Beast kill`,

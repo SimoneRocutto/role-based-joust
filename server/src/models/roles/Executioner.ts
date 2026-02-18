@@ -23,9 +23,6 @@ export class Executioner extends BasePlayer {
 
   private readonly targetKillPoints: number;
   private allPlayers: BasePlayer[] = [];
-  private deathListener:
-    | ((event: { victim: BasePlayer; gameTime: number }) => void)
-    | null = null;
 
   constructor(data: PlayerData) {
     super(data);
@@ -42,13 +39,12 @@ export class Executioner extends BasePlayer {
   override onInit(gameTime: number): void {
     super.onInit(gameTime);
 
-    this.deathListener = (event) => {
+    gameEvents.onPlayerDeath((event) => {
       if (!this.isAlive) return;
       if (event.victim.id === this.targetPlayerId) {
         this.onTargetDeath(event.gameTime);
       }
-    };
-    gameEvents.on("player:death", this.deathListener);
+    });
 
     logger.logRoleAbility(this, "EXECUTIONER_INIT", {
       targetName: this.targetPlayerName,
@@ -100,9 +96,5 @@ export class Executioner extends BasePlayer {
 
   override onDeath(gameTime: number): void {
     super.onDeath(gameTime);
-    if (this.deathListener) {
-      gameEvents.off("player:death", this.deathListener);
-      this.deathListener = null;
-    }
   }
 }

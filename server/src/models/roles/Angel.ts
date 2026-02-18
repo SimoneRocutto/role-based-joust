@@ -72,7 +72,7 @@ export class Angel extends BasePlayer {
       this.isAlive = false;
       this.onDeath(gameTime);
 
-      gameEvents.emit("player:death", { victim: this, gameTime });
+      gameEvents.emitPlayerDeath({ victim: this, gameTime });
     }
   }
 }

@@ -55,8 +55,8 @@ export function registerGameEventBroadcasters(
     }
   });
 
-  // Broadcast player deaths
-  gameEvents.onPlayerDeath((payload) => {
+  // Broadcast player deaths (permanent — survives across rounds)
+  gameEvents.onPlayerDeathPermanent((payload) => {
     const clientPayload: PlayerDeathPayload = {
       victimId: payload.victim.id,
       victimName: payload.victim.name,

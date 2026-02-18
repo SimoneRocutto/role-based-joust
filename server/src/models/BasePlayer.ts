@@ -492,7 +492,7 @@ export class BasePlayer {
     this.onDeath(gameTime);
 
     // Emit death event for other players/roles
-    gameEvents.emit("player:death", { victim: this, gameTime });
+    gameEvents.emitPlayerDeath({ victim: this, gameTime });
   }
 
   /**
