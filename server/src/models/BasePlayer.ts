@@ -67,6 +67,7 @@ export class BasePlayer {
 
   // ========== SCORING OVERRIDES ==========
   lastStandingBonusOverride: number | null = null; // null = use mode default
+  victoryGroupId: string | null = null; // Players with same non-null ID can win together
 
   // ========== TARGET INFO ==========
   targetPlayerId: string | null = null;

@@ -65,6 +65,16 @@ export interface MasochistConfig {
   pointsPerTick: number; // Points awarded each interval
 }
 
+export interface SiblingConfig {
+  toughnessBonus: number; // Toughness multiplier for siblings
+  sharedDamageRatio: number; // Ratio of damage forwarded to sibling (1.0 = 100%)
+}
+
+export interface VultureConfig {
+  deathWindowMs: number; // Time window for chained deaths (ms)
+  pointsPerChainedDeath: number; // Points awarded per chained death
+}
+
 export interface RoleConfigs {
   vampire: VampireConfig;
   beast: BeastConfig;
@@ -79,6 +89,8 @@ export interface RoleConfigs {
   berserker: BerserkerConfig;
   ninja: NinjaConfig;
   masochist: MasochistConfig;
+  sibling: SiblingConfig;
+  vulture: VultureConfig;
 }
 
 export const roleConfigs: RoleConfigs = {
@@ -147,5 +159,15 @@ export const roleConfigs: RoleConfigs = {
     hpThresholdPercent: 0.3, // Below 30% HP
     pointInterval: 10000, // 10 seconds
     pointsPerTick: 1,
+  },
+
+  sibling: {
+    toughnessBonus: 1.5, // 50% more resistant
+    sharedDamageRatio: 1.0, // 100% of damage forwarded
+  },
+
+  vulture: {
+    deathWindowMs: 5000, // 5 seconds
+    pointsPerChainedDeath: 2,
   },
 };

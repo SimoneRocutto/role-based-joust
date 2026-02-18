@@ -90,13 +90,33 @@ export class RoleBasedMode extends GameMode {
     // Use effectively alive to handle disconnections
     const effectivelyAlive = this.getEffectivelyAlivePlayers(engine);
 
-    // Multiple players alive - continue round
+    // Multiple players alive - check if they share a victory group
     if (effectivelyAlive.length > 1) {
-      return {
-        roundEnded: false,
-        gameEnded: false,
-        winner: null,
-      };
+      const groupId = effectivelyAlive[0].victoryGroupId;
+      const allShareGroup =
+        groupId !== null &&
+        effectivelyAlive.every((p) => p.victoryGroupId === groupId);
+
+      if (!allShareGroup) {
+        return {
+          roundEnded: false,
+          gameEnded: false,
+          winner: null,
+        };
+      }
+
+      // All remaining players share a victory group - they win together
+      const gameEnded = engine.currentRound >= this.roundCount;
+      for (const player of effectivelyAlive) {
+        const bonus =
+          player.lastStandingBonusOverride ?? this.lastStandingBonus;
+        player.addPoints(bonus, "last_standing");
+        logger.info(
+          "MODE",
+          `${player.name} is last standing (shared victory)! +${bonus} points`
+        );
+      }
+      return { roundEnded: true, gameEnded, winner: null };
     }
 
     // Round is over (0 or 1 players effectively alive)

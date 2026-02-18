@@ -10,6 +10,8 @@ import { Bodyguard } from "@/models/roles/Bodyguard";
 import { Berserker } from "@/models/roles/Berserker";
 import { Ninja } from "@/models/roles/Ninja";
 import { Masochist } from "@/models/roles/Masochist";
+import { Sibling } from "@/models/roles/Sibling";
+import { Vulture } from "@/models/roles/Vulture";
 import { Toughened } from "@/models/statusEffects/Toughened";
 import { roleConfigs } from "@/config/roleConfig";
 import type { PlayerData } from "@/types/player.types";
@@ -757,6 +759,314 @@ runner.test("Masochist earns multiple points over time", (engine) => {
 });
 
 // ============================================================================
+// SIBLING TESTS
+// ============================================================================
+
+runner.test("Two siblings find each other and show target name", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
+  engine.createTestGame(["sibling", "sibling", "beast"]);
+  engine.players.forEach((p) => p.disableAutoPlay());
+
+  const siblings = engine.players.filter((p) => p instanceof Sibling);
+  assertEqual(siblings.length, 2, "Should have 2 siblings");
+
+  const [sib1, sib2] = siblings;
+  assertEqual(
+    sib1.targetPlayerName,
+    sib2.name,
+    "Sibling 1 should target sibling 2"
+  );
+  assertEqual(
+    sib2.targetPlayerName,
+    sib1.name,
+    "Sibling 2 should target sibling 1"
+  );
+});
+
+runner.test("Damage to one sibling is shared with the other", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
+  engine.createTestGame(["sibling", "sibling", "beast"]);
+  engine.players.forEach((p) => p.disableAutoPlay());
+
+  const siblings = engine.players.filter((p) => p instanceof Sibling);
+  const [sib1, sib2] = siblings;
+
+  // Deal damage to sibling 1
+  sib1.takeDamage(30, engine.gameTime);
+
+  // Both should have accumulated damage (30 / 1.5 toughness = 20 each)
+  assert(sib1.accumulatedDamage > 0, "Sibling 1 should have taken damage");
+  assert(sib2.accumulatedDamage > 0, "Sibling 2 should have shared damage");
+  assertEqual(
+    sib2.accumulatedDamage,
+    30 / roleConfigs.sibling.toughnessBonus,
+    "Sibling 2 should take damage reduced by toughness"
+  );
+});
+
+runner.test("Shared damage doesn't cause infinite loop", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
+  engine.createTestGame(["sibling", "sibling", "beast"]);
+  engine.players.forEach((p) => p.disableAutoPlay());
+
+  const siblings = engine.players.filter((p) => p instanceof Sibling);
+  const [sib1, sib2] = siblings;
+
+  // Deal damage - should not hang or stack overflow
+  sib1.takeDamage(30, engine.gameTime);
+
+  // Each sibling should only take the damage once (30 / 1.5 = 20)
+  const expectedDamage = 30 / roleConfigs.sibling.toughnessBonus;
+  assertEqual(
+    sib1.accumulatedDamage,
+    expectedDamage,
+    "Sibling 1 should take damage exactly once"
+  );
+  assertEqual(
+    sib2.accumulatedDamage,
+    expectedDamage,
+    "Sibling 2 should take shared damage exactly once"
+  );
+});
+
+runner.test("Sibling has +50% effective toughness", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
+  engine.createTestGame(["sibling", "beast"]);
+  engine.players.forEach((p) => p.disableAutoPlay());
+
+  const sibling = engine.players.find((p) => p instanceof Sibling);
+  assert(sibling !== undefined, "Should have sibling");
+  assertEqual(
+    sibling!.toughness,
+    roleConfigs.sibling.toughnessBonus,
+    "Sibling should have 1.5x toughness"
+  );
+});
+
+runner.test(
+  "Single sibling (no pair) plays normally with toughness bonus",
+  (engine) => {
+    const mode = GameModeFactory.getInstance().createMode("role-based");
+    engine.setGameMode(mode);
+
+    engine.createTestGame(["sibling", "beast", "survivor"]);
+    engine.players.forEach((p) => p.disableAutoPlay());
+
+    const sibling = engine.players.find((p) => p instanceof Sibling);
+    assert(sibling !== undefined, "Should have sibling");
+    assertEqual(
+      sibling!.targetPlayerName,
+      null,
+      "Single sibling should have no target"
+    );
+    assertEqual(
+      sibling!.toughness,
+      roleConfigs.sibling.toughnessBonus,
+      "Should still have toughness bonus"
+    );
+
+    // Damage should work normally without crashing
+    sibling!.takeDamage(30, engine.gameTime);
+    assertEqual(
+      sibling!.accumulatedDamage,
+      30 / roleConfigs.sibling.toughnessBonus,
+      "Should take damage normally"
+    );
+  }
+);
+
+runner.test("Two siblings win together when all others die", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
+  engine.createTestGame(["sibling", "sibling", "beast", "survivor"]);
+  engine.players.forEach((p) => p.disableAutoPlay());
+
+  const siblings = engine.players.filter((p) => p instanceof Sibling);
+  const nonSiblings = engine.players.filter((p) => !(p instanceof Sibling));
+
+  assertEqual(siblings.length, 2, "Should have 2 siblings");
+
+  // Kill all non-siblings
+  for (const p of nonSiblings) {
+    p.die(engine.gameTime);
+  }
+  engine.fastForward(100);
+
+  // Both siblings should have received last standing bonus
+  const lastStandingBonus = 5; // default from gameConfig
+  assert(
+    siblings[0].points >= lastStandingBonus,
+    "Sibling 1 should have last standing bonus"
+  );
+  assert(
+    siblings[1].points >= lastStandingBonus,
+    "Sibling 2 should have last standing bonus"
+  );
+});
+
+runner.test("Sibling death triggers death event normally", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
+  engine.createTestGame(["sibling", "sibling", "beast"]);
+  engine.players.forEach((p) => p.disableAutoPlay());
+
+  const siblings = engine.players.filter((p) => p instanceof Sibling);
+  const [sib1] = siblings;
+
+  sib1.die(engine.gameTime);
+  assert(!sib1.isAlive, "Sibling should be dead");
+});
+
+// ============================================================================
+// VULTURE TESTS
+// ============================================================================
+
+runner.test(
+  "Vulture gains points when death occurs within 5s of previous death",
+  (engine) => {
+    const mode = GameModeFactory.getInstance().createMode("role-based");
+    engine.setGameMode(mode);
+
+    engine.createTestGame(["vulture", "beast", "survivor", "ninja"]);
+    engine.players.forEach((p) => p.disableAutoPlay());
+
+    const vulture = engine.players.find((p) => p instanceof Vulture);
+    assert(vulture !== undefined, "Should have vulture");
+
+    const nonVultures = engine.players.filter(
+      (p) => !(p instanceof Vulture) && p.id !== vulture!.id
+    );
+
+    // First death
+    nonVultures[0].die(engine.gameTime);
+    engine.fastForward(100);
+
+    assertEqual(vulture!.points, 0, "No points on first death");
+
+    // Second death within 5s
+    engine.fastForward(3000);
+    nonVultures[1].die(engine.gameTime);
+    engine.fastForward(100);
+
+    assertEqual(
+      vulture!.points,
+      roleConfigs.vulture.pointsPerChainedDeath,
+      "Should gain points on chained death"
+    );
+  }
+);
+
+runner.test(
+  "Vulture gains no points on first death (no prior death)",
+  (engine) => {
+    const mode = GameModeFactory.getInstance().createMode("role-based");
+    engine.setGameMode(mode);
+
+    engine.createTestGame(["vulture", "beast", "survivor"]);
+    engine.players.forEach((p) => p.disableAutoPlay());
+
+    const vulture = engine.players.find((p) => p instanceof Vulture);
+    const beast = engine.players.find((p) => p instanceof Beast);
+    assert(vulture !== undefined, "Should have vulture");
+
+    beast!.die(engine.gameTime);
+    engine.fastForward(100);
+
+    assertEqual(vulture!.points, 0, "No points on first death");
+  }
+);
+
+runner.test(
+  "Vulture gains no points when deaths are >5s apart",
+  (engine) => {
+    const mode = GameModeFactory.getInstance().createMode("role-based");
+    engine.setGameMode(mode);
+
+    engine.createTestGame(["vulture", "beast", "survivor", "ninja"]);
+    engine.players.forEach((p) => p.disableAutoPlay());
+
+    const vulture = engine.players.find((p) => p instanceof Vulture);
+    const nonVultures = engine.players.filter(
+      (p) => !(p instanceof Vulture) && p.id !== vulture!.id
+    );
+
+    // First death
+    nonVultures[0].die(engine.gameTime);
+    engine.fastForward(100);
+
+    // Wait >5 seconds
+    engine.fastForward(6000);
+
+    // Second death
+    nonVultures[1].die(engine.gameTime);
+    engine.fastForward(100);
+
+    assertEqual(
+      vulture!.points,
+      0,
+      "No points when deaths are more than 5s apart"
+    );
+  }
+);
+
+runner.test("Vulture's own death doesn't trigger points", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
+  engine.createTestGame(["vulture", "beast", "survivor"]);
+  engine.players.forEach((p) => p.disableAutoPlay());
+
+  const vulture = engine.players.find((p) => p instanceof Vulture);
+  const beast = engine.players.find((p) => p instanceof Beast);
+
+  // First death (beast)
+  beast!.die(engine.gameTime);
+  engine.fastForward(100);
+
+  // Vulture dies within 5s — should not award points to itself
+  engine.fastForward(2000);
+  vulture!.die(engine.gameTime);
+  engine.fastForward(100);
+
+  assertEqual(vulture!.points, 0, "Vulture's own death should not give points");
+});
+
+runner.test("Dead vulture doesn't gain points", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
+  engine.createTestGame(["vulture", "beast", "survivor", "ninja"]);
+  engine.players.forEach((p) => p.disableAutoPlay());
+
+  const vulture = engine.players.find((p) => p instanceof Vulture);
+  const nonVultures = engine.players.filter(
+    (p) => !(p instanceof Vulture) && p.id !== vulture!.id
+  );
+
+  // Kill vulture first
+  vulture!.die(engine.gameTime);
+  engine.fastForward(100);
+
+  // Two deaths within 5s of each other
+  nonVultures[0].die(engine.gameTime);
+  engine.fastForward(2000);
+  nonVultures[1].die(engine.gameTime);
+  engine.fastForward(100);
+
+  assertEqual(vulture!.points, 0, "Dead vulture should not gain points");
+});
+
+// ============================================================================
 // ROLE ASSIGNMENT TESTS
 // ============================================================================
 
@@ -828,9 +1138,11 @@ runner.test("All roles can be created via factory", (engine) => {
     "berserker",
     "ninja",
     "masochist",
+    "sibling",
+    "vulture",
   ]);
 
-  assertEqual(engine.players.length, 6, "Should have 6 players");
+  assertEqual(engine.players.length, 8, "Should have 8 players");
 
   assert(
     engine.players.some((p) => p instanceof Survivor),
@@ -855,6 +1167,14 @@ runner.test("All roles can be created via factory", (engine) => {
   assert(
     engine.players.some((p) => p instanceof Masochist),
     "Should have Masochist"
+  );
+  assert(
+    engine.players.some((p) => p instanceof Sibling),
+    "Should have Sibling"
+  );
+  assert(
+    engine.players.some((p) => p instanceof Vulture),
+    "Should have Vulture"
   );
 });
 

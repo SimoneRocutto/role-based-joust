@@ -14,6 +14,8 @@ export const roleThemes: RoleThemes = {
     "berserker",
     "ninja",
     "masochist",
+    "sibling",
+    "vulture",
   ],
 
   // Halloween theme - spooky roles
