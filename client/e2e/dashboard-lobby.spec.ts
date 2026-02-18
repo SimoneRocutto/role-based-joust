@@ -143,9 +143,11 @@ test.describe('Dashboard Lobby', () => {
     const player2 = await openPlayerJoin(context);
     const { playerNumber: num2 } = await joinAsPlayer(player2, 'Second');
 
-    // Dashboard should show both with their numbers
-    await expect(dashboard.locator(`text=#${num1} First`)).toBeVisible();
-    await expect(dashboard.locator(`text=#${num2} Second`)).toBeVisible();
+    // Dashboard should show both with their numbers and names
+    await expect(dashboard.locator(`text=#${num1}`)).toBeVisible();
+    await expectDashboardHasPlayer(dashboard, 'First');
+    await expect(dashboard.locator(`text=#${num2}`)).toBeVisible();
+    await expectDashboardHasPlayer(dashboard, 'Second');
 
     // Numbers should be sequential
     expect(num2).toBe(num1 + 1);

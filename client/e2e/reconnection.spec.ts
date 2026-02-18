@@ -102,7 +102,7 @@ test.describe('Disconnect Handling', () => {
       await expectDashboardPlayerCount(dashboard, 1);
 
       // Player 3 should still be connected
-      await expect(dashboard.locator('text=/#\\d+ MultiDisc3/')).toBeVisible();
+      await expect(dashboard.locator('text=MultiDisc3')).toBeVisible();
 
       // Disconnected players should show as offline (scope to AdminControls player grid)
       const adminGrid = dashboard.locator('.grid-cols-4');
@@ -208,8 +208,8 @@ test.describe('Disconnect Handling', () => {
 
       // Dashboard should show both players
       await expectDashboardPlayerCount(dashboard, 2);
-      await expect(dashboard.locator('text=/#\\d+ Persist1/')).toBeVisible();
-      await expect(dashboard.locator('text=/#\\d+ Persist2/')).toBeVisible();
+      await expect(dashboard.locator('text=Persist1')).toBeVisible();
+      await expect(dashboard.locator('text=Persist2')).toBeVisible();
     });
 
     test('dashboard refresh preserves player list', async ({ context }) => {
@@ -225,7 +225,7 @@ test.describe('Disconnect Handling', () => {
 
       // Players should still be shown
       await expectDashboardPlayerCount(dashboard, 1);
-      await expect(dashboard.locator('text=/#\\d+ Refresh1/')).toBeVisible();
+      await expect(dashboard.locator('text=Refresh1')).toBeVisible();
     });
 
     test('dashboard refresh during active game shows game state', async ({

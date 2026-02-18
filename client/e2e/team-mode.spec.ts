@@ -5,6 +5,7 @@ import {
   openPlayerJoin,
   joinAsPlayer,
   openDashboard,
+  proceedFromPreGame,
   API_URL,
   getLobbyPlayers,
 } from './helpers';
@@ -378,6 +379,7 @@ test.describe('Team Mode', () => {
         body: JSON.stringify({ mode: 'classic', countdownDuration: 0 }),
       });
       expect(response.ok).toBe(true);
+      await proceedFromPreGame();
 
       // Team selection should be cleared
       await dashboard.waitForTimeout(500);

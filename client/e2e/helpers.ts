@@ -154,14 +154,22 @@ export async function openPlayerJoin(context: BrowserContext): Promise<Page> {
 
 /**
  * Start game from dashboard (full countdown)
- * Assumes players are already connected
+ * Assumes players are already connected.
+ * Flow: Click "Start Game" (lobby) → pre-game → Click "START GAME" (proceed) → countdown
  */
 export async function startGameFromDashboard(dashboardPage: Page): Promise<void> {
-  // Click start game button
+  // Click start game button in the lobby
   await dashboardPage.click('button:has-text("Start Game")');
 
+  // Wait for pre-game phase — dashboard shows PreGameControls with "START GAME" button
+  await expect(dashboardPage.locator('button:has-text("START GAME")')).toBeVisible({
+    timeout: 5000,
+  });
+
+  // Proceed from pre-game to countdown
+  await dashboardPage.click('button:has-text("START GAME")');
+
   // Wait for countdown overlay to appear (fixed overlay with countdown number)
-  // The countdown display has "Get ready..." text or large numbers
   await expect(dashboardPage.locator('text=Get ready')).toBeVisible({
     timeout: 5000,
   });
@@ -188,7 +196,36 @@ export async function launchGameFast(
   }
 
   // Small delay to allow game state to propagate
+  await new Promise((r) => setTimeout(r, 200));
+
+  // Proceed from pre-game to countdown (game enters pre-game after launch)
+  const proceedResponse = await fetch(`${API_URL}/api/game/proceed`, {
+    method: 'POST',
+  });
+
+  if (!proceedResponse.ok) {
+    const data = await proceedResponse.json();
+    throw new Error(`Failed to proceed from pre-game: ${data.error}`);
+  }
+
+  // Small delay to allow state to propagate
   await new Promise((r) => setTimeout(r, 500));
+}
+
+/**
+ * Proceed from pre-game phase to countdown via API.
+ * Call after launching a game directly via fetch (not launchGameFast, which does this automatically).
+ */
+export async function proceedFromPreGame(): Promise<void> {
+  await new Promise((r) => setTimeout(r, 200));
+  const response = await fetch(`${API_URL}/api/game/proceed`, {
+    method: 'POST',
+  });
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(`Failed to proceed from pre-game: ${data.error}`);
+  }
+  await new Promise((r) => setTimeout(r, 300));
 }
 
 /**
@@ -235,9 +272,9 @@ export async function getLobbyPlayers(): Promise<any> {
  * Verify player is in waiting state (not dead)
  */
 export async function expectPlayerWaiting(playerPage: Page): Promise<void> {
-  // Should see ready button or waiting message (dev mode shows "CLICK TO READY", after readying shows "Waiting for other players...")
+  // Should see waiting message in lobby ("Waiting for game to start...") or ready UI in pre-game
   await expect(
-    playerPage.locator('text=/CLICK TO READY|SHAKE TO READY|Waiting for other players/i')
+    playerPage.locator('text=/CLICK TO READY|SHAKE TO READY|Waiting for other players|Waiting for game to start/i')
   ).toBeVisible();
 
   // Should NOT see skull emoji or "ELIMINATED"
@@ -282,8 +319,8 @@ export async function expectDashboardHasPlayer(
   dashboardPage: Page,
   playerName: string
 ): Promise<void> {
-  // Look for player name in the lobby list specifically (has #number prefix)
-  await expect(dashboardPage.locator(`text=/#\\d+ ${playerName}/`)).toBeVisible();
+  // Look for player name in the lobby list (CompactPlayerCard renders name in a separate span)
+  await expect(dashboardPage.locator(`text=${playerName}`)).toBeVisible();
 }
 
 /**

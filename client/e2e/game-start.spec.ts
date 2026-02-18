@@ -89,8 +89,8 @@ test.describe('Game Start Flow', () => {
     const player2 = await openPlayerJoin(context);
     await joinAsPlayer(player2, 'P2');
 
-    // Start the game
-    await dashboard.click('button:has-text("Start Game")');
+    // Start the game (lobby → pre-game → countdown)
+    await startGameFromDashboard(dashboard);
 
     // Should see countdown overlay with "Get ready" text
     await expect(
@@ -158,8 +158,8 @@ test.describe('Game Start Flow', () => {
     // Make sure role-based mode is selected
     await dashboard.locator('select').first().selectOption('role-based');
 
-    // Start the game
-    await dashboard.click('button:has-text("Start Game")');
+    // Start the game (lobby → pre-game → countdown)
+    await startGameFromDashboard(dashboard);
 
     // Players should see countdown screen (roles are communicated via TTS audio, not visually)
     await expect(

@@ -4,6 +4,7 @@ import {
   resetServerState,
   openPlayerJoin,
   joinAsPlayer,
+  proceedFromPreGame,
   getGameState,
   getLobbyPlayers,
   API_URL,
@@ -55,6 +56,7 @@ test.describe('API Endpoints', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mode: 'classic', countdownDuration: 0 }),
       });
+      await proceedFromPreGame();
 
       // Small delay for game to start
       await new Promise((r) => setTimeout(r, 500));
@@ -184,8 +186,8 @@ test.describe('API Endpoints', () => {
         body: JSON.stringify({ mode: 'classic', countdownDuration: 0 }),
       });
 
-      // Small delay for game to start
-      await new Promise((r) => setTimeout(r, 500));
+      // Proceed from pre-game to active
+      await proceedFromPreGame();
 
       // Verify game is active
       let state = await getGameState();
@@ -235,8 +237,8 @@ test.describe('API Endpoints', () => {
         body: JSON.stringify({ mode: 'classic', countdownDuration: 0 }),
       });
 
-      // Small delay for game to start
-      await new Promise((r) => setTimeout(r, 500));
+      // Proceed from pre-game to active
+      await proceedFromPreGame();
 
       // Reset
       await fetch(`${API_URL}/api/debug/reset`, { method: 'POST' });

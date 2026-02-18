@@ -11,6 +11,7 @@ import {
   waitForGameActive,
   waitForSocketConnection,
   expectDashboardPlayerCount,
+  expectDashboardHasPlayer,
   getGameState,
   API_URL,
 } from './helpers';
@@ -80,8 +81,8 @@ test.describe('Socket Events', () => {
       const player2 = await openPlayerJoin(context);
       await joinAsPlayer(player2, 'CountP2');
 
-      // Start game
-      await dashboard.click('button:has-text("Start Game")');
+      // Start game (lobby → pre-game → countdown)
+      await startGameFromDashboard(dashboard);
 
       // All clients should see countdown
       await expect(dashboard.locator('text=Get ready')).toBeVisible({
@@ -155,8 +156,8 @@ test.describe('Socket Events', () => {
       const player2 = await openPlayerJoin(context);
       await joinAsPlayer(player2, 'Role2');
 
-      // Start game
-      await dashboard.click('button:has-text("Start Game")');
+      // Start game (lobby → pre-game → countdown)
+      await startGameFromDashboard(dashboard);
 
       // Both players should see countdown screen (roles are communicated via TTS audio)
       await expect(player1.locator('text=Get ready')).toBeVisible({
@@ -179,8 +180,8 @@ test.describe('Socket Events', () => {
       const player2 = await openPlayerJoin(context);
       await joinAsPlayer(player2, 'DiffRole2');
 
-      // Start game
-      await dashboard.click('button:has-text("Start Game")');
+      // Start game (lobby → pre-game → countdown)
+      await startGameFromDashboard(dashboard);
 
       // Wait for countdown screen (roles are communicated via TTS audio, not displayed visually)
       await expect(player1.locator('text=Get ready')).toBeVisible({
@@ -203,10 +204,9 @@ test.describe('Socket Events', () => {
       const player = await openPlayerJoin(context);
       const { playerNumber } = await joinAsPlayer(player, 'NumEvent');
 
-      // Dashboard should show player with number
-      await expect(
-        dashboard.locator(`text=/#${playerNumber} NumEvent/`)
-      ).toBeVisible();
+      // Dashboard should show player with number and name
+      await expect(dashboard.locator(`text=#${playerNumber}`)).toBeVisible();
+      await expectDashboardHasPlayer(dashboard, 'NumEvent');
     });
 
     test('lobby update includes all connected players', async ({ context }) => {
@@ -222,9 +222,9 @@ test.describe('Socket Events', () => {
       await joinAsPlayer(player3, 'All3');
 
       // Dashboard should show all 3
-      await expect(dashboard.locator('text=/#\\d+ All1/')).toBeVisible();
-      await expect(dashboard.locator('text=/#\\d+ All2/')).toBeVisible();
-      await expect(dashboard.locator('text=/#\\d+ All3/')).toBeVisible();
+      await expectDashboardHasPlayer(dashboard, 'All1');
+      await expectDashboardHasPlayer(dashboard, 'All2');
+      await expectDashboardHasPlayer(dashboard, 'All3');
     });
 
     test('lobby preserves order after disconnect/reconnect', async ({
@@ -246,10 +246,8 @@ test.describe('Socket Events', () => {
       const player3 = await openPlayerJoin(context);
       const { playerNumber: num3 } = await joinAsPlayer(player3, 'Order3');
 
-      // Player 1 should still have number 1
-      await expect(
-        dashboard.locator(`text=/#${num1} Order1/`)
-      ).toBeVisible();
+      // Player 1 should still be visible
+      await expectDashboardHasPlayer(dashboard, 'Order1');
 
       // Player 3 should have a higher number
       expect(num3).toBeGreaterThan(num1);

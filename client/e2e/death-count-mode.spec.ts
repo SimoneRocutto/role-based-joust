@@ -5,6 +5,7 @@ import {
   openDashboard,
   openPlayerJoin,
   joinAsPlayer,
+  proceedFromPreGame,
   getGameState,
   API_URL,
 } from './helpers';
@@ -53,6 +54,9 @@ async function launchDeathCountGame(
     const data = await response.json();
     throw new Error(`Failed to launch death-count game: ${data.error}`);
   }
+
+  // Proceed from pre-game to countdown
+  await proceedFromPreGame();
 
   // Small delay for state propagation
   await new Promise((r) => setTimeout(r, 500));

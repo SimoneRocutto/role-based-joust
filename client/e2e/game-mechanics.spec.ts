@@ -8,6 +8,7 @@ import {
   startGameFromDashboard,
   waitForCountdownComplete,
   launchGameFast,
+  proceedFromPreGame,
   waitForGameActive,
   expectPlayerAlive,
   expectPlayerDead,
@@ -108,12 +109,10 @@ test.describe('Game Mechanics', () => {
       const player2 = await openPlayerJoin(context);
       await joinAsPlayer(player2, 'StateTest2');
 
-      // Start game but don't wait for countdown to complete
-      await dashboard.click('button:has-text("Start Game")');
+      // Launch with a long countdown so we can check the state
+      await launchGameFast(10);
 
-      // Wait a moment for state to change
-      await dashboard.waitForTimeout(500);
-
+      // Game should be in countdown
       const gameState = await getGameState();
       expect(gameState.state.state).toBe('countdown');
     });
@@ -352,6 +351,7 @@ test.describe('Ready Delay After Round', () => {
         roundCount: 3,
       }),
     });
+    await proceedFromPreGame();
 
     await waitForGameActive(dashboard);
 
@@ -392,6 +392,7 @@ test.describe('Ready Delay After Round', () => {
         roundCount: 3,
       }),
     });
+    await proceedFromPreGame();
 
     await waitForGameActive(dashboard);
 
@@ -427,6 +428,7 @@ test.describe('Ready Delay After Round', () => {
         roundCount: 3,
       }),
     });
+    await proceedFromPreGame();
 
     await waitForGameActive(dashboard);
 
@@ -466,6 +468,7 @@ test.describe('Ready Delay After Round', () => {
         roundCount: 3,
       }),
     });
+    await proceedFromPreGame();
 
     await waitForGameActive(dashboard);
 
