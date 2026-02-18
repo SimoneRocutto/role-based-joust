@@ -645,10 +645,10 @@ runner.test("Ninja survives normal movement below threshold", (engine) => {
   assert(ninja !== undefined, "Should have ninja");
 
   // Simulate movement below ninja's elevated threshold
-  // Default threshold is 0.1, ninja multiplier is 4x, so ninja threshold = 0.4
-  // Movement at 0.3 should be safe for ninja
+  // Default threshold is 0.1, ninja multiplier is 2x, so ninja threshold = 0.2
+  // Movement at {1,1,1} → intensity ≈ 0.1, safe for ninja
   ninja!.updateMovement(
-    { x: 3, y: 3, z: 3, timestamp: engine.gameTime },
+    { x: 1, y: 1, z: 1, timestamp: engine.gameTime },
     engine.gameTime
   );
 
