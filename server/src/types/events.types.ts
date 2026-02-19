@@ -121,3 +121,14 @@ export interface DominationWinEvent {
   winningTeamName: string;
   teamScores: Record<number, number>;
 }
+
+export interface RoleUpdatedEvent {
+  playerId: string;
+  socketId: string;
+  name: string;
+  displayName: string;
+  description: string;
+  difficulty: string;
+  targetName?: string;
+  targetNumber?: number;
+}

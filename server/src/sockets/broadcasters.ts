@@ -23,6 +23,7 @@ import type {
   PlayerRespawnPayload,
   PlayerRespawnPendingPayload,
   RoleAssignedPayload,
+  RoleUpdatedPayload,
   BaseCapturedPayload,
   BasePointPayload,
   BaseStatusPayload,
@@ -257,6 +258,7 @@ export function registerGameEventBroadcasters(
       description: string;
       difficulty: string;
       targetName?: string;
+      targetNumber?: number;
     }) => {
       // Find the socket for this player and emit directly to them
       const socket = io.sockets.sockets.get(payload.socketId);
@@ -267,6 +269,7 @@ export function registerGameEventBroadcasters(
           description: payload.description,
           difficulty: payload.difficulty,
           targetName: payload.targetName,
+          targetNumber: payload.targetNumber,
         };
         socket.emit("role:assigned", clientPayload);
         logger.debug("SOCKET", `Role assigned to ${payload.playerId}`, {
@@ -280,4 +283,28 @@ export function registerGameEventBroadcasters(
       }
     }
   );
+
+  // Send role updates to individual players (mid-game changes, e.g. Executioner new target)
+  gameEvents.onRoleUpdated((payload) => {
+    const socket = io.sockets.sockets.get(payload.socketId);
+    if (socket) {
+      const clientPayload: RoleUpdatedPayload = {
+        name: payload.name,
+        displayName: payload.displayName,
+        description: payload.description,
+        difficulty: payload.difficulty,
+        targetName: payload.targetName,
+        targetNumber: payload.targetNumber,
+      };
+      socket.emit("role:updated", clientPayload);
+      logger.debug("SOCKET", `Role updated for ${payload.playerId}`, {
+        role: payload.displayName,
+      });
+    } else {
+      logger.warn(
+        "SOCKET",
+        `Could not find socket for player ${payload.playerId}`
+      );
+    }
+  });
 }

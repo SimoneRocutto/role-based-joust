@@ -25,7 +25,6 @@ function PlayerView() {
     myPlayerId,
     myPlayerNumber,
     myPlayer,
-    myTarget,
     isWaiting,
     isPreGame,
     isCountdown,
@@ -176,7 +175,6 @@ function PlayerView() {
             player={myPlayer}
             playerNumber={myPlayerNumber}
             teamId={myTeamId}
-            target={myTarget}
             chargeInfo={chargeInfo}
             onTap={handleTap}
             onTakeDamage={takeDamage}

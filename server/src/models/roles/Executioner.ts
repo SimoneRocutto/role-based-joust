@@ -2,6 +2,7 @@ import { BasePlayer } from "../BasePlayer";
 import type { PlayerData } from "@/types/player.types";
 import { Logger } from "@/utils/Logger";
 import { GameEvents } from "@/utils/GameEvents";
+import { ConnectionManager } from "@/managers/ConnectionManager";
 import { roleConfigs } from "@/config/roleConfig";
 import { ROLE_PRIORITIES } from "@/config/priorities";
 
@@ -76,9 +77,10 @@ export class Executioner extends BasePlayer {
     this.addPoints(this.targetKillPoints, "executioner_target");
     this.pickTarget();
 
-    // Notify client of new target
-    if (this.targetPlayerName) {
-      gameEvents.emit("role:assigned", {
+    // Notify client of new target via role:updated (not role:assigned)
+    if (this.targetPlayerName && this.targetPlayerId) {
+      const connectionManager = ConnectionManager.getInstance();
+      gameEvents.emitRoleUpdated({
         playerId: this.id,
         socketId: this.socketId,
         name: "executioner",
@@ -86,6 +88,8 @@ export class Executioner extends BasePlayer {
         description: Executioner.description,
         difficulty: Executioner.difficulty,
         targetName: this.targetPlayerName,
+        targetNumber:
+          connectionManager.getPlayerNumber(this.targetPlayerId) ?? 0,
       });
     }
 

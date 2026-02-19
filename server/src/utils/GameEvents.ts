@@ -19,6 +19,7 @@ import type {
   BasePointEvent,
   BaseStatusEvent,
   DominationWinEvent,
+  RoleUpdatedEvent,
 } from "@/types/events.types";
 
 /**
@@ -140,6 +141,10 @@ export class GameEvents extends EventEmitter {
     this.emit("domination:win", payload);
   }
 
+  emitRoleUpdated(payload: RoleUpdatedEvent): void {
+    this.emit("role:updated", payload);
+  }
+
   // ========== TYPED EVENT LISTENERS ==========
 
   onGameTick(listener: (payload: GameTickEvent) => void): void {
@@ -236,6 +241,10 @@ export class GameEvents extends EventEmitter {
 
   onDominationWin(listener: (payload: DominationWinEvent) => void): void {
     this.on("domination:win", listener);
+  }
+
+  onRoleUpdated(listener: (payload: RoleUpdatedEvent) => void): void {
+    this.on("role:updated", listener);
   }
 
   // ========== UTILITY METHODS ==========

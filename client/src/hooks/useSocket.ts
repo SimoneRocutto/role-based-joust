@@ -191,10 +191,19 @@ export function useSocket() {
       }
     });
 
-    // Role assigned
-    socketService.onRoleAssigned((roleData) => {
-      // Store role in state
-      useGameStore.getState().setMyRole({
+    // Shared logic for role:assigned and role:updated
+    function updateRoleState(roleData: {
+      name: string;
+      displayName: string;
+      description: string;
+      difficulty: string;
+      targetNumber?: number;
+      targetName?: string;
+    }) {
+      const store = useGameStore.getState();
+      const previousTarget = store.myTarget;
+
+      store.setMyRole({
         name: roleData.name,
         displayName: roleData.displayName,
         description: roleData.description,
@@ -203,9 +212,28 @@ export function useSocket() {
         targetName: roleData.targetName,
       });
 
+      if (roleData.targetNumber && roleData.targetName) {
+        store.setMyTarget({
+          number: roleData.targetNumber,
+          name: roleData.targetName,
+        });
+      } else {
+        store.setMyTarget(null);
+      }
+
+      const targetChanged =
+        roleData.targetNumber !== previousTarget?.number;
+
+      return { targetChanged };
+    }
+
+    // Role assigned (initial assignment during countdown)
+    socketService.onRoleAssigned((roleData) => {
+      updateRoleState(roleData);
+
       // Wait for intro to finish, then speak
       setTimeout(() => {
-        let speech = `You are the ${roleData.displayName}. ${roleData.description}`;
+        let speech = `You are the ${roleData.displayName}. ${roleData.description}.`;
 
         if (roleData.targetNumber) {
           speech += ` Your target is Player number ${roleData.targetNumber}.`;
@@ -213,6 +241,15 @@ export function useSocket() {
 
         audioManager.speak(speech);
       }, 500);
+    });
+
+    // Role updated (mid-game changes, e.g. Executioner gets a new target)
+    socketService.onRoleUpdated((roleData) => {
+      const { targetChanged } = updateRoleState(roleData);
+
+      if (targetChanged && roleData.targetNumber) {
+        audioManager.speak(`New target: number ${roleData.targetNumber}`);
+      }
     });
 
     socketService.onTeamUpdate(({ teams }) => {
@@ -356,7 +393,9 @@ export function useSocket() {
       // Update the specific base in the store
       const store = useGameStore.getState();
       const updatedBases = store.bases.map((b) =>
-        b.baseId === baseId ? { ...b, ownerTeamId: teamId, controlProgress: 0 } : b
+        b.baseId === baseId
+          ? { ...b, ownerTeamId: teamId, controlProgress: 0 }
+          : b
       );
       store.setBases(updatedBases);
     });
@@ -388,6 +427,7 @@ export function useSocket() {
       socketService.off("game:end");
       socketService.off("vampire:bloodlust");
       socketService.off("role:assigned");
+      socketService.off("role:updated");
       socketService.off("lobby:update");
       socketService.off("team:update");
       socketService.off("team:selection");

@@ -30,6 +30,8 @@ vi.mock("@/services/socket", () => ({
       socketEventHandlers.set("vampire:bloodlust", cb),
     onRoleAssigned: (cb: Function) =>
       socketEventHandlers.set("role:assigned", cb),
+    onRoleUpdated: (cb: Function) =>
+      socketEventHandlers.set("role:updated", cb),
     onLobbyUpdate: (cb: Function) =>
       socketEventHandlers.set("lobby:update", cb),
     onCountdown: (cb: Function) =>
@@ -144,6 +146,7 @@ describe("useSocket", () => {
       expect(socketEventHandlers.has("game:end")).toBe(true);
       expect(socketEventHandlers.has("vampire:bloodlust")).toBe(true);
       expect(socketEventHandlers.has("role:assigned")).toBe(true);
+      expect(socketEventHandlers.has("role:updated")).toBe(true);
       expect(socketEventHandlers.has("lobby:update")).toBe(true);
       expect(socketEventHandlers.has("game:countdown")).toBe(true);
       expect(socketEventHandlers.has("ready:enabled")).toBe(true);
@@ -764,6 +767,44 @@ describe("useSocket", () => {
       expect(role?.targetNumber).toBe(3);
     });
 
+    it("populates myTarget when target info is present", () => {
+      renderHook(() => useSocket());
+
+      act(() => {
+        triggerSocketEvent("role:assigned", {
+          name: "Executioner",
+          displayName: "Executioner",
+          description: "Hunt your target",
+          difficulty: "Medium",
+          targetNumber: 5,
+          targetName: "Prey",
+        });
+      });
+
+      const target = useGameStore.getState().myTarget;
+      expect(target).toEqual({ number: 5, name: "Prey" });
+    });
+
+    it("clears myTarget when no target info", () => {
+      // Set an existing target first
+      act(() => {
+        useGameStore.getState().setMyTarget({ number: 3, name: "Old Target" });
+      });
+
+      renderHook(() => useSocket());
+
+      act(() => {
+        triggerSocketEvent("role:assigned", {
+          name: "Vampire",
+          displayName: "Vampire",
+          description: "Drain others",
+          difficulty: "Medium",
+        });
+      });
+
+      expect(useGameStore.getState().myTarget).toBeNull();
+    });
+
     it("speaks role description after delay", () => {
       renderHook(() => useSocket());
 
@@ -809,6 +850,87 @@ describe("useSocket", () => {
           s.includes("Your target is Player number 5")
         )
       ).toBe(true);
+    });
+  });
+
+  describe("role:updated event", () => {
+    it("updates role in game store", () => {
+      renderHook(() => useSocket());
+
+      act(() => {
+        triggerSocketEvent("role:updated", {
+          name: "executioner",
+          displayName: "Executioner",
+          description: "Hunt your target",
+          difficulty: "normal",
+          targetNumber: 7,
+          targetName: "New Target",
+        });
+      });
+
+      const role = useGameStore.getState().myRole;
+      expect(role?.name).toBe("executioner");
+      expect(role?.targetNumber).toBe(7);
+      expect(role?.targetName).toBe("New Target");
+    });
+
+    it("updates myTarget", () => {
+      renderHook(() => useSocket());
+
+      act(() => {
+        triggerSocketEvent("role:updated", {
+          name: "executioner",
+          displayName: "Executioner",
+          description: "Hunt your target",
+          difficulty: "normal",
+          targetNumber: 4,
+          targetName: "Alice",
+        });
+      });
+
+      const target = useGameStore.getState().myTarget;
+      expect(target).toEqual({ number: 4, name: "Alice" });
+    });
+
+    it("speaks new target via TTS when target changes", () => {
+      renderHook(() => useSocket());
+
+      act(() => {
+        triggerSocketEvent("role:updated", {
+          name: "executioner",
+          displayName: "Executioner",
+          description: "Hunt your target",
+          difficulty: "normal",
+          targetNumber: 6,
+          targetName: "Bob",
+        });
+      });
+
+      expect(
+        audioSpeakCalls.some((s) => s.includes("New target: number 6"))
+      ).toBe(true);
+    });
+
+    it("does not speak when target is unchanged", () => {
+      // Set initial target
+      act(() => {
+        useGameStore.getState().setMyTarget({ number: 4, name: "Alice" });
+      });
+
+      renderHook(() => useSocket());
+
+      act(() => {
+        triggerSocketEvent("role:updated", {
+          name: "executioner",
+          displayName: "Executioner",
+          description: "Hunt your target",
+          difficulty: "normal",
+          targetNumber: 4,
+          targetName: "Alice",
+        });
+      });
+
+      expect(audioSpeakCalls).toHaveLength(0);
     });
   });
 });

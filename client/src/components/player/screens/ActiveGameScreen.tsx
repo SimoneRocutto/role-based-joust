@@ -2,7 +2,6 @@ import ConnectionStatus from "@/components/player/ConnectionStatus";
 import HealthBackground from "@/components/player/HealthBackground";
 import PlayerNumber from "@/components/player/PlayerNumber";
 import StatusEffects from "@/components/player/StatusEffects";
-import TargetDisplay from "@/components/player/TargetDisplay";
 import DamageFlash from "@/components/player/DamageFlash";
 import type { PlayerState } from "@/types/player.types";
 import type { ChargeInfo } from "@/types/socket.types";
@@ -11,7 +10,6 @@ interface ActiveGameScreenProps {
   player: PlayerState;
   playerNumber: number;
   teamId: number | null;
-  target: { number: number; name: string } | null;
   chargeInfo: ChargeInfo | null;
   onTap: () => void;
   onTakeDamage: () => void;
@@ -22,7 +20,6 @@ export default function ActiveGameScreen({
   player,
   playerNumber,
   teamId,
-  target,
   chargeInfo,
   onTap,
   onTakeDamage,
@@ -65,7 +62,6 @@ export default function ActiveGameScreen({
       {/* Info Bar (25%) */}
       <div className="h-[25%] bg-gray-900 p-4 flex flex-col justify-between">
         <StatusEffects effects={player.statusEffects} />
-        {target && <TargetDisplay target={target} />}
       </div>
 
       {/* Damage flash overlay */}

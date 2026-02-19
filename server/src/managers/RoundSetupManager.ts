@@ -1,12 +1,14 @@
 import type { BasePlayer } from "@/models/BasePlayer";
 import type { GameMode } from "@/gameModes/GameMode";
 import { GameEvents } from "@/utils/GameEvents";
+import { ConnectionManager } from "@/managers/ConnectionManager";
 import { Logger } from "@/utils/Logger";
 import { buildTickPlayerState } from "@/utils/tickPayload";
 import { gameConfig } from "@/config/gameConfig";
 
 const logger = Logger.getInstance();
 const gameEvents = GameEvents.getInstance();
+const connectionManager = ConnectionManager.getInstance();
 
 export interface RoundSetupContext {
   players: BasePlayer[];
@@ -185,8 +187,10 @@ export class RoundSetupManager {
       };
 
       // Include target info if the role has a target
-      if (player.targetPlayerName) {
+      if (player.targetPlayerName && player.targetPlayerId) {
         roleInfo.targetName = player.targetPlayerName;
+        roleInfo.targetNumber =
+          connectionManager.getPlayerNumber(player.targetPlayerId) ?? 0;
       }
 
       logger.debug(

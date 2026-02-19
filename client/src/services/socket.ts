@@ -12,6 +12,7 @@ import type {
   GameEndPayload,
   VampireBloodlustPayload,
   RoleAssignedPayload,
+  RoleUpdatedPayload,
   SocketErrorPayload,
   PlayerReadyPayload,
   ReadyCountPayload,
@@ -161,6 +162,10 @@ class SocketService {
 
   onRoleAssigned(callback: (data: RoleAssignedPayload) => void) {
     this.on("role:assigned", callback);
+  }
+
+  onRoleUpdated(callback: (data: RoleUpdatedPayload) => void) {
+    this.on("role:updated", callback);
   }
 
   onPong(callback: () => void) {

@@ -111,6 +111,8 @@ export interface VampireBloodlustPayload {
 
 export interface RoleAssignedPayload extends RoleInfo {}
 
+export interface RoleUpdatedPayload extends RoleInfo {}
+
 export interface SocketErrorPayload {
   message: string;
   code: string;

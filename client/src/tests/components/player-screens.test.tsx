@@ -20,11 +20,6 @@ vi.mock("@/components/player/PlayerNumber", () => ({
 vi.mock("@/components/player/StatusEffects", () => ({
   default: () => <div data-testid="status-effects" />,
 }));
-vi.mock("@/components/player/TargetDisplay", () => ({
-  default: ({ target }: { target: { name: string } }) => (
-    <div data-testid="target-display">{target.name}</div>
-  ),
-}));
 vi.mock("@/components/player/DamageFlash", () => ({
   default: () => <div data-testid="damage-flash" />,
 }));
@@ -337,7 +332,6 @@ describe("ActiveGameScreen", () => {
     player: createMockPlayer(),
     playerNumber: 1,
     teamId: null as number | null,
-    target: null as { number: number; name: string } | null,
     chargeInfo: null,
     onTap: vi.fn(),
     onTakeDamage: vi.fn(),
@@ -371,17 +365,6 @@ describe("ActiveGameScreen", () => {
     );
 
     expect(screen.getByText("2/3")).toBeInTheDocument();
-  });
-
-  it("shows target when available", () => {
-    render(
-      <ActiveGameScreen
-        {...baseProps}
-        target={{ number: 5, name: "Enemy" }}
-      />
-    );
-
-    expect(screen.getByTestId("target-display")).toBeInTheDocument();
   });
 
   it("calls onTap when clicked", () => {

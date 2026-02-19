@@ -24,6 +24,7 @@ export type {
   GameEndPayload,
   VampireBloodlustPayload,
   RoleAssignedPayload,
+  RoleUpdatedPayload,
   SocketErrorPayload,
   PlayerReadyPayload,
   ReadyCountPayload,
