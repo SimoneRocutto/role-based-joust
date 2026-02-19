@@ -57,25 +57,38 @@ Each base is in one of these states:
 
 ### Tap Cycling
 
-When a base phone is tapped:
+Taps are only processed during the active game state. Before the game starts (lobby, pre-game, countdown) and after it ends, taps are ignored. All bases start neutral at "GO!".
+
+When a base phone is tapped during active play:
 1. Base advances to the next team in sequence: Neutral → Team 1 → Team 2 → ... → Team 1 → ...
 2. Server resets the 5-second control timer for this base (the new team must hold for a full 5s to score)
 3. Server broadcasts `base:captured` event with new owner
 4. Base phone updates its display to show the new team's color
+
+There is no tap cooldown. Two players spam-tapping a contested base will prevent either team from scoring — holding area control IS the gameplay. Teams must push opponents away from a base to score.
 
 **Note**: The first tap always switches from Neutral to Team 1 (Red). Subsequent taps cycle through teams in order. With 2 teams, every tap toggles between them. With 3+ teams, players tap until they see their team's color — this is intentionally simple rather than requiring player identification.
 
 ### Base Phone UI
 
 The base phone screen is minimal and designed to be visible from a distance:
-- **Neutral**: White/gray background, "TAP TO CAPTURE" text
-- **Controlled**: Full-screen team color background, team name displayed, pulsing animation
+- **Base number**: Always visible, large and centered. Displayed as `BASE 1` (or `BASE 2`, `BASE 3`) in a distinct style — the number uses a gold/amber color (#F59E0B) with a hexagonal or diamond-shaped outline behind it, clearly differentiating it from player phones which show plain white `#1` numbers. The "BASE" label above the number makes it unmistakable.
+- **Neutral**: Dark background, gold base number, "TAP TO CAPTURE" text below
+- **Controlled**: Full-screen team color background, gold base number stays visible, team name displayed below, pulsing border animation
 - **Just captured**: Brief flash animation on team change
 
 The base phone does NOT need to show:
 - Health bars, player info, or game scores
 - Any admin controls
 - Connection status (beyond initial setup)
+
+### Base Disconnect
+
+If a base phone disconnects mid-game (battery dies, browser crash, etc.):
+- The base **keeps its current owner** (state is preserved server-side)
+- The scoring timer **pauses** — no points are awarded while disconnected
+- The dashboard shows the base as disconnected (grayed-out indicator)
+- When the base phone reconnects, it resumes from its previous state and the scoring timer restarts
 
 ## Scoring
 
@@ -103,7 +116,6 @@ The scoreboard (displayed on game end) shows:
 - Team name and color
 - Total points
 - Sorted by points descending
-- Individual player stats: deaths, time alive
 
 ## Respawn Mechanic
 
@@ -130,19 +142,23 @@ The scoreboard (displayed on game end) shows:
 
 ### Pre-game
 
-Same flow as other team modes:
-1. Admin enables teams, configures settings
-2. Players join and are assigned to teams
-3. Admin clicks "Start Game" → enters pre-game
-4. Players can tap to switch teams, shake to ready
+Base phones can connect at any time — before or during the game. They simply navigate to `/base` and are registered immediately. The dashboard shows how many bases are connected (e.g., "Bases: 1/2") so the admin knows when all bases are ready.
+
+The rest follows the same flow as other team modes:
+1. Admin enables teams, configures settings (including base count)
+2. Admin places base phones in the play area — they connect via `/base`
+3. Players join and are assigned to teams
+4. Admin clicks "Start Game" → enters pre-game
+5. Players can tap to switch teams, shake to ready
+
+The game can launch even if fewer bases than configured are connected (the admin decides when it's ready). If more bases connect mid-game, they join as neutral bases.
 
 ### Countdown
 
 After pre-game, the countdown phase has a special addition for Domination:
 1. Dashboard voice: **"Game is about to start, position on your spawn points!"**
-2. Brief pause (~3s) for players to position
-3. Standard countdown: **"3... 2... 1... GO!"**
-4. Total countdown duration: ~6 seconds
+2. When ended (~3s) standard countdown starts: **"3... 2... 1... GO!"**
+3. Total countdown duration: ~6 seconds
 
 ### Active Game
 
@@ -301,8 +317,8 @@ Same as other team modes — players grouped by team, showing alive/dead status.
 
 ### Audio Cues (Dashboard)
 
-- **Base captured**: SFX + voice: `"Blue Team captured Base 1"`
-- **Point scored**: Subtle SFX tick
+- **Base captured**: Voice from dashboard: `"Blue Team captured Base 1"`. Debounced — only triggers after the base has been held by the same team for 1 second without changing, so rapid tap-cycling through teams (e.g., 3+ team games) doesn't spam the announcement.
+- **Point scored**: SFX tick plays on the base phone (not dashboard) so nearby players hear it. Dashboard plays a subtle visual pulse on the base indicator instead.
 - **Score milestones**: Voice at 50% and 75% of target: `"Red Team halfway there"`, `"Blue Team at 15 points"`
 - **Game won**: Victory fanfare + `"Red Team wins!"`
 
@@ -313,7 +329,7 @@ Same as other team modes — players grouped by team, showing alive/dead status.
 1. **`DominationMode`** (`server/src/gameModes/DominationMode.ts`):
    - Extends `GameMode`
    - Manages bases, control timers, team scores
-   - Respawn logic (10s delay)
+   - Respawn logic (10s delay) — extracted into a shared `RespawnManager` utility used by both DeathCountMode and DominationMode, since the core respawn flow (track pending respawns, countdown, revive with full HP, emit events) is identical. Only the respawn duration differs (5s vs 10s, configurable).
    - Win condition: first team to point target
    - SpeedShift game events
 
