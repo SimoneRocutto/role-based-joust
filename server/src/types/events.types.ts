@@ -110,7 +110,7 @@ export interface BaseStatusEvent {
   bases: Array<{
     baseId: string;
     baseNumber: number;
-    teamId: number | null;
+    ownerTeamId: number | null;
     controlProgress: number;
     isConnected: boolean;
   }>;

@@ -17,6 +17,7 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 - BUGS:
     - sometimes all players have the skull at the end of the round. Points are not cumulative. I have to track down when this happens
     - when phone page is inactive, it says "reconnecting...". But in reality, it will never reconnect. I'd rather see a "refresh page" button
+    - wakelock has a flaw: when exiting the browser, then re-entering it, it stops working. We should request it again on browser reenter
     - make it so both /join and /player screens are unified under /player
     - in classic mode, it happened that game didn't start even though everyone put ready
     - TTS doesn't work on iOS -> it's fine, we'll replace it with real voice
@@ -39,10 +40,11 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 
 - New roles (E = easy, M = medium, H = hard):
     - (E) troll: every time they take damage, they recover it after 8 seconds, unless they get hit again -> promotes chip damage playstyle. After they are discovered by other players, they could be focused. There should be a visual cue when someone gains life back. It's like berserker but promotes opposite gameplay
-    - (M) vampire: every 20 seconds he enters bloodlust -> for 5 seconds, he gains 1 point and gains 20% HP if someone else takes damage during this mode
+    - (M) vampire: every 20 seconds he enters bloodlust -> for 5 seconds, he gains 1 point and gains 20% HP if someone else dies during this mode
     - (M) jester: his life changes by showing wrong things, like healing or losing more life than he should when he gets hit.
-    - (M) hunted: similar to survivor. Every 20s, players will hear "The hunter is alive" and the hunter's screen flashes to make it clear he is the hunter. Flashing lasts 5 seconds. Every time he survives the flashes, he gains 2 points
+    - (M) hunted: similar to survivor. Every 20s, players will hear "The hunted is alive" and the hunter's screen flashes to make it clear he is the hunted. Flashing lasts 5 seconds. Every time he survives the flashes, he gains 2 points
     - (M) sayan: every time he takes damage under 40% life, for the next 5 seconds, if a player dies he gains back 20% life and gains 2 points.
+    - (M) suicide: if he dies by violent death, he gains 1 point
     - (H) lifestealer (alternative to sayan): when he is under 50% life, a player dying gives him a charge. Use one charge to gain 20% life. Gain 1 point for each player that dies when he is under 50% life
     - (H) timewarper: when he taps, sensitivity for every player is changed like fast speed in speedShift (for 10s). Every player that dies in that mode gives him 2 points. He can take someone off guard with this skill
     - (H) the bomb: after 15s from match start, he can tap to activate a timer -> his role will be revealed on his screen (plus audio cue from the dashboard), and after 8 seconds, if he's alive, everyone else will take 50% damage

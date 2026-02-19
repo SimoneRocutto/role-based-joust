@@ -251,7 +251,7 @@ export class DominationMode extends GameMode {
       return {
         baseId: base.baseId,
         baseNumber: base.baseNumber,
-        teamId: base.ownerTeamId,
+        ownerTeamId: base.ownerTeamId,
         controlProgress,
         isConnected: base.isConnected,
       };
