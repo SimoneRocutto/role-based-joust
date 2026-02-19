@@ -49,7 +49,6 @@ function PlayerView() {
 
   // Handle tap to switch team during pre-game
   const handleTeamSwitch = useCallback(() => {
-    console.log("here");
     if (!isPreGame) return;
     socketService.sendTeamSwitch();
   }, [isPreGame]);

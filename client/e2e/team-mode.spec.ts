@@ -230,7 +230,7 @@ test.describe('Team Mode', () => {
   });
 
   test.describe('Team Lobby Dashboard', () => {
-    test('dashboard shows team sections during team selection', async ({ context }) => {
+    test('dashboard shows team sections during pre-game', async ({ context }) => {
       // Enable teams
       await fetch(`${API_URL}/api/game/settings`, {
         method: 'POST',
@@ -247,16 +247,17 @@ test.describe('Team Mode', () => {
       const p2 = await openPlayerJoin(context);
       await joinAsPlayer(p2, 'DashTeam2');
 
-      // Enter team selection phase
-      const selResponse = await fetch(`${API_URL}/api/game/team-selection`, {
+      // Launch game (enters pre-game where team selection happens)
+      await fetch(`${API_URL}/api/game/launch`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'classic', countdownDuration: 0 }),
       });
-      expect(selResponse.ok).toBe(true);
 
       // Wait for state propagation
       await dashboard.waitForTimeout(1000);
 
-      // Should see team names
+      // Should see team names in the pre-game player grid
       await expect(dashboard.locator('text=Red Team')).toBeVisible({ timeout: 5000 });
       await expect(dashboard.locator('text=Blue Team')).toBeVisible({ timeout: 5000 });
     });
@@ -329,7 +330,7 @@ test.describe('Team Mode', () => {
       expect(data.error).toContain('not enabled');
     });
 
-    test('player phones show team color during selection', async ({ context }) => {
+    test('player phones show team color during pre-game', async ({ context }) => {
       // Enable teams
       await fetch(`${API_URL}/api/game/settings`, {
         method: 'POST',
@@ -342,15 +343,19 @@ test.describe('Team Mode', () => {
       const p2 = await openPlayerJoin(context);
       await joinAsPlayer(p2, 'PhoneSelP2');
 
-      // Enter team selection
-      await fetch(`${API_URL}/api/game/team-selection`, { method: 'POST' });
+      // Launch game (enters pre-game where team selection happens)
+      await fetch(`${API_URL}/api/game/launch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'classic', countdownDuration: 0 }),
+      });
       await p1.waitForTimeout(1000);
 
-      // Player should see team badge and tap-to-switch hint
+      // Player should see team badge and tap-to-switch hint in pre-game
       await expect(p1.locator('text=/Tap to switch team/i')).toBeVisible({ timeout: 5000 });
 
-      // Should NOT see ready UI during team selection
-      await expect(p1.locator('text=/SHAKE TO READY|CLICK TO READY/i')).not.toBeVisible();
+      // Should also see ready UI (team selection and ready happen concurrently)
+      await expect(p1.locator('text=/SHAKE TO READY|CLICK TO READY/i')).toBeVisible({ timeout: 5000 });
     });
 
     test('launching game from team selection works', async ({ context }) => {
