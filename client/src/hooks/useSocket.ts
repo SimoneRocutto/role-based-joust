@@ -352,7 +352,7 @@ export function useSocket() {
       useGameStore.getState().setDominationTeamScores(teamScores);
     });
 
-    socketService.onBaseCaptured(({ baseId, baseNumber, teamId, teamName, teamColor }) => {
+    socketService.onBaseCaptured(({ baseId, teamId }) => {
       // Update the specific base in the store
       const store = useGameStore.getState();
       const updatedBases = store.bases.map((b) =>
@@ -361,7 +361,7 @@ export function useSocket() {
       store.setBases(updatedBases);
     });
 
-    socketService.onDominationWin(({ winningTeamId, winningTeamName, teamScores }) => {
+    socketService.onDominationWin(({ teamScores }) => {
       useGameStore.getState().setDominationTeamScores(teamScores);
     });
 

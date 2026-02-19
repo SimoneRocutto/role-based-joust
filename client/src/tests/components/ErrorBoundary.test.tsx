@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import ErrorBoundary from '@/components/shared/ErrorBoundary'
 
@@ -68,7 +68,7 @@ describe('ErrorBoundary', () => {
     })
 
     it('displays fallback message when error has no message', () => {
-      function ThrowEmpty() {
+      function ThrowEmpty(): JSX.Element {
         throw new Error()
       }
 
@@ -165,7 +165,7 @@ describe('ErrorBoundary', () => {
 
   describe('edge cases', () => {
     it('handles non-Error objects thrown', () => {
-      function ThrowString() {
+      function ThrowString(): JSX.Element {
         throw 'string error' // eslint-disable-line no-throw-literal
       }
 
@@ -180,7 +180,7 @@ describe('ErrorBoundary', () => {
     })
 
     it('handles null thrown', () => {
-      function ThrowNull() {
+      function ThrowNull(): JSX.Element {
         throw null // eslint-disable-line no-throw-literal
       }
 
@@ -194,7 +194,7 @@ describe('ErrorBoundary', () => {
     })
 
     it('catches errors from deeply nested children', () => {
-      function DeepChild() {
+      function DeepChild(): JSX.Element {
         throw new Error('Deep error')
       }
 

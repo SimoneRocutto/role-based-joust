@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGameState } from "@/hooks/useGameState";
 import { useModeEvents } from "@/hooks/useModeEvents";
 import { useGameStore } from "@/store/gameStore";

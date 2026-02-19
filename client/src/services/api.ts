@@ -57,7 +57,7 @@ class ApiService {
   // GET /api/game/lobby
   async getLobbyPlayers(): Promise<{
     success: boolean;
-    players: Array<{ id: string; name: string; number: number; isAlive: boolean; isReady: boolean }>;
+    players: Array<{ id: string; name: string; number: number; isAlive: boolean; isReady: boolean; isConnected?: boolean; teamId?: number | null }>;
   }> {
     return this.request("/game/lobby");
   }
@@ -158,6 +158,10 @@ class ApiService {
     }>;
     modes: Array<{ key: string; name: string; description: string }>;
     themes: string[];
+    dominationPointTarget?: number;
+    dominationControlInterval?: number;
+    dominationRespawnTime?: number;
+    dominationBaseCount?: number;
   }> {
     return this.request("/game/settings");
   }

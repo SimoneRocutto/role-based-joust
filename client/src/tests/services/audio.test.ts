@@ -23,7 +23,6 @@ function createMockHowl() {
 class AudioManager {
   private sounds: Map<string, ReturnType<typeof createMockHowl>> = new Map()
   private currentMusic: ReturnType<typeof createMockHowl> | null = null
-  private originalMusicVolume = 0.4
   private isMuted = false
   private isSpeaking = false
   private _isUnlocked = false
@@ -55,7 +54,6 @@ class AudioManager {
       this.sounds.set(track, sound)
     }
 
-    this.originalMusicVolume = volume
     this.currentMusic = sound
 
     sound.play()
@@ -186,7 +184,7 @@ describe('AudioManager', () => {
       createdSounds.push(sound)
       return sound
     })
-    audioManager = new AudioManager(mockCreateSound)
+    audioManager = new AudioManager(mockCreateSound as () => ReturnType<typeof createMockHowl>)
   })
 
   afterEach(() => {

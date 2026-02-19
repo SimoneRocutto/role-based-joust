@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { socketService } from "@/services/socket";
 import { useGameStore } from "@/store/gameStore";
 import { TEAM_COLORS } from "@/utils/teamColors";
@@ -18,8 +18,6 @@ export default function BaseView() {
   const [flashActive, setFlashActive] = useState(false);
   const gameState = useGameStore((s) => s.gameState);
   const isConnected = useGameStore((s) => s.isConnected);
-  const prevOwnerRef = useRef<number | null>(null);
-
   // Register as a base on mount
   useEffect(() => {
     const handleRegistered = (data: BaseRegisteredPayload) => {

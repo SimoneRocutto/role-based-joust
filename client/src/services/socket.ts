@@ -204,6 +204,7 @@ class SocketService {
         number: number;
         isAlive: boolean;
         isReady: boolean;
+        isConnected?: boolean;
         teamId?: number | null;
       }>;
     }) => void

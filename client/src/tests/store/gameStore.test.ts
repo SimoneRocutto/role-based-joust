@@ -331,8 +331,8 @@ describe('gameStore', () => {
     it('setScores updates scores', () => {
       const { setScores } = useGameStore.getState()
       const scores = [
-        { playerId: 'p1', playerName: 'Player 1', playerNumber: 1, score: 100, rank: 1, status: 'winner' },
-        { playerId: 'p2', playerName: 'Player 2', playerNumber: 2, score: 50, rank: 2, status: 'runner-up' },
+        { playerId: 'p1', playerName: 'Player 1', playerNumber: 1, score: 100, roundPoints: 0, rank: 1, status: 'winner' },
+        { playerId: 'p2', playerName: 'Player 2', playerNumber: 2, score: 50, roundPoints: 0, rank: 2, status: 'runner-up' },
       ]
 
       setScores(scores)
@@ -349,7 +349,7 @@ describe('gameStore', () => {
       store.setMyPlayer('player-1', 1)
       store.setGameState('active')
       store.updatePlayers([createMockPlayer()])
-      store.setScores([{ playerId: 'p1', playerName: 'P1', playerNumber: 1, score: 100, rank: 1, status: 'winner' }])
+      store.setScores([{ playerId: 'p1', playerName: 'P1', playerNumber: 1, score: 100, roundPoints: 0, rank: 1, status: 'winner' }])
 
       // Reset
       store.reset()

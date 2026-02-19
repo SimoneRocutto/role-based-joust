@@ -152,7 +152,7 @@ function PlayerView() {
           playerNumber={myPlayerNumber}
           playerName={playerName}
           countdownSeconds={countdownSeconds}
-          countdownPhase={countdownPhase}
+          countdownPhase={countdownPhase ?? "countdown"}
         />
       )}
 

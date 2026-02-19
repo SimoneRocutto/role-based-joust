@@ -109,7 +109,7 @@ describe('ApiService', () => {
   beforeEach(() => {
     api = new ApiService()
     mockFetch = vi.fn()
-    global.fetch = mockFetch
+    global.fetch = mockFetch as typeof fetch
   })
 
   afterEach(() => {
