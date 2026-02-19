@@ -48,8 +48,9 @@ export class Berserker extends BasePlayer {
   override takeDamage(baseDamage: number, gameTime: number): void {
     super.takeDamage(baseDamage, gameTime);
 
-    // Apply tough skin if still alive after taking damage
-    if (this.isAlive && baseDamage > 0) {
+    // Apply tough skin if still alive after taking damage. This can only work if berskerker is
+    // not already toughened (otherwise it could always stay in that mode by refreshing it with damage).
+    if (this.isAlive && baseDamage > 0 && !this.hasStatusEffect(Toughened)) {
       this.applyStatusEffect(
         Toughened,
         gameTime,

@@ -26,6 +26,9 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 
 - Death count mode specific:
 
+- Domination mode specific:
+    - a base that disconnects when out of the active game should simply be forgotten
+
 - Team mode specific:
     - end of round scoreboard is confusing: it should list players in order of round points. We should also find a way to represent total points for the entire teams
     - points at the end of round should exclude points made by the lowest scoring players. This doesn't happen when all team have the same amount of players. Though, when we have 3, 2 and 2 in teams, team with 3 players will statistically score +50% points compared to other teams. So, we'll just exclude the worst player from their score count as a way to lower the disparity. We can think of other ways to compensate
