@@ -156,8 +156,8 @@ export const roleConfigs: RoleConfigs = {
   },
 
   masochist: {
-    hpThresholdPercent: 0.3, // Below 30% HP
-    pointInterval: 10000, // 10 seconds
+    hpThresholdPercent: 0.5, // Below 50% HP
+    pointInterval: 15000, // 15 seconds
     pointsPerTick: 1,
   },
 

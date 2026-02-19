@@ -9,13 +9,14 @@ const logger = Logger.getInstance();
 /**
  * Masochist - Low-HP point generation role
  *
- * While below 30% HP, earns 1 point every 10 seconds.
+ * While below 50% HP, earns 1 point every 15 seconds.
  * Rewards risky playstyle of staying alive while damaged.
  */
 export class Masochist extends BasePlayer {
+  // TODO add sound cue when under 50%
   static override priority: number = ROLE_PRIORITIES.MASOCHIST;
   static displayName: string = "Masochist";
-  static description: string = "Earn 1 point every 10s while below 30% HP";
+  static description: string = "Earn 1 point every 15s while below 50% HP";
   static difficulty: string = "normal";
 
   private readonly hpThresholdPercent: number;

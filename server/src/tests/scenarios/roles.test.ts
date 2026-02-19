@@ -683,7 +683,7 @@ runner.test("Ninja dies instantly when exceeding threshold", (engine) => {
 // MASOCHIST TESTS
 // ============================================================================
 
-runner.test("Masochist earns points when below 30% HP", (engine) => {
+runner.test("Masochist earns points when below 50% HP", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
@@ -693,27 +693,27 @@ runner.test("Masochist earns points when below 30% HP", (engine) => {
   const masochist = engine.players.find((p) => p instanceof Masochist);
   assert(masochist !== undefined, "Should have masochist");
 
-  // Deal enough damage to go below 30% HP (above 70% of threshold)
-  const damageToBelow30 = masochist!.deathThreshold * 0.75;
+  // Deal enough damage to go below 50% HP (above 50% of threshold)
+  const damageToBelow30 = masochist!.deathThreshold * 0.55;
   masochist!.takeDamage(damageToBelow30, engine.gameTime);
 
   const hpPercent =
     1 - masochist!.accumulatedDamage / masochist!.deathThreshold;
-  assert(hpPercent < 0.3, "Should be below 30% HP");
+  assert(hpPercent < 0.5, "Should be below 50% HP");
 
   assertEqual(masochist!.points, 0, "Should have 0 points before interval");
 
-  // Fast-forward 10.2 seconds (extra 200ms because timer starts on first tick after damage)
-  engine.fastForward(10200);
+  // Fast-forward 15.2 seconds (extra 200ms because timer starts on first tick after damage)
+  engine.fastForward(15200);
 
   assertEqual(
     masochist!.points,
     1,
-    "Should have 1 point after 10s below threshold"
+    "Should have 1 point after 15s below threshold"
   );
 });
 
-runner.test("Masochist doesn't earn points above 30% HP", (engine) => {
+runner.test("Masochist doesn't earn points above 50% HP", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
@@ -723,12 +723,12 @@ runner.test("Masochist doesn't earn points above 30% HP", (engine) => {
   const masochist = engine.players.find((p) => p instanceof Masochist);
   assert(masochist !== undefined, "Should have masochist");
 
-  // Deal light damage (stay above 30%)
-  masochist!.takeDamage(masochist!.deathThreshold * 0.3, engine.gameTime);
+  // Deal light damage (stay above 50%)
+  masochist!.takeDamage(masochist!.deathThreshold * 0.45, engine.gameTime);
 
   const hpPercent =
     1 - masochist!.accumulatedDamage / masochist!.deathThreshold;
-  assert(hpPercent > 0.3, "Should be above 30% HP");
+  assert(hpPercent > 0.5, "Should be above 50% HP");
 
   // Fast-forward 20 seconds
   engine.fastForward(20000);
@@ -750,16 +750,16 @@ runner.test("Masochist earns multiple points over time", (engine) => {
   const masochist = engine.players.find((p) => p instanceof Masochist);
   assert(masochist !== undefined, "Should have masochist");
 
-  // Go below 30% HP
-  masochist!.takeDamage(masochist!.deathThreshold * 0.75, engine.gameTime);
+  // Go below 50% HP
+  masochist!.takeDamage(masochist!.deathThreshold * 0.55, engine.gameTime);
 
-  // Fast-forward 30.2 seconds (3 intervals + buffer for first tick)
-  engine.fastForward(30200);
+  // Fast-forward 45.2 seconds (3 intervals + buffer for first tick)
+  engine.fastForward(45200);
 
   assertEqual(
     masochist!.points,
     3,
-    "Should have 3 points after 30s below threshold"
+    "Should have 3 points after 45s below threshold"
   );
 });
 
@@ -907,14 +907,8 @@ runner.test("Two siblings win together when all others die", (engine) => {
   engine.fastForward(100);
 
   // Both siblings should have received 1st place bonus (5 pts)
-  assert(
-    siblings[0].points >= 5,
-    "Sibling 1 should have 1st place bonus"
-  );
-  assert(
-    siblings[1].points >= 5,
-    "Sibling 2 should have 1st place bonus"
-  );
+  assert(siblings[0].points >= 5, "Sibling 1 should have 1st place bonus");
+  assert(siblings[1].points >= 5, "Sibling 2 should have 1st place bonus");
 });
 
 runner.test("Sibling death triggers death event normally", (engine) => {
@@ -990,38 +984,35 @@ runner.test(
   }
 );
 
-runner.test(
-  "Vulture gains no points when deaths are >5s apart",
-  (engine) => {
-    const mode = GameModeFactory.getInstance().createMode("role-based");
-    engine.setGameMode(mode);
+runner.test("Vulture gains no points when deaths are >5s apart", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
 
-    engine.createTestGame(["vulture", "beast", "survivor", "ninja"]);
-    engine.players.forEach((p) => p.disableAutoPlay());
+  engine.createTestGame(["vulture", "beast", "survivor", "ninja"]);
+  engine.players.forEach((p) => p.disableAutoPlay());
 
-    const vulture = engine.players.find((p) => p instanceof Vulture);
-    const nonVultures = engine.players.filter(
-      (p) => !(p instanceof Vulture) && p.id !== vulture!.id
-    );
+  const vulture = engine.players.find((p) => p instanceof Vulture);
+  const nonVultures = engine.players.filter(
+    (p) => !(p instanceof Vulture) && p.id !== vulture!.id
+  );
 
-    // First death
-    nonVultures[0].die(engine.gameTime);
-    engine.fastForward(100);
+  // First death
+  nonVultures[0].die(engine.gameTime);
+  engine.fastForward(100);
 
-    // Wait >5 seconds
-    engine.fastForward(6000);
+  // Wait >5 seconds
+  engine.fastForward(6000);
 
-    // Second death
-    nonVultures[1].die(engine.gameTime);
-    engine.fastForward(100);
+  // Second death
+  nonVultures[1].die(engine.gameTime);
+  engine.fastForward(100);
 
-    assertEqual(
-      vulture!.points,
-      0,
-      "No points when deaths are more than 5s apart"
-    );
-  }
-);
+  assertEqual(
+    vulture!.points,
+    0,
+    "No points when deaths are more than 5s apart"
+  );
+});
 
 runner.test("Vulture's own death doesn't trigger points", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
