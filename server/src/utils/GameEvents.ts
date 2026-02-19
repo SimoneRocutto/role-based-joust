@@ -15,6 +15,10 @@ import type {
   GameStartEvent,
   PlayerRespawnEvent,
   PlayerRespawnPendingEvent,
+  BaseCapturedEvent,
+  BasePointEvent,
+  BaseStatusEvent,
+  DominationWinEvent,
 } from "@/types/events.types";
 
 /**
@@ -120,6 +124,22 @@ export class GameEvents extends EventEmitter {
     this.emit("player:respawn-pending", payload);
   }
 
+  emitBaseCaptured(payload: BaseCapturedEvent): void {
+    this.emit("base:captured", payload);
+  }
+
+  emitBasePoint(payload: BasePointEvent): void {
+    this.emit("base:point", payload);
+  }
+
+  emitBaseStatus(payload: BaseStatusEvent): void {
+    this.emit("base:status", payload);
+  }
+
+  emitDominationWin(payload: DominationWinEvent): void {
+    this.emit("domination:win", payload);
+  }
+
   // ========== TYPED EVENT LISTENERS ==========
 
   onGameTick(listener: (payload: GameTickEvent) => void): void {
@@ -200,6 +220,22 @@ export class GameEvents extends EventEmitter {
     listener: (payload: PlayerRespawnPendingEvent) => void
   ): void {
     this.on("player:respawn-pending", listener);
+  }
+
+  onBaseCaptured(listener: (payload: BaseCapturedEvent) => void): void {
+    this.on("base:captured", listener);
+  }
+
+  onBasePoint(listener: (payload: BasePointEvent) => void): void {
+    this.on("base:point", listener);
+  }
+
+  onBaseStatus(listener: (payload: BaseStatusEvent) => void): void {
+    this.on("base:status", listener);
+  }
+
+  onDominationWin(listener: (payload: DominationWinEvent) => void): void {
+    this.on("domination:win", listener);
   }
 
   // ========== UTILITY METHODS ==========

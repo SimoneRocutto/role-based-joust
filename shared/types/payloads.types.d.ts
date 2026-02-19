@@ -11,6 +11,7 @@ import type {
   ClientScoreEntry,
   TeamScore,
   ChargeInfo,
+  BaseState,
 } from "./common.types";
 
 // ---------------------------------------------------------------------------
@@ -160,4 +161,38 @@ export interface CountdownPayload {
   phase: "countdown" | "go";
   roundNumber: number;
   totalRounds: number;
+}
+
+// ---------------------------------------------------------------------------
+// Domination / Base events
+// ---------------------------------------------------------------------------
+
+export interface BaseRegisteredPayload {
+  baseId: string;
+  baseNumber: number;
+}
+
+export interface BaseCapturedPayload {
+  baseId: string;
+  baseNumber: number;
+  teamId: number;
+  teamName: string;
+  teamColor: string;
+}
+
+export interface BasePointPayload {
+  baseId: string;
+  baseNumber: number;
+  teamId: number;
+  teamScores: Record<number, number>;
+}
+
+export interface BaseStatusPayload {
+  bases: BaseState[];
+}
+
+export interface DominationWinPayload {
+  winningTeamId: number;
+  winningTeamName: string;
+  teamScores: Record<number, number>;
 }

@@ -99,6 +99,18 @@ export interface TeamScore {
 }
 
 // ---------------------------------------------------------------------------
+// Base state (Domination mode)
+// ---------------------------------------------------------------------------
+
+export interface BaseState {
+  baseId: string;
+  baseNumber: number;
+  ownerTeamId: number | null;
+  controlProgress: number; // 0-1, progress toward next point
+  isConnected: boolean;
+}
+
+// ---------------------------------------------------------------------------
 // Ability charges
 // ---------------------------------------------------------------------------
 

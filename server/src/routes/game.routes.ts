@@ -17,6 +17,10 @@ import {
   setRoundDurationPreference,
   setTeamsEnabledPreference,
   setTeamCountPreference,
+  setDominationPointTargetPreference,
+  setDominationControlIntervalPreference,
+  setDominationRespawnTimePreference,
+  setDominationBaseCountPreference,
   userPreferences,
 } from "@/config/gameConfig";
 import { getAvailableThemes, themeExists } from "@/config/roleThemes";
@@ -198,10 +202,15 @@ router.post(
       return;
     }
 
+    // Determine effective mode early (needed for team forcing)
+    const effectiveMode = mode || userPreferences.gameMode;
+
     // Configure teams based on current settings
+    // Domination mode always requires teams
     const teamManager = TeamManager.getInstance();
+    const forceTeams = effectiveMode === "domination";
     teamManager.configure(
-      userPreferences.teamsEnabled,
+      forceTeams || userPreferences.teamsEnabled,
       userPreferences.teamCount
     );
     // End team selection phase if it was active
@@ -230,7 +239,6 @@ router.post(
     }
 
     // Use persisted preferences as defaults
-    const effectiveMode = mode || userPreferences.gameMode;
     const effectiveTheme = theme || userPreferences.theme;
     const effectiveRoundCount = userPreferences.roundCount;
 
@@ -244,6 +252,12 @@ router.post(
     }
     // Pass roundDuration in ms for timed modes
     modeOptions.roundDuration = userPreferences.roundDuration * 1000;
+    // Pass domination-specific options
+    if (effectiveMode === "domination") {
+      modeOptions.pointTarget = userPreferences.dominationPointTarget;
+      modeOptions.controlIntervalMs = userPreferences.dominationControlInterval * 1000;
+      modeOptions.respawnDelayMs = userPreferences.dominationRespawnTime * 1000;
+    }
     const gameMode = factory.createMode(effectiveMode, modeOptions);
 
     // Set mode on engine
@@ -398,6 +412,11 @@ router.get(
       roundDuration: userPreferences.roundDuration,
       teamsEnabled: userPreferences.teamsEnabled,
       teamCount: userPreferences.teamCount,
+      // Domination settings
+      dominationPointTarget: userPreferences.dominationPointTarget,
+      dominationControlInterval: userPreferences.dominationControlInterval,
+      dominationRespawnTime: userPreferences.dominationRespawnTime,
+      dominationBaseCount: userPreferences.dominationBaseCount,
       // Movement details
       movement: {
         dangerThreshold: gameConfig.movement.dangerThreshold,
@@ -438,6 +457,10 @@ router.post(
       teamCount,
       dangerThreshold,
       damageMultiplier,
+      dominationPointTarget,
+      dominationControlInterval,
+      dominationRespawnTime,
+      dominationBaseCount,
     } = req.body;
     const updates: string[] = [];
 
@@ -568,6 +591,43 @@ router.post(
       }
     }
 
+    // Update domination settings
+    if (dominationPointTarget !== undefined) {
+      if (typeof dominationPointTarget !== "number" || dominationPointTarget < 5 || dominationPointTarget > 100) {
+        res.status(400).json({ success: false, error: "dominationPointTarget must be a number between 5 and 100" });
+        return;
+      }
+      setDominationPointTargetPreference(dominationPointTarget);
+      updates.push(`dominationPointTarget=${dominationPointTarget}`);
+    }
+
+    if (dominationControlInterval !== undefined) {
+      if (typeof dominationControlInterval !== "number" || dominationControlInterval < 3 || dominationControlInterval > 15) {
+        res.status(400).json({ success: false, error: "dominationControlInterval must be a number between 3 and 15" });
+        return;
+      }
+      setDominationControlIntervalPreference(dominationControlInterval);
+      updates.push(`dominationControlInterval=${dominationControlInterval}`);
+    }
+
+    if (dominationRespawnTime !== undefined) {
+      if (typeof dominationRespawnTime !== "number" || dominationRespawnTime < 5 || dominationRespawnTime > 30) {
+        res.status(400).json({ success: false, error: "dominationRespawnTime must be a number between 5 and 30" });
+        return;
+      }
+      setDominationRespawnTimePreference(dominationRespawnTime);
+      updates.push(`dominationRespawnTime=${dominationRespawnTime}`);
+    }
+
+    if (dominationBaseCount !== undefined) {
+      if (typeof dominationBaseCount !== "number" || dominationBaseCount < 1 || dominationBaseCount > 3) {
+        res.status(400).json({ success: false, error: "dominationBaseCount must be a number between 1 and 3" });
+        return;
+      }
+      setDominationBaseCountPreference(dominationBaseCount);
+      updates.push(`dominationBaseCount=${dominationBaseCount}`);
+    }
+
     // Custom sensitivity values (overrides preset)
     if (dangerThreshold !== undefined || damageMultiplier !== undefined) {
       const update: Partial<{
@@ -602,6 +662,10 @@ router.post(
       roundDuration: userPreferences.roundDuration,
       teamsEnabled: userPreferences.teamsEnabled,
       teamCount: userPreferences.teamCount,
+      dominationPointTarget: userPreferences.dominationPointTarget,
+      dominationControlInterval: userPreferences.dominationControlInterval,
+      dominationRespawnTime: userPreferences.dominationRespawnTime,
+      dominationBaseCount: userPreferences.dominationBaseCount,
       movement: {
         dangerThreshold: gameConfig.movement.dangerThreshold,
         damageMultiplier: gameConfig.movement.damageMultiplier,

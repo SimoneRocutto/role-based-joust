@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { PlayerState, RoleInfo } from "@/types/player.types";
 import type { GameStateType, ScoreEntry, TeamScore } from "@/types/game.types";
+import type { BaseState } from "@/types/socket.types";
 
 interface GameStore {
   // Connection state
@@ -47,6 +48,10 @@ interface GameStore {
   teamSelectionActive: boolean;
   teamScores: TeamScore[] | null;
 
+  // Base state (Domination mode)
+  bases: BaseState[];
+  dominationTeamScores: Record<number, number>;
+
   // Mode recap (shown during pre-game)
   modeRecap: {
     modeName: string;
@@ -92,6 +97,8 @@ interface GameStore {
   setModeRecap: (
     recap: { modeName: string; roundCount: number; sensitivity: string } | null
   ) => void;
+  setBases: (bases: BaseState[]) => void;
+  setDominationTeamScores: (scores: Record<number, number>) => void;
   resetReadyState: () => void;
   reset: () => void;
 }
@@ -133,6 +140,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   teams: {},
   teamSelectionActive: false,
   teamScores: null,
+
+  bases: [],
+  dominationTeamScores: {},
 
   modeRecap: null,
 
@@ -249,6 +259,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setModeRecap: (recap) => set({ modeRecap: recap }),
 
+  setBases: (bases) => set({ bases }),
+
+  setDominationTeamScores: (scores) => set({ dominationTeamScores: scores }),
+
   resetReadyState: () =>
     set({
       readyPlayers: new Set(),
@@ -288,6 +302,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       teamsEnabled: false,
       teamSelectionActive: false,
       teamScores: null,
+      bases: [],
+      dominationTeamScores: {},
       modeRecap: null,
       latestEvent: null,
       scores: [],

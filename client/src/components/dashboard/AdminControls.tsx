@@ -35,6 +35,11 @@ function AdminControls() {
         handleRoundCountChange={settings.handleRoundCountChange}
         handleRoundDurationChange={settings.handleRoundDurationChange}
         handleTeamCountChange={settings.handleTeamCountChange}
+        dominationPointTarget={settings.dominationPointTarget}
+        dominationControlInterval={settings.dominationControlInterval}
+        dominationRespawnTime={settings.dominationRespawnTime}
+        dominationBaseCount={settings.dominationBaseCount}
+        handleDominationSettingChange={settings.handleDominationSettingChange}
       />
 
       <LobbyActionBar

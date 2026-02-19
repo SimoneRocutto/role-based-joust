@@ -6,6 +6,7 @@ import { GameEvents } from "@/utils/GameEvents";
 import { Logger } from "@/utils/Logger";
 import { userPreferences } from "@/config/gameConfig";
 import { formatScoresForClient, buildTeamScores } from "./helpers";
+import { BaseManager } from "@/managers/BaseManager";
 import type {
   GameTickPlayerState,
   PlayerDeathPayload,
@@ -22,6 +23,10 @@ import type {
   PlayerRespawnPayload,
   PlayerRespawnPendingPayload,
   RoleAssignedPayload,
+  BaseCapturedPayload,
+  BasePointPayload,
+  BaseStatusPayload,
+  DominationWinPayload,
 } from "@shared/types";
 
 const logger = Logger.getInstance();
@@ -205,6 +210,40 @@ export function registerGameEventBroadcasters(
       };
       socket.emit("player:respawn-pending", clientPayload);
     }
+  });
+
+  // Broadcast base captured events (Domination mode)
+  gameEvents.onBaseCaptured((payload) => {
+    const clientPayload: BaseCapturedPayload = payload;
+    io.emit("base:captured", clientPayload);
+  });
+
+  // Broadcast base point events (Domination mode)
+  gameEvents.onBasePoint((payload) => {
+    const clientPayload: BasePointPayload = payload;
+    io.emit("base:point", clientPayload);
+
+    // Also emit to the specific base socket for SFX
+    const baseManager = BaseManager.getInstance();
+    const base = baseManager.getBase(payload.baseId);
+    if (base?.isConnected) {
+      const socket = io.sockets.sockets.get(base.socketId);
+      if (socket) {
+        socket.emit("base:point", clientPayload);
+      }
+    }
+  });
+
+  // Broadcast base status updates (Domination mode)
+  gameEvents.onBaseStatus((payload) => {
+    const clientPayload: BaseStatusPayload = payload;
+    io.emit("base:status", clientPayload);
+  });
+
+  // Broadcast domination win events
+  gameEvents.onDominationWin((payload) => {
+    const clientPayload: DominationWinPayload = payload;
+    io.emit("domination:win", clientPayload);
   });
 
   // Send role assignment to individual players

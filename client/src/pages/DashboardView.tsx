@@ -11,6 +11,7 @@ import AdminControls from "@/components/dashboard/AdminControls";
 import PreGameControls from "@/components/dashboard/PreGameControls";
 import Scoreboard from "@/components/dashboard/Scoreboard";
 import CountdownDisplay from "@/components/dashboard/CountdownDisplay";
+import BaseStatusPanel from "@/components/dashboard/BaseStatusPanel";
 import { useAudioStore } from "@/store/audioStore";
 import { audioManager } from "@/services/audio";
 
@@ -264,6 +265,7 @@ function DashboardView() {
         {/* Active gameplay phases */}
         {(isCountdown || isActive || isRoundEnded) && (
           <>
+            <BaseStatusPanel />
             <PlayerGrid />
 
             {/* Stop Game button during active gameplay */}

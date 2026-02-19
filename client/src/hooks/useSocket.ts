@@ -343,6 +343,28 @@ export function useSocket() {
       useGameStore.getState().setMyPlayer("", 0);
     });
 
+    // Base events (Domination mode)
+    socketService.onBaseStatus(({ bases }) => {
+      useGameStore.getState().setBases(bases);
+    });
+
+    socketService.onBasePoint(({ teamScores }) => {
+      useGameStore.getState().setDominationTeamScores(teamScores);
+    });
+
+    socketService.onBaseCaptured(({ baseId, baseNumber, teamId, teamName, teamColor }) => {
+      // Update the specific base in the store
+      const store = useGameStore.getState();
+      const updatedBases = store.bases.map((b) =>
+        b.baseId === baseId ? { ...b, ownerTeamId: teamId, controlProgress: 0 } : b
+      );
+      store.setBases(updatedBases);
+    });
+
+    socketService.onDominationWin(({ winningTeamId, winningTeamName, teamScores }) => {
+      useGameStore.getState().setDominationTeamScores(teamScores);
+    });
+
     // Error handling
     socketService.onError(({ message, code }) => {
       console.error("Socket error:", code, message);
@@ -375,6 +397,10 @@ export function useSocket() {
       socketService.off("player:respawn");
       socketService.off("player:respawn-pending");
       socketService.off("player:kicked");
+      socketService.off("base:status");
+      socketService.off("base:point");
+      socketService.off("base:captured");
+      socketService.off("domination:win");
       socketService.off("error");
     };
   }, [myPlayerId, myPlayerNumber]);

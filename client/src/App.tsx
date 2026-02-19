@@ -5,6 +5,7 @@ import { useReconnect } from "@/hooks/useReconnect";
 import JoinView from "@/pages/JoinView";
 import PlayerView from "@/pages/PlayerView";
 import DashboardView from "@/pages/DashboardView";
+import BaseView from "@/pages/BaseView";
 import ErrorBoundary from "@/components/shared/ErrorBoundary";
 import { audioManager } from "./services/audio";
 
@@ -26,6 +27,7 @@ function App() {
         <Route path="/join" element={<JoinView />} />
         <Route path="/player" element={<PlayerView />} />
         <Route path="/dashboard" element={<DashboardView />} />
+        <Route path="/base" element={<BaseView />} />
         <Route path="*" element={<Navigate to="/join" replace />} />
       </Routes>
     </ErrorBoundary>

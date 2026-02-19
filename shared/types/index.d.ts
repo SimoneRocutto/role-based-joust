@@ -7,6 +7,7 @@ export type {
   ClientScoreEntry,
   TeamScore,
   ChargeInfo,
+  BaseState,
 } from "./common.types";
 
 export type {
@@ -32,4 +33,9 @@ export type {
   PlayerRespawnPendingPayload,
   TapResultPayload,
   CountdownPayload,
+  BaseRegisteredPayload,
+  BaseCapturedPayload,
+  BasePointPayload,
+  BaseStatusPayload,
+  DominationWinPayload,
 } from "./payloads.types";

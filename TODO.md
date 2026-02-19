@@ -12,17 +12,7 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 
 - FEATURES:
     - UI: add a settings screen (accessible from the UI) where all the more complex settings (like sensibility of movement detection) can be accessed. In the future, other settings will be accessed through this screen
-    - new mode - domination:
-        - this draws inspirations by game mechanics similar to U. Tournament domination mode.
-        - the game is played in teams
-        - there should be a different endpoint which is unlocked just for this mode. The phone that connects to this endpoint will be registered as a base to conquer. We could technically have multiple bases to conquer
-        - from a practical perspective, the phone will be positioned at the center of the playground and can be in one of three states when playing in two teams: inactive (initial state), conquered by team 1, conquered by team 2
-        - the first time the phone is tapped, it switches state to the first team. From that moment onwards, tapping it will change team: in two teams mode, it will go to team 2, then again team 1 and so on. This is optimal because when a player of a team who isn't controlling the base taps the phone, it will immediately change to his team. It's slighly clunkier with 3 or more teams because tapping should then do team 1 -> 2 -> 3 -> 1 and so on. Players will have to tap until they see their team color on the phone, not optimal but whatever
-        - every 5 seconds the base is controlled by a team (it kept the same team for these 5 seconds), the team controlling it will score 1 point
-        - when a team reaches a certain amount of points, they win. For now we could configure it to 20, then we could change it in the future
-        - when a player dies, they will have to go back to their respawn point (this mechanic will of course be outside of game code) and the phone will tell them when they respawned. There should be a 10s respawn timer
-        - for starting the game, there will be the same flow we have for other team modes like classic team or death count team. After pregame, it will go off and we'll have a voice from the dashboard saying "Game is about to start, position on your spawn points!" Then we'll have 3 2 1 GO countdown like in all other modes. I want something like 6 seconds of total countdown, just the amount of time to let the voice finish saying the line
-        - I want the mode to be documented fully: not only the code logic, but also how it should be played by players. Maybe we'll need a dedicated documentation that will be what players will read, more like game rules
+
 
 - BUGS:
     - sometimes all players have the skull at the end of the round. Points are not cumulative. I have to track down when this happens

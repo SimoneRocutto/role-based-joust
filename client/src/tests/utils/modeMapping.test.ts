@@ -9,8 +9,8 @@ import {
 
 describe("modeMapping", () => {
   describe("COMBINED_MODES", () => {
-    it("has 6 entries (3 solo + 3 team)", () => {
-      expect(COMBINED_MODES).toHaveLength(6);
+    it("has 7 entries (3 solo + 3 team + domination)", () => {
+      expect(COMBINED_MODES).toHaveLength(7);
     });
 
     it("has unique keys", () => {

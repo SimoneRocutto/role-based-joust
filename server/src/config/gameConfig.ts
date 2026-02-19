@@ -43,6 +43,13 @@ export interface ModeDefaultsConfig {
     respawnDelayMs: number; // Time before a dead player respawns
     defaultRoundDurationMs: number; // Default round duration
   };
+  domination: {
+    countdownSeconds: number; // Countdown duration for Domination mode
+    respawnDelayMs: number; // Time before a dead player respawns
+    controlIntervalMs: number; // Milliseconds of control needed per point
+    pointTarget: number; // Points needed to win
+    baseCount: number; // Expected number of bases
+  };
 }
 
 export interface SpeedShiftConfig {
@@ -83,6 +90,10 @@ export interface UserPreferences {
   roundDuration: number; // Round duration in seconds for timed modes (30-300)
   teamsEnabled: boolean; // Whether team mode is active
   teamCount: number; // Number of teams (2-4)
+  dominationPointTarget: number; // Points needed to win domination (5-100)
+  dominationControlInterval: number; // Seconds of control per point (3-15)
+  dominationRespawnTime: number; // Seconds before respawn (5-30)
+  dominationBaseCount: number; // Expected number of bases (1-3)
 }
 
 export interface SensitivityPreset {
@@ -143,6 +154,10 @@ const defaultPreferences: UserPreferences = {
   roundDuration: 90,
   teamsEnabled: false,
   teamCount: 2,
+  dominationPointTarget: 20,
+  dominationControlInterval: 5,
+  dominationRespawnTime: 10,
+  dominationBaseCount: 1,
 };
 
 export const gameConfig: GameConfig = {
@@ -183,6 +198,13 @@ export const gameConfig: GameConfig = {
       respawnDelayMs: 5000, // 5 seconds
       defaultRoundDurationMs: 90000, // 90 seconds
     },
+    domination: {
+      countdownSeconds: 6,
+      respawnDelayMs: 10000, // 10 seconds
+      controlIntervalMs: 5000, // 5 seconds
+      pointTarget: 20,
+      baseCount: 1,
+    },
   },
 
   speedShift: {
@@ -217,6 +239,10 @@ function persistSettings(): void {
     roundDuration: userPreferences.roundDuration,
     teamsEnabled: userPreferences.teamsEnabled,
     teamCount: userPreferences.teamCount,
+    dominationPointTarget: userPreferences.dominationPointTarget,
+    dominationControlInterval: userPreferences.dominationControlInterval,
+    dominationRespawnTime: userPreferences.dominationRespawnTime,
+    dominationBaseCount: userPreferences.dominationBaseCount,
   };
   settingsStore.save(settings);
 }
@@ -334,6 +360,38 @@ export function setTeamCountPreference(count: number): void {
   persistSettings();
 }
 
+/**
+ * Update domination point target preference.
+ */
+export function setDominationPointTargetPreference(target: number): void {
+  userPreferences.dominationPointTarget = Math.max(5, Math.min(100, target));
+  persistSettings();
+}
+
+/**
+ * Update domination control interval preference (seconds).
+ */
+export function setDominationControlIntervalPreference(seconds: number): void {
+  userPreferences.dominationControlInterval = Math.max(3, Math.min(15, seconds));
+  persistSettings();
+}
+
+/**
+ * Update domination respawn time preference (seconds).
+ */
+export function setDominationRespawnTimePreference(seconds: number): void {
+  userPreferences.dominationRespawnTime = Math.max(5, Math.min(30, seconds));
+  persistSettings();
+}
+
+/**
+ * Update domination base count preference.
+ */
+export function setDominationBaseCountPreference(count: number): void {
+  userPreferences.dominationBaseCount = Math.max(1, Math.min(3, count));
+  persistSettings();
+}
+
 export function resetMovementConfig(): void {
   Object.assign(gameConfig.movement, defaultMovement);
   Object.assign(userPreferences, defaultPreferences);
@@ -369,6 +427,18 @@ export function initSettings(): void {
     }
     if (saved.teamCount !== undefined) {
       userPreferences.teamCount = saved.teamCount;
+    }
+    if (saved.dominationPointTarget !== undefined) {
+      userPreferences.dominationPointTarget = saved.dominationPointTarget;
+    }
+    if (saved.dominationControlInterval !== undefined) {
+      userPreferences.dominationControlInterval = saved.dominationControlInterval;
+    }
+    if (saved.dominationRespawnTime !== undefined) {
+      userPreferences.dominationRespawnTime = saved.dominationRespawnTime;
+    }
+    if (saved.dominationBaseCount !== undefined) {
+      userPreferences.dominationBaseCount = saved.dominationBaseCount;
     }
   }
 }

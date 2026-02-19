@@ -12,6 +12,10 @@ interface GameSettingsPanelProps {
   teamsEnabled: boolean;
   teamCount: number;
   loading: boolean;
+  dominationPointTarget: number;
+  dominationControlInterval: number;
+  dominationRespawnTime: number;
+  dominationBaseCount: number;
   handleCombinedModeChange: (combinedKey: string) => void;
   handleThemeChange: (theme: string) => void;
   handleSensitivityChange: (sensitivity: string) => void;
@@ -19,6 +23,7 @@ interface GameSettingsPanelProps {
   handleRoundCountChange: (count: number) => void;
   handleRoundDurationChange: (duration: number) => void;
   handleTeamCountChange: (count: number) => void;
+  handleDominationSettingChange: (key: string, value: number) => void;
 }
 
 function GameSettingsPanel({
@@ -40,7 +45,13 @@ function GameSettingsPanel({
   handleRoundCountChange,
   handleRoundDurationChange,
   handleTeamCountChange,
+  dominationPointTarget,
+  dominationControlInterval,
+  dominationRespawnTime,
+  dominationBaseCount,
+  handleDominationSettingChange,
 }: GameSettingsPanelProps) {
+  const isDomination = selectedMode === "domination";
   return (
     <>
       {/* Mode Selection (combined with teams) */}
@@ -105,33 +116,129 @@ function GameSettingsPanel({
         </div>
       )}
 
-      {/* Round Count Selection */}
-      <div className="mb-4">
-        <label className="block text-sm text-gray-400 mb-2">
-          Number of Rounds
-        </label>
-        <div className="flex gap-2">
-          {[1, 2, 3, 4, 5].map((count) => (
-            <button
-              key={count}
-              onClick={() => handleRoundCountChange(count)}
-              disabled={loading}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                roundCount === count
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-              }`}
-            >
-              {count}
-            </button>
-          ))}
+      {/* Domination-specific settings */}
+      {isDomination && (
+        <>
+          <div className="mb-4">
+            <label className="block text-sm text-gray-400 mb-2">Point Target</label>
+            <div className="flex gap-2">
+              {[10, 15, 20, 30].map((target) => (
+                <button
+                  key={target}
+                  onClick={() => handleDominationSettingChange("dominationPointTarget", target)}
+                  disabled={loading}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    dominationPointTarget === target
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                  }`}
+                >
+                  {target}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              First team to {dominationPointTarget} points wins
+            </p>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm text-gray-400 mb-2">Control Interval</label>
+            <div className="flex gap-2">
+              {[3, 5, 10].map((sec) => (
+                <button
+                  key={sec}
+                  onClick={() => handleDominationSettingChange("dominationControlInterval", sec)}
+                  disabled={loading}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    dominationControlInterval === sec
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                  }`}
+                >
+                  {sec}s
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Seconds of uncontested control per point
+            </p>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm text-gray-400 mb-2">Respawn Time</label>
+            <div className="flex gap-2">
+              {[5, 10, 15].map((sec) => (
+                <button
+                  key={sec}
+                  onClick={() => handleDominationSettingChange("dominationRespawnTime", sec)}
+                  disabled={loading}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    dominationRespawnTime === sec
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                  }`}
+                >
+                  {sec}s
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm text-gray-400 mb-2">Base Count</label>
+            <div className="flex gap-2">
+              {[1, 2, 3].map((count) => (
+                <button
+                  key={count}
+                  onClick={() => handleDominationSettingChange("dominationBaseCount", count)}
+                  disabled={loading}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    dominationBaseCount === count
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                  }`}
+                >
+                  {count}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Expected number of base phones
+            </p>
+          </div>
+        </>
+      )}
+
+      {/* Round Count Selection (hidden for domination) */}
+      {!isDomination && (
+        <div className="mb-4">
+          <label className="block text-sm text-gray-400 mb-2">
+            Number of Rounds
+          </label>
+          <div className="flex gap-2">
+            {[1, 2, 3, 4, 5].map((count) => (
+              <button
+                key={count}
+                onClick={() => handleRoundCountChange(count)}
+                disabled={loading}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  roundCount === count
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                }`}
+              >
+                {count}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            {roundCount === 1
+              ? "Single round — winner takes all"
+              : `${roundCount} rounds — points accumulate`}
+          </p>
         </div>
-        <p className="text-xs text-gray-500 mt-1">
-          {roundCount === 1
-            ? "Single round — winner takes all"
-            : `${roundCount} rounds — points accumulate`}
-        </p>
-      </div>
+      )}
 
       {/* Round Duration (only for timed modes like death-count) */}
       {selectedMode === "death-count" && (

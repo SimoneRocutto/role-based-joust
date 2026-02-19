@@ -3,13 +3,10 @@ import type { GameEngine } from "@/managers/GameEngine";
 import type { BasePlayer } from "@/models/BasePlayer";
 import type { WinCondition, ScoreEntry } from "@/types/index";
 import { Logger } from "@/utils/Logger";
-import { GameEvents } from "@/utils/GameEvents";
+import { RespawnManager } from "@/managers/RespawnManager";
 import { restoreMovementConfig, gameConfig } from "@/config/gameConfig";
 
 const logger = Logger.getInstance();
-const gameEvents = GameEvents.getInstance();
-
-const RESPAWN_DELAY = gameConfig.modeDefaults.deathCount.respawnDelayMs;
 
 /**
  * DeathCountMode - Time-based survival with respawns
@@ -29,7 +26,7 @@ export class DeathCountMode extends GameMode {
   override useRoles = false;
 
   private deathCounts: Map<string, number> = new Map();
-  private pendingRespawns: Map<string, number> = new Map(); // playerId → respawnAtTime
+  private respawnManager: RespawnManager;
 
   constructor(options?: GameModeOptions) {
     super(options);
@@ -43,6 +40,7 @@ export class DeathCountMode extends GameMode {
       this.roundCount = 3;
     }
     this.multiRound = true;
+    this.respawnManager = new RespawnManager(gameConfig.modeDefaults.deathCount.respawnDelayMs);
   }
 
   override onModeSelected(engine: GameEngine): void {
@@ -66,7 +64,7 @@ export class DeathCountMode extends GameMode {
 
     // Clear state for new round
     this.deathCounts.clear();
-    this.pendingRespawns.clear();
+    this.respawnManager.clear();
 
     // Initialize death counts for all players
     for (const player of engine.players) {
@@ -79,11 +77,7 @@ export class DeathCountMode extends GameMode {
     super.onTick(engine, gameTime);
 
     // Check pending respawns
-    for (const [playerId, respawnAt] of this.pendingRespawns) {
-      if (gameTime >= respawnAt) {
-        this.respawnPlayer(playerId, engine, gameTime);
-      }
-    }
+    this.respawnManager.checkRespawns(engine, gameTime);
   }
 
   override onPlayerDeath(victim: BasePlayer, engine: GameEngine): void {
@@ -102,45 +96,21 @@ export class DeathCountMode extends GameMode {
     super.onPlayerDeath(victim, engine);
 
     // Schedule respawn if there's enough time left
-    if (
-      this.roundDuration !== null &&
-      engine.gameTime + RESPAWN_DELAY < this.roundDuration
-    ) {
-      const respawnAt = engine.gameTime + RESPAWN_DELAY;
-      this.pendingRespawns.set(victim.id, respawnAt);
+    const scheduled = this.respawnManager.scheduleRespawn(
+      victim.id,
+      engine.gameTime,
+      this.roundDuration
+    );
 
-      // Emit respawn-pending to the dying player
-      gameEvents.emitPlayerRespawnPending({
-        player: victim,
-        respawnIn: RESPAWN_DELAY,
-      });
-
-      logger.info("MODE", `${victim.name} will respawn at ${respawnAt}ms`);
+    if (scheduled) {
+      this.respawnManager.emitRespawnPending(victim);
+      logger.info("MODE", `${victim.name} will respawn at ${engine.gameTime + this.respawnManager.getDelay()}ms`);
     } else {
       logger.info(
         "MODE",
         `${victim.name} will NOT respawn (too close to round end)`
       );
     }
-  }
-
-  private respawnPlayer(
-    playerId: string,
-    engine: GameEngine,
-    gameTime: number
-  ): void {
-    const player = engine.getPlayerById(playerId);
-    if (!player) return;
-
-    this.pendingRespawns.delete(playerId);
-
-    player.isAlive = true;
-    player.clearStatusEffects(gameTime);
-
-    // Emit respawn event
-    gameEvents.emitPlayerRespawn({ player, gameTime });
-
-    logger.info("MODE", `${player.name} respawned at ${gameTime}ms`);
   }
 
   override checkWinCondition(engine: GameEngine): WinCondition {

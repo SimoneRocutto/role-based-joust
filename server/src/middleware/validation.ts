@@ -57,6 +57,10 @@ const schemas = {
     teamCount: { type: "number", required: false, min: 2, max: 4 },
     dangerThreshold: { type: "number", required: false, min: 0.001, max: 1 },
     damageMultiplier: { type: "number", required: false, min: 1, max: 500 },
+    dominationPointTarget: { type: "number", required: false, min: 5, max: 100 },
+    dominationControlInterval: { type: "number", required: false, min: 3, max: 15 },
+    dominationRespawnTime: { type: "number", required: false, min: 5, max: 30 },
+    dominationBaseCount: { type: "number", required: false, min: 1, max: 3 },
   },
 };
 

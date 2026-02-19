@@ -21,6 +21,10 @@ export function useAdminSettings() {
   const [roundDuration, setRoundDuration] = useState(90);
   const [teamsEnabled, setTeamsEnabled] = useState(false);
   const [teamCount, setTeamCount] = useState(2);
+  const [dominationPointTarget, setDominationPointTarget] = useState(20);
+  const [dominationControlInterval, setDominationControlInterval] = useState(5);
+  const [dominationRespawnTime, setDominationRespawnTime] = useState(10);
+  const [dominationBaseCount, setDominationBaseCount] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -77,6 +81,18 @@ export function useAdminSettings() {
           }
           if (data.teamCount) {
             setTeamCount(data.teamCount);
+          }
+          if (data.dominationPointTarget !== undefined) {
+            setDominationPointTarget(data.dominationPointTarget);
+          }
+          if (data.dominationControlInterval !== undefined) {
+            setDominationControlInterval(data.dominationControlInterval);
+          }
+          if (data.dominationRespawnTime !== undefined) {
+            setDominationRespawnTime(data.dominationRespawnTime);
+          }
+          if (data.dominationBaseCount !== undefined) {
+            setDominationBaseCount(data.dominationBaseCount);
           }
         }
       })
@@ -209,6 +225,20 @@ export function useAdminSettings() {
     }
   };
 
+  const handleDominationSettingChange = async (key: string, value: number) => {
+    // Update local state
+    if (key === "dominationPointTarget") setDominationPointTarget(value);
+    if (key === "dominationControlInterval") setDominationControlInterval(value);
+    if (key === "dominationRespawnTime") setDominationRespawnTime(value);
+    if (key === "dominationBaseCount") setDominationBaseCount(value);
+
+    try {
+      await apiService.updateSettings({ [key]: value });
+    } catch (err) {
+      console.error(`Failed to update ${key}:`, err);
+    }
+  };
+
   const handleShuffleTeams = async () => {
     try {
       await apiService.shuffleTeams();
@@ -259,6 +289,10 @@ export function useAdminSettings() {
     roundDuration,
     teamsEnabled,
     teamCount,
+    dominationPointTarget,
+    dominationControlInterval,
+    dominationRespawnTime,
+    dominationBaseCount,
     combinedModeKey,
     loading,
     error,
@@ -278,6 +312,7 @@ export function useAdminSettings() {
     handleRoundDurationChange,
     handleTeamsEnabledChange,
     handleTeamCountChange,
+    handleDominationSettingChange,
     handleShuffleTeams,
     handleLaunchGame,
     handleStartClick,

@@ -23,6 +23,14 @@ export interface PersistedSettings {
   teamsEnabled: boolean;
   /** Number of teams (2-4) */
   teamCount: number;
+  /** Domination: points needed to win (5-100) */
+  dominationPointTarget: number;
+  /** Domination: seconds of control per point (3-15) */
+  dominationControlInterval: number;
+  /** Domination: seconds before respawn (5-30) */
+  dominationRespawnTime: number;
+  /** Domination: expected number of bases (1-3) */
+  dominationBaseCount: number;
 }
 
 class SettingsStore {

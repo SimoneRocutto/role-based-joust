@@ -50,6 +50,10 @@ function createTestSettings(overrides?: Partial<PersistedSettings>): PersistedSe
     roundDuration: 90,
     teamsEnabled: false,
     teamCount: 2,
+    dominationPointTarget: 20,
+    dominationControlInterval: 5,
+    dominationRespawnTime: 10,
+    dominationBaseCount: 1,
     ...overrides,
   };
 }
@@ -90,16 +94,13 @@ runner.test("Settings load on init with new format", () => {
   try {
     // Write a settings file in new format
     mkdirSync(dir, { recursive: true });
-    const settings: PersistedSettings = {
+    const settings: PersistedSettings = createTestSettings({
       movement: { dangerThreshold: 0.1, damageMultiplier: 99, historySize: 5, smoothingEnabled: true, oneshotMode: false },
       sensitivity: "custom",
       gameMode: "classic",
       theme: "halloween",
       roundCount: 5,
-      roundDuration: 90,
-      teamsEnabled: false,
-      teamCount: 2,
-    };
+    });
     writeFileSync(filePath, JSON.stringify(settings), "utf-8");
 
     const loaded = store.load();

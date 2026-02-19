@@ -86,3 +86,38 @@ export interface PlayerRespawnPendingEvent {
   player: import("../models/BasePlayer").BasePlayer;
   respawnIn: number;
 }
+
+// ---------------------------------------------------------------------------
+// Base / Domination events
+// ---------------------------------------------------------------------------
+
+export interface BaseCapturedEvent {
+  baseId: string;
+  baseNumber: number;
+  teamId: number;
+  teamName: string;
+  teamColor: string;
+}
+
+export interface BasePointEvent {
+  baseId: string;
+  baseNumber: number;
+  teamId: number;
+  teamScores: Record<number, number>;
+}
+
+export interface BaseStatusEvent {
+  bases: Array<{
+    baseId: string;
+    baseNumber: number;
+    teamId: number | null;
+    controlProgress: number;
+    isConnected: boolean;
+  }>;
+}
+
+export interface DominationWinEvent {
+  winningTeamId: number;
+  winningTeamName: string;
+  teamScores: Record<number, number>;
+}

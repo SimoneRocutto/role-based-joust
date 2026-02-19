@@ -21,6 +21,11 @@ import type {
   GameStartPayload,
   PlayerRespawnPayload,
   PlayerRespawnPendingPayload,
+  BaseRegisteredPayload,
+  BaseCapturedPayload,
+  BasePointPayload,
+  BaseStatusPayload,
+  DominationWinPayload,
 } from "@/types/socket.types";
 
 // In development, use empty string to connect via Vite proxy (same origin)
@@ -170,6 +175,15 @@ class SocketService {
     this.socket?.emit("team:switch");
   }
 
+  // Base phone events (Domination mode)
+  registerAsBase() {
+    this.socket?.emit("base:register");
+  }
+
+  tapBase(baseId: string) {
+    this.socket?.emit("base:tap", { baseId });
+  }
+
   onTeamSelection(callback: (data: { active: boolean }) => void) {
     this.on("team:selection", callback);
   }
@@ -239,6 +253,26 @@ class SocketService {
 
   onPlayerKicked(callback: (data: { reason: string }) => void) {
     this.on("player:kicked", callback);
+  }
+
+  onBaseRegistered(callback: (data: BaseRegisteredPayload) => void) {
+    this.on("base:registered", callback);
+  }
+
+  onBaseCaptured(callback: (data: BaseCapturedPayload) => void) {
+    this.on("base:captured", callback);
+  }
+
+  onBasePoint(callback: (data: BasePointPayload) => void) {
+    this.on("base:point", callback);
+  }
+
+  onBaseStatus(callback: (data: BaseStatusPayload) => void) {
+    this.on("base:status", callback);
+  }
+
+  onDominationWin(callback: (data: DominationWinPayload) => void) {
+    this.on("domination:win", callback);
   }
 
   // Generic event listener management

@@ -12,6 +12,7 @@ import { InputAdapter } from "@/utils/InputAdapter";
 import { Logger } from "@/utils/Logger";
 import { initSettings } from "@/config/gameConfig";
 import { registerSocketHandlers } from "@/sockets/handlers";
+import { registerBaseHandlers } from "@/sockets/baseHandlers";
 import { registerGameEventBroadcasters } from "@/sockets/broadcasters";
 
 const logger = Logger.getInstance();
@@ -91,6 +92,7 @@ app.locals.io = io;
 // ============================================================================
 
 registerSocketHandlers(io, gameEngine);
+registerBaseHandlers(io, gameEngine);
 registerGameEventBroadcasters(io, gameEngine);
 
 // ============================================================================

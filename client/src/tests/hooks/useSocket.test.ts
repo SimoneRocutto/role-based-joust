@@ -48,6 +48,16 @@ vi.mock("@/services/socket", () => ({
       socketEventHandlers.set("team:selection", cb),
     onPlayerKicked: (cb: Function) =>
       socketEventHandlers.set("player:kicked", cb),
+    onBaseRegistered: (cb: Function) =>
+      socketEventHandlers.set("base:registered", cb),
+    onBaseCaptured: (cb: Function) =>
+      socketEventHandlers.set("base:captured", cb),
+    onBasePoint: (cb: Function) =>
+      socketEventHandlers.set("base:point", cb),
+    onBaseStatus: (cb: Function) =>
+      socketEventHandlers.set("base:status", cb),
+    onDominationWin: (cb: Function) =>
+      socketEventHandlers.set("domination:win", cb),
     onError: (cb: Function) => socketEventHandlers.set("error", cb),
     sendMovement: vi.fn(),
     joinGame: vi.fn(),

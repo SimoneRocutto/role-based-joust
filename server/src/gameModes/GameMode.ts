@@ -177,6 +177,14 @@ export abstract class GameMode {
   }
 
   /**
+   * Called when a base phone is tapped (Domination mode).
+   * Override in modes that use bases.
+   */
+  onBaseTap(baseId: string, engine: GameEngine): void {
+    // No-op by default
+  }
+
+  /**
    * Called when entire game ends
    */
   onGameEnd(engine: GameEngine): void {
