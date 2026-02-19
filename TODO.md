@@ -12,8 +12,8 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 
 - FEATURES:
     - UI: add a settings screen (accessible from the UI) where all the more complex settings (like sensibility of movement detection) can be accessed. In the future, other settings will be accessed through this screen
-    - new mode - domain:
-        - this draws inspirations by game mechanics similar to U. Tournament domain mode.
+    - new mode - domination:
+        - this draws inspirations by game mechanics similar to U. Tournament domination mode.
         - the game is played in teams
         - there should be a different endpoint which is unlocked just for this mode. The phone that connects to this endpoint will be registered as a base to conquer. We could technically have multiple bases to conquer
         - from a practical perspective, the phone will be positioned at the center of the playground and can be in one of three states when playing in two teams: inactive (initial state), conquered by team 1, conquered by team 2
