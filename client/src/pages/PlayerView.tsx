@@ -5,6 +5,7 @@ import { useGameStore } from "@/store/gameStore";
 import { useShakeDetection } from "@/hooks/useShakeDetection";
 import { usePlayerDevice, isDevMode } from "@/hooks/usePlayerDevice";
 import { usePlayerAbility } from "@/hooks/usePlayerAbility";
+import { useHealthAudio } from "@/hooks/useHealthAudio";
 import { socketService } from "@/services/socket";
 import { audioManager } from "@/services/audio";
 import { getTeamColor } from "@/utils/teamColors";
@@ -28,6 +29,7 @@ function PlayerView() {
     isWaiting,
     isPreGame,
     isCountdown,
+    isActive,
     isRoundEnded,
     isFinished,
     isMyPlayerDead,
@@ -41,6 +43,9 @@ function PlayerView() {
 
   const { permissionsGranted, showPortraitLock } = usePlayerDevice(myPlayerId);
   const { chargeInfo, handleTap } = usePlayerAbility(myPlayerId);
+
+  // HP-based heartbeat sounds (all modes)
+  useHealthAudio(myPlayer?.accumulatedDamage, isActive && !isMyPlayerDead);
 
   const myTeamId = myPlayer?.teamId ?? null;
   const myTeamColor = getTeamColor(myTeamId);

@@ -690,62 +690,6 @@ describe("useSocket", () => {
     });
   });
 
-  describe("vampire:bloodlust event", () => {
-    it("starts heartbeat loop for current player when active", () => {
-      act(() => {
-        useGameStore.getState().setMyPlayer("vampire-player", 1);
-      });
-
-      renderHook(() => useSocket());
-
-      act(() => {
-        triggerSocketEvent("vampire:bloodlust", {
-          vampireId: "vampire-player",
-          active: true,
-        });
-      });
-
-      expect(audioLoopCalls).toContainEqual({
-        sound: "low-health-heartbeat",
-        options: { volume: 0.6 },
-      });
-    });
-
-    it("stops heartbeat when bloodlust ends", () => {
-      act(() => {
-        useGameStore.getState().setMyPlayer("vampire-player", 1);
-      });
-
-      renderHook(() => useSocket());
-
-      act(() => {
-        triggerSocketEvent("vampire:bloodlust", {
-          vampireId: "vampire-player",
-          active: false,
-        });
-      });
-
-      expect(audioStopCalls).toContain("low-health-heartbeat");
-    });
-
-    it("does not affect other players", () => {
-      act(() => {
-        useGameStore.getState().setMyPlayer("other-player", 2);
-      });
-
-      renderHook(() => useSocket());
-
-      act(() => {
-        triggerSocketEvent("vampire:bloodlust", {
-          vampireId: "vampire-player",
-          active: true,
-        });
-      });
-
-      expect(audioLoopCalls).toHaveLength(0);
-    });
-  });
-
   describe("role:assigned event", () => {
     it("stores role in game store", () => {
       renderHook(() => useSocket());

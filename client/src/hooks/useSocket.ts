@@ -179,17 +179,8 @@ export function useSocket() {
       }
     });
 
-    // Vampire bloodlust
-    socketService.onVampireBloodlust(({ vampireId, active }) => {
-      // If it's me
-      if (vampireId === myPlayerId) {
-        if (active) {
-          audioManager.loop("low-health-heartbeat", { volume: 0.6 });
-        } else {
-          audioManager.stop("low-health-heartbeat");
-        }
-      }
-    });
+    // Vampire bloodlust (visual/state effects only — heartbeat audio is handled by useHealthAudio)
+    socketService.onVampireBloodlust(() => {});
 
     // Shared logic for role:assigned and role:updated
     function updateRoleState(roleData: {

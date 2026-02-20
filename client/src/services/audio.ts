@@ -197,7 +197,8 @@ class AudioManager {
   }
 
   loop(soundName: string, options: { volume?: number } = {}) {
-    const sound = this.sounds.get(soundName);
+    const fullPath = this.getSoundPath(`effects/${soundName}`);
+    const sound = this.sounds.get(fullPath);
     if (!sound) {
       console.warn(`Sound '${soundName}' not preloaded`);
       return;
@@ -211,14 +212,16 @@ class AudioManager {
   }
 
   stop(soundName: string) {
-    const sound = this.sounds.get(soundName);
+    const fullPath = this.getSoundPath(`effects/${soundName}`);
+    const sound = this.sounds.get(fullPath);
     if (sound) {
       sound.stop();
     }
   }
 
   isPlaying(soundName: string): boolean {
-    const sound = this.sounds.get(soundName);
+    const fullPath = this.getSoundPath(`effects/${soundName}`);
+    const sound = this.sounds.get(fullPath);
     return sound ? sound.playing() : false;
   }
 
