@@ -17,9 +17,9 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 - BUGS:
     - sometimes all players have the skull at the end of the round. Points are not cumulative. I have to track down when this happens
     - when phone page is inactive, it says "reconnecting...". But in reality, it will never reconnect. I'd rather see a "refresh page" button
-    - wakelock has a flaw: when exiting the browser, then re-entering it, it stops working. We should request it again on browser reenter
     - make it so both /join and /player screens are unified under /player
     - in classic mode, it happened that game didn't start even though everyone put ready
+    - heartbeat sound cannot be heard on phone (but works on pc)
     - TTS doesn't work on iOS -> it's fine, we'll replace it with real voice
 
 - Classic mode specific:

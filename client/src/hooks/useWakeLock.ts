@@ -24,6 +24,7 @@ export function useWakeLock(autoEnable = true) {
       // Re-acquire wake lock if visibility changes
       wakeLock.addEventListener("release", () => {
         console.log("Wake Lock released");
+        wakeLockRef.current = null;
         setIsActive(false);
       });
 
