@@ -25,7 +25,7 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 - Death count mode specific:
 
 - Domination mode specific:
-    - a base that disconnects when out of the active game should simply be forgotten
+    - when ending a domination mode game and starting another one, I can see points from the previous game. I also see that the base has the color of the team who conquered it before. But this at least goes away on countdown end (still, it should be wiped before)
 
 - Team mode specific:
     - end of round scoreboard is confusing: it should list players in order of round points. We should also find a way to represent total points for the entire teams

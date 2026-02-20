@@ -27,7 +27,6 @@ export class BaseManager {
   private static instance: BaseManager;
   private bases: Map<string, BaseInfo> = new Map(); // baseId → BaseInfo
   private socketToBase: Map<string, string> = new Map(); // socketId → baseId
-  private nextBaseNumber: number = 1;
 
   private constructor() {}
 
@@ -36,6 +35,16 @@ export class BaseManager {
       BaseManager.instance = new BaseManager();
     }
     return BaseManager.instance;
+  }
+
+  /**
+   * Returns the lowest base number not currently in use.
+   */
+  private getNextAvailableNumber(): number {
+    const used = new Set(Array.from(this.bases.values()).map((b) => b.baseNumber));
+    let n = 1;
+    while (used.has(n)) n++;
+    return n;
   }
 
   /**
@@ -55,9 +64,8 @@ export class BaseManager {
       }
     }
 
-    const baseId = `base-${this.nextBaseNumber}`;
-    const baseNumber = this.nextBaseNumber;
-    this.nextBaseNumber++;
+    const baseNumber = this.getNextAvailableNumber();
+    const baseId = `base-${baseNumber}`;
 
     const base: BaseInfo = {
       baseId,
@@ -77,7 +85,7 @@ export class BaseManager {
   }
 
   /**
-   * Handle a base phone disconnecting.
+   * Handle a base phone disconnecting during active gameplay.
    * Keeps ownership state but marks as disconnected (pauses scoring).
    */
   handleDisconnect(socketId: string): void {
@@ -89,6 +97,37 @@ export class BaseManager {
 
     base.isConnected = false;
     logger.info("BASE", `Base ${base.baseNumber} disconnected (ownership preserved)`, { baseId });
+  }
+
+  /**
+   * Remove all disconnected bases, freeing their numbers for reuse.
+   * Called before registering a new base outside of active gameplay so that
+   * ghost entries left by bases that dropped mid-game don't pollute the list.
+   */
+  purgeDisconnected(): void {
+    for (const [baseId, base] of Array.from(this.bases.entries())) {
+      if (!base.isConnected) {
+        this.socketToBase.delete(base.socketId);
+        this.bases.delete(baseId);
+        logger.info("BASE", `Base ${base.baseNumber} purged (was disconnected)`, { baseId });
+      }
+    }
+  }
+
+  /**
+   * Fully remove a base — used when it disconnects outside active gameplay.
+   * Its number is freed and can be reused by the next base that connects.
+   */
+  removeBase(socketId: string): void {
+    const baseId = this.socketToBase.get(socketId);
+    if (!baseId) return;
+
+    const base = this.bases.get(baseId);
+    if (!base) return;
+
+    this.socketToBase.delete(socketId);
+    this.bases.delete(baseId);
+    logger.info("BASE", `Base ${base.baseNumber} removed (disconnected outside active game)`, { baseId });
   }
 
   /**
@@ -222,7 +261,6 @@ export class BaseManager {
   reset(): void {
     this.bases.clear();
     this.socketToBase.clear();
-    this.nextBaseNumber = 1;
     logger.info("BASE", "All bases cleared");
   }
 }

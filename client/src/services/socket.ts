@@ -181,8 +181,8 @@ class SocketService {
   }
 
   // Base phone events (Domination mode)
-  registerAsBase() {
-    this.socket?.emit("base:register");
+  registerAsBase(baseId?: string) {
+    this.socket?.emit("base:register", baseId ? { baseId } : {});
   }
 
   tapBase(baseId: string) {

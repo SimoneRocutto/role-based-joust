@@ -177,6 +177,8 @@ export interface CountdownPayload {
 export interface BaseRegisteredPayload {
   baseId: string;
   baseNumber: number;
+  ownerTeamId?: number | null;
+  gameState?: string;
 }
 
 export interface BaseCapturedPayload {

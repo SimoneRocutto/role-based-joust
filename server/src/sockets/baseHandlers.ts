@@ -20,15 +20,42 @@ export function registerBaseHandlers(
     /**
      * Base registration event — sent by base phones when they connect.
      */
-    socket.on("base:register", () => {
-      const { baseId, baseNumber } = baseManager.registerBase(socket.id);
+    socket.on("base:register", (data: { baseId?: string } = {}) => {
+      let resultBaseId: string;
+      let resultBaseNumber: number;
 
-      socket.emit("base:registered", { baseId, baseNumber });
+      // If the client provides a stored baseId, try to reconnect to the
+      // existing entry (preserves number and mid-game ownership).
+      if (data.baseId && baseManager.reconnectBase(data.baseId, socket.id)) {
+        const base = baseManager.getBase(data.baseId)!;
+        resultBaseId = base.baseId;
+        resultBaseNumber = base.baseNumber;
+        logger.info("SOCKET", "Base reconnected", {
+          socketId: socket.id,
+          baseId: resultBaseId,
+          baseNumber: resultBaseNumber,
+        });
+      } else {
+        // Fresh registration — purge ghosts first if outside active game.
+        if (gameEngine.gameState !== "active") {
+          baseManager.purgeDisconnected();
+        }
+        const registered = baseManager.registerBase(socket.id);
+        resultBaseId = registered.baseId;
+        resultBaseNumber = registered.baseNumber;
+        logger.info("SOCKET", "Base registered", {
+          socketId: socket.id,
+          baseId: resultBaseId,
+          baseNumber: resultBaseNumber,
+        });
+      }
 
-      logger.info("SOCKET", "Base registered", {
-        socketId: socket.id,
-        baseId,
-        baseNumber,
+      const ownerTeamId = baseManager.getBase(resultBaseId)?.ownerTeamId ?? null;
+      socket.emit("base:registered", {
+        baseId: resultBaseId,
+        baseNumber: resultBaseNumber,
+        ownerTeamId,
+        gameState: gameEngine.gameState,
       });
 
       // Broadcast updated base status to all clients
@@ -49,12 +76,17 @@ export function registerBaseHandlers(
     });
 
     /**
-     * On disconnect, mark base as disconnected (preserve ownership).
+     * On disconnect: if the game is active, preserve ownership (scoring pauses);
+     * otherwise forget the base entirely so its number can be reused.
      */
     socket.on("disconnect", () => {
       const baseId = baseManager.getBaseIdBySocket(socket.id);
       if (baseId) {
-        baseManager.handleDisconnect(socket.id);
+        if (gameEngine.gameState === "active") {
+          baseManager.handleDisconnect(socket.id);
+        } else {
+          baseManager.removeBase(socket.id);
+        }
         broadcastBaseStatus(io, gameEngine);
         logger.info("SOCKET", "Base disconnected", {
           socketId: socket.id,
@@ -72,7 +104,7 @@ function broadcastBaseStatus(io: SocketIOServer, gameEngine: GameEngine): void {
   const bases = baseManager.getAllBases().map((base) => ({
     baseId: base.baseId,
     baseNumber: base.baseNumber,
-    teamId: base.ownerTeamId,
+    ownerTeamId: base.ownerTeamId,
     controlProgress: 0,
     isConnected: base.isConnected,
   }));

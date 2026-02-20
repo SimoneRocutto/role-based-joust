@@ -18,15 +18,25 @@ export default function BaseView() {
   const [flashActive, setFlashActive] = useState(false);
   const gameState = useGameStore((s) => s.gameState);
   const isConnected = useGameStore((s) => s.isConnected);
-  // Register as a base on mount
+  // Register as a base on mount, reusing a stored baseId if available so
+  // the server can reconnect to the same slot (preserves number + ownership).
   useEffect(() => {
     const handleRegistered = (data: BaseRegisteredPayload) => {
       setBaseId(data.baseId);
       setBaseNumber(data.baseNumber);
+      localStorage.setItem("baseId", data.baseId);
+      // Restore ownership and game state on reconnect
+      if (data.ownerTeamId !== undefined) {
+        setOwnerTeamId(data.ownerTeamId);
+      }
+      if (data.gameState) {
+        useGameStore.getState().setGameState(data.gameState as any);
+      }
     };
 
     socketService.onBaseRegistered(handleRegistered);
-    socketService.registerAsBase();
+    const storedBaseId = localStorage.getItem("baseId") ?? undefined;
+    socketService.registerAsBase(storedBaseId);
 
     return () => {
       socketService.off("base:registered");
