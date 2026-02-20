@@ -25,6 +25,12 @@ export function useSocket() {
   } = useGameStore();
 
   useEffect(() => {
+    const resetDominationState = () => {
+      const store = useGameStore.getState();
+      store.setDominationTeamScores({});
+      store.setBases(store.bases.map((b) => ({ ...b, ownerTeamId: null, controlProgress: 0 })));
+    };
+
     // Connection status — stored as named ref so cleanup removes ONLY this listener,
     // leaving useReconnect.ts listeners intact (socketService.off without callback
     // would nuke all listeners for the event).
@@ -138,6 +144,8 @@ export function useSocket() {
       });
       // Ensure ready is enabled — no delay for pre-game, players can ready immediately
       useGameStore.getState().setReadyEnabled(true);
+      // Reset domination state from any previous game
+      resetDominationState();
       setGameState("pre-game");
     });
 
@@ -345,6 +353,8 @@ export function useSocket() {
       useGameStore.getState().setTeamSelectionActive(false);
       // Reset ready state - server resets all ready states, so client must sync
       resetReadyState();
+      // Reset domination state
+      resetDominationState();
     });
 
     // Player respawn - update player as alive again
