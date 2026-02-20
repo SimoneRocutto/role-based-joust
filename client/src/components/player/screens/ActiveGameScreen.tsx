@@ -3,6 +3,7 @@ import HealthBackground from "@/components/player/HealthBackground";
 import PlayerNumber from "@/components/player/PlayerNumber";
 import StatusEffects from "@/components/player/StatusEffects";
 import DamageFlash from "@/components/player/DamageFlash";
+import HealEffect from "@/components/player/HealEffect";
 import type { PlayerState } from "@/types/player.types";
 import type { ChargeInfo } from "@/types/socket.types";
 
@@ -66,6 +67,12 @@ export default function ActiveGameScreen({
 
       {/* Damage flash overlay */}
       <DamageFlash accumulatedDamage={player.accumulatedDamage} />
+
+      {/* Heal effect overlay */}
+      <HealEffect
+        accumulatedDamage={player.accumulatedDamage}
+        isAlive={player.isAlive}
+      />
     </div>
   );
 }

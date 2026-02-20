@@ -13,6 +13,7 @@ import { Masochist } from "@/models/roles/Masochist";
 import { Sibling } from "@/models/roles/Sibling";
 import { Vulture } from "@/models/roles/Vulture";
 import { Toughened } from "@/models/statusEffects/Toughened";
+import { Troll } from "@/models/roles/Troll";
 import { roleConfigs } from "@/config/roleConfig";
 import type { PlayerData } from "@/types/player.types";
 
@@ -1060,6 +1061,94 @@ runner.test("Dead vulture doesn't gain points", (engine) => {
   engine.fastForward(100);
 
   assertEqual(vulture!.points, 0, "Dead vulture should not gain points");
+});
+
+// ============================================================================
+// TROLL TESTS
+// ============================================================================
+
+runner.test("Troll heals damage after delay", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
+  engine.createTestGame(["troll", "beast"]);
+  engine.players.forEach((p) => p.disableAutoPlay());
+
+  const troll = engine.players.find((p) => p instanceof Troll);
+  assert(troll !== undefined, "Should have troll");
+
+  // Deal non-lethal damage
+  troll!.takeDamage(30, engine.gameTime);
+  const damageAfterHit = troll!.accumulatedDamage;
+  assert(damageAfterHit > 0, "Troll should have taken damage");
+
+  // Before delay: no heal
+  engine.fastForward(roleConfigs.troll.healDelay - 500);
+  assert(troll!.accumulatedDamage > 0, "Should not have healed before delay");
+
+  // After delay: healed
+  engine.fastForward(600);
+  assert(troll!.isAlive, "Troll should still be alive");
+  assertEqual(troll!.accumulatedDamage, 0, "Troll should have healed all damage");
+});
+
+runner.test("Troll heal resets on repeated damage", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
+  engine.createTestGame(["troll", "beast"]);
+  engine.players.forEach((p) => p.disableAutoPlay());
+
+  const troll = engine.players.find((p) => p instanceof Troll);
+  assert(troll !== undefined, "Should have troll");
+
+  const healDelay = roleConfigs.troll.healDelay;
+
+  // First hit
+  troll!.takeDamage(20, engine.gameTime);
+
+  // Advance partway, then hit again (resets timer)
+  engine.fastForward(5000);
+  troll!.takeDamage(20, engine.gameTime);
+  const damageAfterBothHits = troll!.accumulatedDamage;
+
+  // 7s after second hit — not healed yet (need 8s)
+  engine.fastForward(healDelay - 1000);
+  assert(
+    troll!.accumulatedDamage > 0,
+    "Should not have healed before timer elapsed since last hit"
+  );
+
+  // 8.1s after second hit — should have healed
+  engine.fastForward(1100);
+  assertEqual(troll!.accumulatedDamage, 0, "Should have healed all accumulated damage");
+  assert(
+    damageAfterBothHits > 0,
+    "Both damage instances were tracked and healed"
+  );
+});
+
+runner.test("Troll does not heal after death", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
+  engine.createTestGame(["troll", "beast"]);
+  engine.players.forEach((p) => p.disableAutoPlay());
+
+  const troll = engine.players.find((p) => p instanceof Troll);
+  assert(troll !== undefined, "Should have troll");
+
+  // Kill troll with lethal damage
+  troll!.takeDamage(troll!.deathThreshold, engine.gameTime);
+  assert(!troll!.isAlive, "Troll should be dead");
+
+  // Fast-forward past heal delay — no crash, accumulatedDamage stays at 0 (reset by death)
+  engine.fastForward(roleConfigs.troll.healDelay + 1000);
+  assertEqual(
+    troll!.accumulatedDamage,
+    0,
+    "Dead Troll accumulatedDamage stays at 0"
+  );
 });
 
 // ============================================================================

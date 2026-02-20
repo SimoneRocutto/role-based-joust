@@ -38,13 +38,11 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 - Role mode specific:
     - optional through config (and useful for role): hear a sound whenever another player is dead (useful when fighting another one with the earbud on -> without earbuds you would hear his death sound from his phone) 
     - audio cues need to be added:
-        - on heal (for troll, still not implemented)
     - charges should be hidden from the screen. Actually right now we have this bug but we can bypass it. I'll leave it here as history: charges are shown on player screen even though he has no charges (0/1). Maybe this happens when being ironclad in the first round and beast/beasthunter in the second.
     - sound from dashboard with player number: it should say 7 eliminated
     - record sounds for audio to avoid using tts on iPhone (doesn't work)
 
 - New roles (E = easy, M = medium, H = hard):
-    - (E) troll: every time they take damage, they recover it after 8 seconds, unless they get hit again -> promotes chip damage playstyle. After they are discovered by other players, they could be focused. There should be a visual cue when someone gains life back. It's like berserker but promotes opposite gameplay
     - (M) vampire: every 20 seconds he enters bloodlust -> for 5 seconds, he gains 1 point and gains 20% HP if someone else dies during this mode
     - (M) jester: his life changes by showing wrong things, like healing or losing more life than he should when he gets hit.
     - (M) hunted: similar to survivor. Every 20s, players will hear "The hunted is alive" and the hunter's screen flashes to make it clear he is the hunted. Flashing lasts 5 seconds. Every time he survives the flashes, he gains 2 points

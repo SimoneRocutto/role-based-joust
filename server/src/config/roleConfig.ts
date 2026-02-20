@@ -75,6 +75,10 @@ export interface VultureConfig {
   pointsPerChainedDeath: number; // Points awarded per chained death
 }
 
+export interface TrollConfig {
+  healDelay: number; // ms after last hit before heal fires
+}
+
 export interface RoleConfigs {
   vampire: VampireConfig;
   beast: BeastConfig;
@@ -91,6 +95,7 @@ export interface RoleConfigs {
   masochist: MasochistConfig;
   sibling: SiblingConfig;
   vulture: VultureConfig;
+  troll: TrollConfig;
 }
 
 export const roleConfigs: RoleConfigs = {
@@ -169,5 +174,9 @@ export const roleConfigs: RoleConfigs = {
   vulture: {
     deathWindowMs: 5000, // 5 seconds
     pointsPerChainedDeath: 2,
+  },
+
+  troll: {
+    healDelay: 8000, // 8 seconds after last hit
   },
 };

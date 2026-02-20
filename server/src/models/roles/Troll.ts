@@ -1,0 +1,100 @@
+import { BasePlayer } from "../BasePlayer";
+import type { PlayerData } from "@/types/player.types";
+import { Logger } from "@/utils/Logger";
+import { roleConfigs } from "@/config/roleConfig";
+import { ROLE_PRIORITIES } from "@/config/priorities";
+
+const logger = Logger.getInstance();
+
+/**
+ * Troll - Delayed regeneration role
+ *
+ * Every time the Troll takes damage, it schedules an instant heal for 8 seconds later.
+ * If the Troll takes any damage before that 8 seconds is up, the timer resets and the
+ * new damage is added to the pending heal pool.
+ *
+ * This promotes a chip damage playstyle: you need sustained focus to kill the Troll,
+ * since isolated hits will just heal off. But if everyone targets them at once, the
+ * heal never fires.
+ */
+export class Troll extends BasePlayer {
+  static override priority: number = ROLE_PRIORITIES.TROLL;
+  static displayName: string = "Troll";
+  static description: string =
+    "Damage heals back after 8s if you aren't hit again";
+  static difficulty: string = "easy";
+
+  private pendingHeal: number = 0;
+  private lastDamageTime: number = -Infinity;
+  // TODO maybe use an event for player damage and implement debounce there
+  private readonly damageDebounce: number = 1000;
+  private readonly healDelay: number;
+
+  constructor(data: PlayerData) {
+    super(data);
+    const config = roleConfigs.troll;
+    this.healDelay = config.healDelay;
+  }
+
+  override onInit(gameTime: number): void {
+    super.onInit(gameTime);
+    this.pendingHeal = 0;
+    this.lastDamageTime = -Infinity;
+    logger.logRoleAbility(this, "TROLL_INIT", { healDelay: this.healDelay });
+  }
+
+  /**
+   * Intercept damage: track actual damage applied and reset the heal timer.
+   */
+  override takeDamage(baseDamage: number, gameTime: number): void {
+    const damageBefore = this.accumulatedDamage;
+    super.takeDamage(baseDamage, gameTime);
+
+    if (!this.isAlive) return;
+
+    const actualDamage = this.accumulatedDamage - damageBefore;
+    if (actualDamage <= 0) return;
+
+    this.pendingHeal =
+      actualDamage +
+      // If troll gets damaged multiple times in a second, we want to make it so he can regain all that back.
+      (gameTime - this.lastDamageTime < this.damageDebounce
+        ? this.pendingHeal
+        : 0);
+    this.lastDamageTime = gameTime;
+
+    logger.logRoleAbility(this, "TROLL_DAMAGE_TRACKED", {
+      actualDamage,
+      pendingHeal: this.pendingHeal,
+      healIn: this.healDelay,
+    });
+  }
+
+  /**
+   * Every tick: if 8 seconds have passed since last hit and there's pending heal, apply it.
+   */
+  override onTick(gameTime: number, deltaTime: number): void {
+    super.onTick(gameTime, deltaTime);
+
+    if (
+      this.isAlive &&
+      this.pendingHeal > 0 &&
+      gameTime - this.lastDamageTime >= this.healDelay
+    ) {
+      const healed = Math.min(this.pendingHeal, this.accumulatedDamage);
+      this.accumulatedDamage = Math.max(
+        0,
+        this.accumulatedDamage - this.pendingHeal
+      );
+      this.pendingHeal = 0;
+
+      logger.logRoleAbility(this, "TROLL_HEALED", { healed });
+    }
+  }
+
+  override onDeath(gameTime: number): void {
+    super.onDeath(gameTime);
+    this.pendingHeal = 0;
+    this.lastDamageTime = -Infinity;
+  }
+}

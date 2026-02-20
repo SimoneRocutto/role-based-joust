@@ -109,6 +109,17 @@ function PlayerView() {
     }
   }, [myPlayer?.accumulatedDamage]);
 
+  // Play heal sound when accumulatedDamage decreases
+  const prevAccumDamageRef = useRef(0);
+  useEffect(() => {
+    const current = myPlayer?.accumulatedDamage ?? 0;
+    const prev = prevAccumDamageRef.current;
+    prevAccumDamageRef.current = current;
+    if (isActive && !isMyPlayerDead && current < prev && prev > 0) {
+      audioManager.playSfx("heal", { volume: 0.7 });
+    }
+  }, [myPlayer?.accumulatedDamage, isActive, isMyPlayerDead]);
+
   // Play score-up sound when points increase during active gameplay
   const prevPointsRef = useRef(0);
   useEffect(() => {

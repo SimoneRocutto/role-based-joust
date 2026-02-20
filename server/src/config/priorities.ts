@@ -65,6 +65,7 @@ export const ROLE_PRIORITIES = {
   MASOCHIST: Priority.LOW, // 5  - Passive point generation
   SIBLING: Priority.MEDIUM_LOW, // 10 - Reactive damage sharing
   VULTURE: Priority.LOW, // 5  - Passive point tracking
+  TROLL: Priority.LOW, // 5  - Passive delayed heal
 } as const;
 
 /**
