@@ -203,6 +203,7 @@ function DashboardView() {
   // Round timer TTS cues (30s, 5-4-3-2-1, time up)
   const firedThresholds = useRef<Set<number>>(new Set());
   const roundTimeRemaining = useGameStore((state) => state.roundTimeRemaining);
+  const mode = useGameStore((state) => state.mode);
 
   useEffect(() => {
     // Reset thresholds when round changes or game stops
@@ -222,10 +223,7 @@ function DashboardView() {
     ];
 
     for (const { ms, speech } of thresholds) {
-      if (
-        roundTimeRemaining <= ms &&
-        !firedThresholds.current.has(ms)
-      ) {
+      if (roundTimeRemaining <= ms && !firedThresholds.current.has(ms)) {
         firedThresholds.current.add(ms);
         audioManager.speak(speech);
       }
@@ -265,7 +263,7 @@ function DashboardView() {
         {/* Active gameplay phases */}
         {(isCountdown || isActive || isRoundEnded) && (
           <>
-            <BaseStatusPanel />
+            {mode === "domination" && <BaseStatusPanel />}
             <PlayerGrid />
 
             {/* Stop Game button during active gameplay */}
