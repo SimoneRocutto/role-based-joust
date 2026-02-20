@@ -15,7 +15,6 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
     - UI: add a settings screen (accessible from the UI) where all the more complex settings (like sensibility of movement detection) can be accessed. In the future, other settings will be accessed through this screen
 
 - BUGS:
-    - when reconnecting during a game, I see that my phone shows the #1 waiting for game to start instead of my life. We should have a way to do it
     - sometimes all players have the skull at the end of the round. Points are not cumulative. I have to track down when this happens
     - in classic mode, it happened that game didn't start even though everyone put ready
     - heartbeat sound cannot be heard on phone (but works on pc)

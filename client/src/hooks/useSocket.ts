@@ -49,10 +49,31 @@ export function useSocket() {
     });
 
     // Player reconnected — same named-ref pattern to avoid nuking useReconnect listeners.
-    const onPlayerReconnected = (data: { success: boolean; playerId: string; playerNumber: number; player: any }) => {
+    const onPlayerReconnected = (data: {
+      success: boolean;
+      playerId: string;
+      playerNumber: number;
+      player: any;
+      gameState?: string;
+      currentRound?: number;
+      totalRounds?: number;
+      mode?: string | null;
+    }) => {
       if (data.success) {
         useGameStore.getState().setMyPlayer(data.playerId, data.playerNumber);
         updatePlayer(data.player);
+
+        // Restore game state so the correct screen is shown immediately
+        // (without this, the store stays on "waiting" and shows the lobby)
+        if (data.gameState && data.gameState !== "waiting") {
+          setGameState(data.gameState as any);
+        }
+        if (data.currentRound && data.totalRounds) {
+          setRound(data.currentRound, data.totalRounds);
+        }
+        if (data.mode) {
+          setMode(data.mode);
+        }
       }
     };
     socketService.onPlayerReconnected(onPlayerReconnected);

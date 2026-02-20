@@ -105,6 +105,10 @@ export function registerSocketHandlers(
                 points: player.points,
               }
             : null,
+          gameState: gameEngine.gameState,
+          currentRound: gameEngine.currentRound,
+          totalRounds: gameEngine.currentMode?.roundCount ?? 0,
+          mode: gameEngine.lastModeKey ?? null,
         });
       } else {
         socket.emit("player:reconnected", {

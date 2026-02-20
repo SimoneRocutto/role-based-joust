@@ -56,6 +56,10 @@ export interface PlayerReconnectedPayload {
   playerId: string;
   playerNumber: number;
   player: PlayerState;
+  gameState: string;
+  currentRound: number;
+  totalRounds: number;
+  mode: string | null;
 }
 
 export interface GameTickPayload {
