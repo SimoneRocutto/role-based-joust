@@ -71,6 +71,7 @@ export interface GameTickPlayerState {
   isDisconnected: boolean;
   disconnectedAt: number | null;
   graceTimeRemaining: number;
+  statusEffects: StatusEffectInfo[];
 }
 
 // ---------------------------------------------------------------------------

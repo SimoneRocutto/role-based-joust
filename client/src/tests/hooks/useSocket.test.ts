@@ -301,13 +301,13 @@ describe("useSocket", () => {
             toughness: 100,
             accumulatedDamage: 0,
             statusEffects: [
-              { type: "Bloodlust", priority: 50, timeLeft: 5000 },
+              { type: "OldEffect", priority: 50, timeLeft: 5000 },
             ],
           },
         ]);
       });
 
-      // Tick comes with partial data
+      // Tick now provides authoritative status effects
       act(() => {
         triggerSocketEvent("game:tick", {
           gameTime: 1000,
@@ -320,6 +320,7 @@ describe("useSocket", () => {
               points: 10,
               totalPoints: 10,
               toughness: 100,
+              statusEffects: [{ type: "Toughened", priority: 30, timeLeft: 2000 }],
             },
           ],
         });
@@ -328,10 +329,12 @@ describe("useSocket", () => {
       const player = useGameStore.getState().players[0];
       // Should have updated damage
       expect(player.accumulatedDamage).toBe(15);
-      // Should preserve existing fields
+      // Should preserve non-tick fields
       expect(player.number).toBe(1);
       expect(player.role).toBe("Vampire");
+      // Status effects come from tick, not stale state
       expect(player.statusEffects).toHaveLength(1);
+      expect(player.statusEffects[0].type).toBe("Toughened");
     });
   });
 

@@ -9,10 +9,10 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
     - numbers of deaths in death count mode should be highly visible from a distance. We could also consider showing them on the player screen (or maybe showing a trophy or somthing like that on the player ahead)
     - introduce the possibility of having different background music tracks that are picked at random for a certain mode
     - teams mode should not be able to start with empty teams
+    - use special animations/cool backgrounds to distinguish between speedshift slow and fast phases. Red and blue will be mistaken for red and blue team colors. We should use a different way to convey velocity info to players
 
 - FEATURES:
     - UI: add a settings screen (accessible from the UI) where all the more complex settings (like sensibility of movement detection) can be accessed. In the future, other settings will be accessed through this screen
-
 
 - BUGS:
     - sometimes all players have the skull at the end of the round. Points are not cumulative. I have to track down when this happens
@@ -37,6 +37,8 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 
 - Role mode specific:
     - optional through config (and useful for role): hear a sound whenever another player is dead (useful when fighting another one with the earbud on -> without earbuds you would hear his death sound from his phone) 
+    - audio cues need to be added:
+        - on heal (for troll, still not implemented)
     - charges should be hidden from the screen. Actually right now we have this bug but we can bypass it. I'll leave it here as history: charges are shown on player screen even though he has no charges (0/1). Maybe this happens when being ironclad in the first round and beast/beasthunter in the second.
     - sound from dashboard with player number: it should say 7 eliminated
     - record sounds for audio to avoid using tts on iPhone (doesn't work)

@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGameState } from "@/hooks/useGameState";
 import { useGameStore } from "@/store/gameStore";
@@ -108,6 +108,31 @@ function PlayerView() {
       audioManager.playSfx("damage", { volume: 0.3, noRepeatFor: 1000 });
     }
   }, [myPlayer?.accumulatedDamage]);
+
+  // Play score-up sound when points increase during active gameplay
+  const prevPointsRef = useRef(0);
+  useEffect(() => {
+    const currentPoints = myPlayer?.points ?? 0;
+    if (isActive && currentPoints > prevPointsRef.current) {
+      audioManager.playSfx("score-up", { volume: 0.7 });
+    }
+    prevPointsRef.current = currentPoints;
+  }, [myPlayer?.points, isActive]);
+
+  // Loop war drums while Berserker's Toughened effect is active
+  const isToughened =
+    myPlayer?.statusEffects.some((e) => e.type === "Toughened") ?? false;
+  useEffect(() => {
+    if (isToughened) {
+      // Could think of looping this if we ever want to extend it over 3 seconds
+      audioManager.playSfx("berserk-war-drums", { volume: 0.7 });
+    } else {
+      audioManager.stop("berserk-war-drums");
+    }
+    return () => {
+      audioManager.stop("berserk-war-drums");
+    };
+  }, [isToughened]);
 
   // Reset ready state when countdown starts (new round)
   useEffect(() => {

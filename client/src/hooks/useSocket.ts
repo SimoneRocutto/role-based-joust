@@ -78,10 +78,10 @@ export function useSocket() {
               // Connection status
               isDisconnected: tp.isDisconnected,
               graceTimeRemaining: tp.graceTimeRemaining,
-              // Preserve existing fields if not in tick
+              // Preserve fields not in tick
               number: existing?.number ?? 0,
               role: existing?.role ?? "",
-              statusEffects: existing?.statusEffects ?? [],
+              statusEffects: tp.statusEffects,
               // Preserve team assignment (set from tick if available, else from existing)
               teamId: (tp as any).teamId ?? existing?.teamId ?? null,
             };

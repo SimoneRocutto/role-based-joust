@@ -23,5 +23,10 @@ export function buildTickPlayerState(
     isDisconnected: player.isDisconnected(),
     disconnectedAt: player.disconnectedAt,
     graceTimeRemaining: player.getGraceTimeRemaining(gameTime),
+    statusEffects: player.getSortedStatusEffects().map((effect) => ({
+      type: effect.constructor.name,
+      priority: effect.priority,
+      timeLeft: effect.getRemainingTime(gameTime),
+    })),
   };
 }
