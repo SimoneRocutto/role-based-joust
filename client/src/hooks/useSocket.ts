@@ -25,10 +25,13 @@ export function useSocket() {
   } = useGameStore();
 
   useEffect(() => {
-    // Connection status
-    socketService.on("connection:change", (connected: boolean) => {
+    // Connection status — stored as named ref so cleanup removes ONLY this listener,
+    // leaving useReconnect.ts listeners intact (socketService.off without callback
+    // would nuke all listeners for the event).
+    const onConnectionChange = (connected: boolean) => {
       setConnected(connected);
-    });
+    };
+    socketService.on("connection:change", onConnectionChange);
 
     // Player joined
     socketService.onPlayerJoined((data) => {
@@ -45,12 +48,14 @@ export function useSocket() {
       }
     });
 
-    // Player reconnected
-    socketService.onPlayerReconnected((data) => {
+    // Player reconnected — same named-ref pattern to avoid nuking useReconnect listeners.
+    const onPlayerReconnected = (data: { success: boolean; playerId: string; playerNumber: number; player: any }) => {
       if (data.success) {
+        useGameStore.getState().setMyPlayer(data.playerId, data.playerNumber);
         updatePlayer(data.player);
       }
-    });
+    };
+    socketService.onPlayerReconnected(onPlayerReconnected);
 
     // Game tick - includes player states with damage/health info
     socketService.onGameTick(
@@ -407,9 +412,11 @@ export function useSocket() {
       respawnTtsTimeouts.forEach(clearTimeout);
       respawnTtsTimeouts.length = 0;
 
-      socketService.off("connection:change");
+      // Use specific callbacks for events shared with useReconnect.ts — removing
+      // without a callback would nuke all listeners (including useReconnect's).
+      socketService.off("connection:change", onConnectionChange);
+      socketService.off("player:reconnected", onPlayerReconnected);
       socketService.off("player:joined");
-      socketService.off("player:reconnected");
       socketService.off("game:tick");
       socketService.off("player:death");
       socketService.off("round:start");

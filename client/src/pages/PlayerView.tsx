@@ -1,14 +1,16 @@
 import { useEffect, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import { useGameState } from "@/hooks/useGameState";
 import { useGameStore } from "@/store/gameStore";
 import { useShakeDetection } from "@/hooks/useShakeDetection";
 import { usePlayerDevice, isDevMode } from "@/hooks/usePlayerDevice";
 import { usePlayerAbility } from "@/hooks/usePlayerAbility";
 import { useHealthAudio } from "@/hooks/useHealthAudio";
+import { useReconnect } from "@/hooks/useReconnect";
 import { socketService } from "@/services/socket";
 import { audioManager } from "@/services/audio";
 import { getTeamColor } from "@/utils/teamColors";
+import JoinForm from "@/components/player/JoinForm";
+import DisconnectedOverlay from "@/components/player/DisconnectedOverlay";
 import PortraitLock from "@/components/player/PortraitLock";
 import LobbyScreen from "@/components/player/screens/LobbyScreen";
 import PreGameScreen from "@/components/player/screens/PreGameScreen";
@@ -20,8 +22,6 @@ import GameFinishedScreen from "@/components/player/screens/GameFinishedScreen";
 import type { PlayerMovePayload } from "@/types/socket.types";
 
 function PlayerView() {
-  const navigate = useNavigate();
-
   const {
     myPlayerId,
     myPlayerNumber,
@@ -38,8 +38,10 @@ function PlayerView() {
     respawnCountdown,
   } = useGameState();
 
-  const { countdownSeconds, countdownPhase, myIsReady, setMyReady, modeRecap } =
+  const { countdownSeconds, countdownPhase, myIsReady, setMyReady, modeRecap, setMyPlayer, clearIdentity } =
     useGameStore();
+
+  const { isReconnecting, isGivenUp, retryOnce, resetReconnect } = useReconnect();
 
   const { permissionsGranted, showPortraitLock } = usePlayerDevice(myPlayerId);
   const { chargeInfo, handleTap } = usePlayerAbility(myPlayerId);
@@ -50,6 +52,22 @@ function PlayerView() {
   const myTeamId = myPlayer?.teamId ?? null;
   const myTeamColor = getTeamColor(myTeamId);
   const playerName = myPlayer?.name || "Player";
+
+  // On mount: hydrate identity from localStorage so game UI shows on refresh
+  // instead of the join form (reconnect runs in background via useReconnect)
+  useEffect(() => {
+    const playerId = localStorage.getItem("playerId");
+    const playerNumber = localStorage.getItem("playerNumber");
+    if (playerId && playerNumber) {
+      setMyPlayer(playerId, parseInt(playerNumber));
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleRejoin = useCallback(() => {
+    resetReconnect(); // clear isGivenUp so the overlay doesn't reappear after joining
+    localStorage.removeItem("sessionToken");
+    clearIdentity();
+  }, [clearIdentity, resetReconnect]);
 
   // Handle tap to switch team during pre-game
   const handleTeamSwitch = useCallback(() => {
@@ -78,7 +96,6 @@ function PlayerView() {
   }, [myPlayerId]);
 
   // Shake detection for ready state (pre-game, between rounds, game end)
-  // Pre-game and round-ended both use a ready delay — only allow shaking when enabled
   const shouldDetectShake =
     (((isPreGame || isRoundEnded) && readyEnabled) || isFinished) &&
     !myIsReady &&
@@ -91,15 +108,6 @@ function PlayerView() {
     onShake: handleShakeDetected,
     enabled: shouldDetectShake,
   });
-
-  // Check if player has joined (also reacts to kick clearing identity)
-  useEffect(() => {
-    const playerId = localStorage.getItem("playerId");
-    const playerNumber = localStorage.getItem("playerNumber");
-    if (!playerId || !playerNumber) {
-      navigate("/join");
-    }
-  }, [navigate, myPlayerId]);
 
   // Play damage sound when taking damage
   useEffect(() => {
@@ -135,7 +143,6 @@ function PlayerView() {
     myPlayer?.statusEffects.some((e) => e.type === "Toughened") ?? false;
   useEffect(() => {
     if (isToughened) {
-      // Could think of looping this if we ever want to extend it over 3 seconds
       audioManager.playSfx("berserk-war-drums", { volume: 0.7 });
     } else {
       audioManager.stop("berserk-war-drums");
@@ -152,12 +159,9 @@ function PlayerView() {
     }
   }, [isCountdown, setMyReady]);
 
-  if (!myPlayerNumber || !myPlayerId) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
-      </div>
-    );
+  // No session yet — show join form inline (no navigation needed)
+  if (!myPlayerId) {
+    return <JoinForm />;
   }
 
   const shakeProps = {
@@ -172,13 +176,22 @@ function PlayerView() {
     <div className="player-view relative w-screen h-screen overflow-hidden">
       {showPortraitLock && <PortraitLock />}
 
+      {/* Disconnected overlay — shown after giving up on reconnection */}
+      {isGivenUp && (
+        <DisconnectedOverlay
+          isReconnecting={isReconnecting}
+          onRetry={retryOnce}
+          onRejoin={handleRejoin}
+        />
+      )}
+
       {isWaiting && !isCountdown && (
-        <LobbyScreen playerNumber={myPlayerNumber} playerName={playerName} />
+        <LobbyScreen playerNumber={myPlayerNumber!} playerName={playerName} />
       )}
 
       {isPreGame && !isCountdown && (
         <PreGameScreen
-          playerNumber={myPlayerNumber}
+          playerNumber={myPlayerNumber!}
           playerName={playerName}
           modeRecap={modeRecap}
           teamColor={myTeamColor}
@@ -189,7 +202,7 @@ function PlayerView() {
 
       {isCountdown && (
         <CountdownScreen
-          playerNumber={myPlayerNumber}
+          playerNumber={myPlayerNumber!}
           playerName={playerName}
           countdownSeconds={countdownSeconds}
           countdownPhase={countdownPhase ?? "countdown"}
@@ -198,7 +211,7 @@ function PlayerView() {
 
       {isRoundEnded && !isCountdown && (
         <RoundEndedScreen
-          playerNumber={myPlayerNumber}
+          playerNumber={myPlayerNumber!}
           playerName={playerName}
           totalPoints={myPlayer?.totalPoints || myPlayer?.points || 0}
           isRoundWinner={isRoundWinner}
@@ -214,7 +227,7 @@ function PlayerView() {
         myPlayer && (
           <ActiveGameScreen
             player={myPlayer}
-            playerNumber={myPlayerNumber}
+            playerNumber={myPlayerNumber!}
             teamId={myTeamId}
             chargeInfo={chargeInfo}
             onTap={handleTap}
@@ -238,7 +251,7 @@ function PlayerView() {
 
       {isFinished && (
         <GameFinishedScreen
-          playerNumber={myPlayerNumber}
+          playerNumber={myPlayerNumber!}
           playerName={playerName}
           totalPoints={myPlayer?.totalPoints || myPlayer?.points || 0}
           {...shakeProps}

@@ -100,6 +100,7 @@ interface GameStore {
   setBases: (bases: BaseState[]) => void;
   setDominationTeamScores: (scores: Record<number, number>) => void;
   resetReadyState: () => void;
+  clearIdentity: () => void;
   reset: () => void;
 }
 
@@ -275,6 +276,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
       roundTimeRemaining: null,
       respawnCountdown: null,
       modeRecap: null,
+    }),
+
+  clearIdentity: () =>
+    set({
+      myPlayerId: null,
+      myPlayerNumber: null,
+      myPlayer: null,
+      myRole: null,
+      myTarget: null,
     }),
 
   reset: () =>

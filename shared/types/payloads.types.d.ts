@@ -54,6 +54,7 @@ export interface PlayerJoinedPayload {
 export interface PlayerReconnectedPayload {
   success: boolean;
   playerId: string;
+  playerNumber: number;
   player: PlayerState;
 }
 

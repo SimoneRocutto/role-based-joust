@@ -299,8 +299,12 @@ export class ConnectionManager {
     });
 
     // Keep session token for potential reconnection
-    // Remove socket mappings
-    this.playerSockets.delete(playerId);
+    // Only remove the playerSockets entry if it still points to this socket.
+    // If the player reconnected with a new socket before this disconnect fires
+    // (race condition), we must not overwrite the new mapping.
+    if (this.playerSockets.get(playerId) === socketId) {
+      this.playerSockets.delete(playerId);
+    }
     this.socketPlayers.delete(socketId);
     this.lastActivity.delete(socketId);
   }
@@ -343,13 +347,29 @@ export class ConnectionManager {
     socketId: string,
     onExpiry: (playerId: string) => void
   ): void {
+    // Race condition guard: if the player already reconnected with a new socket
+    // before this disconnect event fired, skip the grace period entirely.
+    const currentSocketId = this.playerSockets.get(playerId);
+    if (currentSocketId !== undefined && currentSocketId !== socketId) {
+      logger.info(
+        "CONNECTION",
+        `Player ${playerId} lobby disconnect ignored — already reconnected with new socket`
+      );
+      // Clean up only the stale socket references
+      this.socketPlayers.delete(socketId);
+      this.lastActivity.delete(socketId);
+      return;
+    }
+
     logger.info(
       "CONNECTION",
       `Player ${playerId} disconnected in lobby — grace period started (${this.LOBBY_DISCONNECT_TIMEOUT / 1000}s)`
     );
 
     // Remove socket mappings (same as handleDisconnect)
-    this.playerSockets.delete(playerId);
+    if (this.playerSockets.get(playerId) === socketId) {
+      this.playerSockets.delete(playerId);
+    }
     this.socketPlayers.delete(socketId);
     this.lastActivity.delete(socketId);
 

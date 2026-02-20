@@ -15,9 +15,8 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
     - UI: add a settings screen (accessible from the UI) where all the more complex settings (like sensibility of movement detection) can be accessed. In the future, other settings will be accessed through this screen
 
 - BUGS:
+    - when reconnecting during a game, I see that my phone shows the #1 waiting for game to start instead of my life. We should have a way to do it
     - sometimes all players have the skull at the end of the round. Points are not cumulative. I have to track down when this happens
-    - when phone page is inactive, it says "reconnecting...". But in reality, it will never reconnect. I'd rather see a "refresh page" button
-    - make it so both /join and /player screens are unified under /player
     - in classic mode, it happened that game didn't start even though everyone put ready
     - heartbeat sound cannot be heard on phone (but works on pc)
     - TTS doesn't work on iOS -> it's fine, we'll replace it with real voice
@@ -37,6 +36,7 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 
 - Role mode specific:
     - optional through config (and useful for role): hear a sound whenever another player is dead (useful when fighting another one with the earbud on -> without earbuds you would hear his death sound from his phone) 
+    - berserker right now is probably bugged: damage is usually taken in multiple instances when falling or being pushed. So, it risks triggering with the first instance of damage (usually very small) and then preventing the rest. I think we should implement a debounce directly in the core logic (see troll debounce -> needed for the same reason). This way, berserker would need a full second before actually going in toughened status
     - audio cues need to be added:
     - charges should be hidden from the screen. Actually right now we have this bug but we can bypass it. I'll leave it here as history: charges are shown on player screen even though he has no charges (0/1). Maybe this happens when being ironclad in the first round and beast/beasthunter in the second.
     - sound from dashboard with player number: it should say 7 eliminated

@@ -38,7 +38,7 @@ vi.mock('@/utils/constants', () => ({
   RECONNECTION_CONFIG: {
     MAX_ATTEMPTS: 5,
     RETRY_INTERVAL: 100, // Shortened for tests
-    TIMEOUT: 500, // Shortened for tests
+    TIMEOUT: 500, // Shortened for tests (legacy, not used by hook anymore)
   },
 }))
 
@@ -75,6 +75,7 @@ describe('useReconnect', () => {
       const { result } = renderHook(() => useReconnect())
 
       expect(result.current.isReconnecting).toBe(false)
+      expect(result.current.isGivenUp).toBe(false)
       expect(result.current.attempts).toBe(0)
     })
 
@@ -90,7 +91,6 @@ describe('useReconnect', () => {
 
       unmount()
 
-      // Events should be cleared
       expect(socketEventHandlers.has('connection:change')).toBe(false)
     })
   })
@@ -119,6 +119,7 @@ describe('useReconnect', () => {
       })
 
       expect(result.current.isReconnecting).toBe(true)
+      expect(result.current.isGivenUp).toBe(false)
     })
 
     it('updates store reconnecting state on disconnect', () => {
@@ -136,16 +137,28 @@ describe('useReconnect', () => {
   })
 
   describe('reconnection attempts', () => {
-    // NOTE: The useReconnect hook has a design issue where isReconnecting is in the
-    // useEffect dependencies. When handleDisconnect calls setIsReconnecting(true),
-    // React re-runs the effect, which triggers cleanup (clearing the interval) before
-    // the interval can fire. This means the interval-based reconnection attempts
-    // can't actually work with the current hook implementation.
-    //
-    // The following tests verify the timeout behavior, which does work correctly
-    // since the cleanup doesn't clear the setTimeout.
+    it('sends player:reconnect on each interval tick', async () => {
+      vi.mocked(localStorage.getItem).mockReturnValue('valid-token')
 
-    it('stops after timeout when reconnecting', async () => {
+      renderHook(() => useReconnect())
+      // Clear proactive mount call (page-refresh restore) so we can test interval behavior in isolation
+      vi.clearAllMocks()
+
+      await act(async () => {
+        triggerSocketEvent('connection:change', false)
+      })
+
+      expect(socketService.reconnect).not.toHaveBeenCalled()
+
+      // First tick
+      await act(async () => {
+        vi.advanceTimersByTime(100)
+      })
+
+      expect(socketService.reconnect).toHaveBeenCalledTimes(1)
+    })
+
+    it('gives up after MAX_ATTEMPTS', async () => {
       vi.mocked(localStorage.getItem).mockReturnValue('valid-token')
 
       const { result } = renderHook(() => useReconnect())
@@ -156,14 +169,13 @@ describe('useReconnect', () => {
 
       expect(result.current.isReconnecting).toBe(true)
 
-      // Advance past the timeout (500ms in mocked config)
+      // Advance past MAX_ATTEMPTS+1 ticks (100ms each, MAX_ATTEMPTS=5 → give up at tick 6 = 600ms)
       await act(async () => {
-        vi.advanceTimersByTime(600)
+        vi.advanceTimersByTime(700)
       })
 
-      // Should have stopped reconnecting after timeout
       expect(result.current.isReconnecting).toBe(false)
-      expect(result.current.attempts).toBe(0)
+      expect(result.current.isGivenUp).toBe(true)
     })
 
     it('sets initial reconnecting state in store', async () => {
@@ -175,12 +187,11 @@ describe('useReconnect', () => {
         triggerSocketEvent('connection:change', false)
       })
 
-      // Store should show reconnecting with 0 attempts initially
       expect(useGameStore.getState().isReconnecting).toBe(true)
       expect(useGameStore.getState().reconnectAttempts).toBe(0)
     })
 
-    it('resets store after timeout', async () => {
+    it('resets store after giving up', async () => {
       vi.mocked(localStorage.getItem).mockReturnValue('valid-token')
 
       renderHook(() => useReconnect())
@@ -190,35 +201,81 @@ describe('useReconnect', () => {
       })
 
       await act(async () => {
-        vi.advanceTimersByTime(600)
+        vi.advanceTimersByTime(700)
       })
 
-      // Store should be reset after timeout
       expect(useGameStore.getState().isReconnecting).toBe(false)
       expect(useGameStore.getState().reconnectAttempts).toBe(0)
     })
   })
 
-  describe('successful reconnection', () => {
-    it('stops reconnecting on connection restored', () => {
+  describe('page refresh restore', () => {
+    it('sends player:reconnect on mount when socket already connected and token exists', () => {
       vi.mocked(localStorage.getItem).mockReturnValue('valid-token')
+      mockConnected = true
 
-      const { result } = renderHook(() => useReconnect())
+      renderHook(() => useReconnect())
 
-      // Disconnect
-      act(() => {
-        triggerSocketEvent('connection:change', false)
-      })
+      expect(socketService.reconnect).toHaveBeenCalledWith(
+        expect.objectContaining({ token: 'valid-token' })
+      )
+    })
 
-      expect(result.current.isReconnecting).toBe(true)
+    it('does not send player:reconnect on mount when no token', () => {
+      vi.mocked(localStorage.getItem).mockReturnValue(null)
+      mockConnected = true
 
-      // Reconnect
+      renderHook(() => useReconnect())
+
+      expect(socketService.reconnect).not.toHaveBeenCalled()
+    })
+
+    it('does not send player:reconnect on mount when socket disconnected', () => {
+      vi.mocked(localStorage.getItem).mockReturnValue('valid-token')
+      mockConnected = false
+
+      renderHook(() => useReconnect())
+
+      expect(socketService.reconnect).not.toHaveBeenCalled()
+    })
+
+    it('sends player:reconnect when connection:change fires true without being in reconnecting state', () => {
+      vi.mocked(localStorage.getItem).mockReturnValue('valid-token')
+      mockConnected = false // not connected on mount — no proactive call
+
+      renderHook(() => useReconnect())
+      vi.clearAllMocks()
+
+      // Socket connects (e.g. page refresh — transport connects after effect registered)
       act(() => {
         triggerSocketEvent('connection:change', true)
       })
 
-      expect(result.current.isReconnecting).toBe(false)
-      expect(result.current.attempts).toBe(0)
+      expect(socketService.reconnect).toHaveBeenCalledWith(
+        expect.objectContaining({ token: 'valid-token' })
+      )
+    })
+  })
+
+  describe('successful reconnection', () => {
+    it('sends player:reconnect immediately when transport reconnects during reconnection', () => {
+      vi.mocked(localStorage.getItem).mockReturnValue('valid-token')
+
+      renderHook(() => useReconnect())
+
+      act(() => {
+        triggerSocketEvent('connection:change', false)
+      })
+
+      // Transport reconnects while we're in reconnecting state
+      act(() => {
+        triggerSocketEvent('connection:change', true)
+      })
+
+      // Should have sent player:reconnect immediately on transport reconnect
+      expect(socketService.reconnect).toHaveBeenCalledWith(
+        expect.objectContaining({ token: 'valid-token' })
+      )
     })
 
     it('stops reconnecting on player:reconnected success', () => {
@@ -226,79 +283,113 @@ describe('useReconnect', () => {
 
       const { result } = renderHook(() => useReconnect())
 
-      // Disconnect
       act(() => {
         triggerSocketEvent('connection:change', false)
       })
 
       expect(result.current.isReconnecting).toBe(true)
 
-      // Server confirms reconnection
       act(() => {
         triggerSocketEvent('player:reconnected', { success: true })
       })
 
       expect(result.current.isReconnecting).toBe(false)
+      expect(result.current.isGivenUp).toBe(false)
     })
 
-    it('does not stop on player:reconnected failure', () => {
+    it('gives up immediately on player:reconnected failure', () => {
       vi.mocked(localStorage.getItem).mockReturnValue('valid-token')
 
       const { result } = renderHook(() => useReconnect())
 
-      // Disconnect
       act(() => {
         triggerSocketEvent('connection:change', false)
       })
 
       expect(result.current.isReconnecting).toBe(true)
 
-      // Server reports failure
+      // Server rejects token (e.g. server restarted)
       act(() => {
         triggerSocketEvent('player:reconnected', { success: false })
       })
 
-      // Should still be reconnecting
-      expect(result.current.isReconnecting).toBe(true)
+      expect(result.current.isReconnecting).toBe(false)
+      expect(result.current.isGivenUp).toBe(true)
     })
   })
 
-  describe('timeout', () => {
-    it('stops reconnecting after timeout', () => {
+  describe('retryOnce', () => {
+    it('clears isGivenUp and sets isReconnecting on retry', () => {
       vi.mocked(localStorage.getItem).mockReturnValue('valid-token')
+      mockConnected = true
+
+      const { result } = renderHook(() => useReconnect())
+
+      // Simulate given-up state
+      act(() => {
+        triggerSocketEvent('connection:change', false)
+      })
+      act(() => {
+        triggerSocketEvent('player:reconnected', { success: false })
+      })
+
+      expect(result.current.isGivenUp).toBe(true)
+
+      act(() => {
+        result.current.retryOnce()
+      })
+
+      expect(result.current.isGivenUp).toBe(false)
+      expect(result.current.isReconnecting).toBe(true)
+    })
+
+    it('sends player:reconnect immediately when socket is connected', () => {
+      vi.mocked(localStorage.getItem).mockReturnValue('valid-token')
+      mockConnected = true
 
       const { result } = renderHook(() => useReconnect())
 
       act(() => {
         triggerSocketEvent('connection:change', false)
       })
-
-      expect(result.current.isReconnecting).toBe(true)
-
-      // Wait for timeout
       act(() => {
-        vi.advanceTimersByTime(500)
+        triggerSocketEvent('player:reconnected', { success: false })
       })
 
-      expect(result.current.isReconnecting).toBe(false)
+      act(() => {
+        result.current.retryOnce()
+      })
+
+      expect(socketService.reconnect).toHaveBeenCalledWith(
+        expect.objectContaining({ token: 'valid-token' })
+      )
     })
 
-    it('resets store state after timeout', () => {
+    it('gives up again after retryOnce timeout with no response', async () => {
       vi.mocked(localStorage.getItem).mockReturnValue('valid-token')
+      mockConnected = true
 
-      renderHook(() => useReconnect())
+      const { result } = renderHook(() => useReconnect())
 
       act(() => {
         triggerSocketEvent('connection:change', false)
       })
-
       act(() => {
-        vi.advanceTimersByTime(500)
+        triggerSocketEvent('player:reconnected', { success: false })
+      })
+      act(() => {
+        result.current.retryOnce()
       })
 
-      const storeState = useGameStore.getState()
-      expect(storeState.isReconnecting).toBe(false)
-      expect(storeState.reconnectAttempts).toBe(0)
+      expect(result.current.isGivenUp).toBe(false)
+
+      // Advance past the 5s retry timeout
+      await act(async () => {
+        vi.advanceTimersByTime(5100)
+      })
+
+      expect(result.current.isGivenUp).toBe(true)
+      expect(result.current.isReconnecting).toBe(false)
     })
   })
 
@@ -405,7 +496,7 @@ describe('useReconnect', () => {
 
       unmount()
 
-      // Advancing time should not cause errors
+      // Advancing time should not cause errors after unmount
       act(() => {
         vi.advanceTimersByTime(1000)
       })

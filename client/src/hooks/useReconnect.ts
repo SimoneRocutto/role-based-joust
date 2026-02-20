@@ -1,103 +1,118 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { socketService } from "@/services/socket";
 import { useGameStore } from "@/store/gameStore";
 import { RECONNECTION_CONFIG } from "@/utils/constants";
 
 export function useReconnect() {
   const [isReconnecting, setIsReconnecting] = useState(false);
+  const [isGivenUp, setIsGivenUp] = useState(false);
   const [attempts, setAttempts] = useState(0);
-  const intervalRef = useRef<number | null>(null);
 
-  const { setReconnecting, isConnected } = useGameStore();
+  const intervalRef = useRef<number | null>(null);
+  const retryTimeoutRef = useRef<number | null>(null);
+  // Stable ref so functions defined outside the effect can call stopReconnecting
+  const stopRef = useRef<() => void>(() => {});
+  // True while we're in the reconnecting cycle (avoids starting it twice)
+  const isReconnectingRef = useRef(false);
+
+  const { setReconnecting } = useGameStore();
 
   useEffect(() => {
-    const handleDisconnect = () => {
-      const sessionToken = localStorage.getItem("sessionToken");
-      if (!sessionToken) {
-        // No session to restore, but still reconnect the transport
-        // (e.g. after being kicked, the server force-disconnects the socket)
-        console.log("No session token, reconnecting transport only");
-        socketService.forceReconnect();
-        return;
-      }
-
-      setIsReconnecting(true);
-      setAttempts(0);
-      setReconnecting(true, 0);
-
-      console.log("Starting reconnection attempts...");
-
-      // Try to reconnect every 2 seconds
-      intervalRef.current = window.setInterval(() => {
-        setAttempts((prev) => {
-          const newAttempts = prev + 1;
-
-          if (newAttempts >= RECONNECTION_CONFIG.MAX_ATTEMPTS) {
-            console.log("Max reconnection attempts reached");
-            stopReconnecting();
-            return prev;
-          }
-
-          console.log(`Reconnection attempt ${newAttempts}...`);
-          setReconnecting(true, newAttempts);
-
-          socketService.reconnect({
-            token: sessionToken,
-            socketId: socketService.getSocketId() || "",
-          });
-
-          return newAttempts;
-        });
-      }, RECONNECTION_CONFIG.RETRY_INTERVAL);
-
-      // Stop trying after timeout
-      setTimeout(() => {
-        if (intervalRef.current) {
-          console.log("Reconnection timeout");
-          stopReconnecting();
-        }
-      }, RECONNECTION_CONFIG.TIMEOUT);
-    };
-
-    const handleConnect = () => {
-      if (isReconnecting) {
-        console.log("Reconnected successfully");
-        stopReconnecting();
-      }
-    };
-
     const stopReconnecting = () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+      isReconnectingRef.current = false;
       setIsReconnecting(false);
       setAttempts(0);
       setReconnecting(false, 0);
     };
 
-    // Listen to socket events
-    socketService.on("connection:change", (connected: boolean) => {
+    // Keep a stable ref so retryOnce (defined outside effect) can call it
+    stopRef.current = stopReconnecting;
+
+    const startReconnecting = () => {
+      const sessionToken = localStorage.getItem("sessionToken");
+      if (!sessionToken) {
+        // No session to restore — just reconnect the transport
+        socketService.forceReconnect();
+        return;
+      }
+
+      if (isReconnectingRef.current) return;
+
+      isReconnectingRef.current = true;
+      setIsReconnecting(true);
+      setIsGivenUp(false);
+      setAttempts(0);
+      setReconnecting(true, 0);
+
+      let count = 0;
+      intervalRef.current = window.setInterval(() => {
+        count++;
+
+        if (count > RECONNECTION_CONFIG.MAX_ATTEMPTS) {
+          stopReconnecting();
+          setIsGivenUp(true);
+          return;
+        }
+
+        setAttempts(count);
+        setReconnecting(true, count);
+
+        socketService.reconnect({
+          token: sessionToken,
+          socketId: socketService.getSocketId() || "",
+        });
+      }, RECONNECTION_CONFIG.RETRY_INTERVAL);
+    };
+
+    const onConnectionChange = (connected: boolean) => {
       if (!connected) {
-        handleDisconnect();
+        startReconnecting();
       } else {
-        handleConnect();
-      }
-    });
-
-    socketService.onPlayerReconnected((data) => {
-      if (data.success) {
-        console.log("Player reconnected successfully");
-        stopReconnecting();
-      }
-    });
-
-    // When the tab becomes visible again, force a reconnection if disconnected
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
+        // Always try to restore session on connect — handles both mid-reconnection
+        // and page refresh (where isReconnectingRef starts as false).
         const sessionToken = localStorage.getItem("sessionToken");
-        if (sessionToken && !socketService.getConnectionStatus()) {
-          console.log("Tab became visible, forcing reconnection...");
+        if (sessionToken) {
+          socketService.reconnect({
+            token: sessionToken,
+            socketId: socketService.getSocketId() || "",
+          });
+        }
+      }
+    };
+    socketService.on("connection:change", onConnectionChange);
+
+    // Proactive restore: if socket was already connected before this effect ran
+    // (common on page refresh), fire immediately since connection:change won't fire.
+    const existingToken = localStorage.getItem("sessionToken");
+    if (existingToken && socketService.getConnectionStatus()) {
+      socketService.reconnect({
+        token: existingToken,
+        socketId: socketService.getSocketId() || "",
+      });
+    }
+
+    const onPlayerReconnected = (data: { success: boolean }) => {
+      if (data.success) {
+        stopReconnecting();
+      } else {
+        // Server rejected token (e.g. server restarted) — give up immediately
+        stopReconnecting();
+        setIsGivenUp(true);
+      }
+    };
+    socketService.onPlayerReconnected(onPlayerReconnected);
+
+    const handleVisibilityChange = () => {
+      if (
+        document.visibilityState === "visible" &&
+        !socketService.getConnectionStatus()
+      ) {
+        const sessionToken = localStorage.getItem("sessionToken");
+        if (sessionToken) {
           socketService.forceReconnect();
         }
       }
@@ -109,14 +124,54 @@ export function useReconnect() {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
-      socketService.off("connection:change");
-      socketService.off("player:reconnected");
+      // Use specific callbacks so cleanup doesn't nuke useSocket.ts listeners
+      socketService.off("connection:change", onConnectionChange);
+      socketService.off("player:reconnected", onPlayerReconnected);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [isReconnecting, isConnected]);
+  }, []); // empty deps — no re-running on state changes
 
-  return {
-    isReconnecting,
-    attempts,
-  };
+  // Reset all reconnection state — call this when the user initiates a fresh join
+  // so the DisconnectedOverlay doesn't linger after a successful rejoin.
+  const resetReconnect = useCallback(() => {
+    stopRef.current();
+    setIsGivenUp(false);
+  }, []);
+
+  // Single-shot retry: send one player:reconnect attempt immediately,
+  // then give up after 5s if no response.
+  const retryOnce = useCallback(() => {
+    const sessionToken = localStorage.getItem("sessionToken");
+    if (!sessionToken) return;
+
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+    }
+
+    isReconnectingRef.current = true;
+    setIsGivenUp(false);
+    setIsReconnecting(true);
+    setReconnecting(true, 0);
+
+    if (socketService.getConnectionStatus()) {
+      socketService.reconnect({
+        token: sessionToken,
+        socketId: socketService.getSocketId() || "",
+      });
+    } else {
+      // Transport reconnect triggers connection:change(true) which
+      // will send player:reconnect via the handler above
+      socketService.forceReconnect();
+    }
+
+    // Give up if no response within 5s
+    retryTimeoutRef.current = window.setTimeout(() => {
+      if (isReconnectingRef.current) {
+        stopRef.current();
+        setIsGivenUp(true);
+      }
+    }, 5000);
+  }, [setReconnecting]);
+
+  return { isReconnecting, isGivenUp, attempts, retryOnce, resetReconnect };
 }

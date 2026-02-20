@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useSocket } from "@/hooks/useSocket";
-import { useReconnect } from "@/hooks/useReconnect";
 import JoinView from "@/pages/JoinView";
 import PlayerView from "@/pages/PlayerView";
 import DashboardView from "@/pages/DashboardView";
@@ -12,9 +11,6 @@ import { audioManager } from "./services/audio";
 function App() {
   // Initialize socket connection
   useSocket();
-
-  // Initialize reconnection logic
-  useReconnect();
 
   useEffect(() => {
     audioManager.initialize();
