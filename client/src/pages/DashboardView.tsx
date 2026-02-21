@@ -257,6 +257,9 @@ function DashboardView() {
               <PreGameControls />
             </div>
             <PlayerGrid />
+            <div className="mt-6">
+              {mode === "domination" && <BaseStatusPanel />}
+            </div>
           </>
         )}
 
