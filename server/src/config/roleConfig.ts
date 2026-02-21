@@ -58,6 +58,11 @@ export interface SiblingConfig {
   sharedDamageRatio: number; // Ratio of damage forwarded to sibling (1.0 = 100%)
 }
 
+export interface VillagerConfig {
+  placementBonusIncrease: number; // Amount of extra points earned if in topN players
+  topN: number; // Placements for which he earns extra points
+}
+
 export interface VultureConfig {
   deathWindowMs: number; // Time window for chained deaths (ms)
   pointsPerChainedDeath: number; // Points awarded per chained death
@@ -80,6 +85,7 @@ export interface RoleConfigs {
   ninja: NinjaConfig;
   masochist: MasochistConfig;
   sibling: SiblingConfig;
+  villager: VillagerConfig;
   vulture: VultureConfig;
   troll: TrollConfig;
 }
@@ -143,6 +149,11 @@ export const roleConfigs: RoleConfigs = {
   sibling: {
     toughnessBonus: 1.5, // 50% more resistant
     sharedDamageRatio: 1.0, // 100% of damage forwarded
+  },
+
+  villager: {
+    placementBonusIncrease: 1,
+    topN: 1,
   },
 
   vulture: {
