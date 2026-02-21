@@ -232,7 +232,7 @@ function DashboardView() {
 
   return (
     <div
-      className="min-h-screen text-white overflow-hidden"
+      className="min-h-screen max-h-screen flex flex-col text-white overflow-hidden"
       style={{ background, transition: "background 0.5s ease-in-out" }}
     >
       {/* Header */}
@@ -242,7 +242,7 @@ function DashboardView() {
       {isCountdown && <CountdownDisplay />}
 
       {/* Main Content */}
-      <div className="p-6">
+      <div className="p-6 overflow-scroll">
         {/* Admin Controls (only show in waiting/lobby) */}
         {isWaiting && (
           <div className="mb-6">

@@ -6,7 +6,7 @@ function EventFeed() {
   const isSpeaking = useAudioStore((state) => state.isSpeaking);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 px-8 py-4">
+    <div className="bg-gray-800 border-t border-gray-700 px-8 py-4">
       <div className="flex items-center justify-between">
         {/* Latest Event */}
         <div className="flex items-center gap-3">
