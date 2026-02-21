@@ -6,9 +6,11 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 
 - SHORT TERM PRIORITIES:
     - rework round end/game end UI for death count and team matches in general
+    - rework domination active game UI
     - write roles combinations for every number of players from 3 up to 16 for easy level of difficulty
     - write roles combinations for every number of players from 3 up to 16 for medium level of difficulty
     - record sounds and replace every TTS entry
+    - maybe allow multiple audio tracks for background music
     - maybe implement timeshift role and the bomb/bomb faker
     - maybe implement king game mode
 

@@ -16,18 +16,6 @@ export interface AngelConfig {
   invulnerabilityDuration: number; // Divine protection duration
 }
 
-export interface MedicConfig {
-  healCooldown: number; // Time between heals
-  healDuration: number; // Duration of regeneration effect
-  healPerSecond: number; // HP healed per second
-  selfRegenerationRate: number; // Passive self-healing rate
-  healPoints: number; // Points gained per heal
-}
-
-export interface AssassinConfig {
-  targetKillPoints: number; // Points for killing assigned target
-}
-
 export interface IroncladConfig {
   maxCharges: number; // Number of ability uses
   cooldownDuration: number; // ms to regain 1 charge (0 = no regen)
@@ -84,8 +72,6 @@ export interface RoleConfigs {
   beast: BeastConfig;
   beastHunter: BeastHunterConfig;
   angel: AngelConfig;
-  medic: MedicConfig;
-  assassin: AssassinConfig;
   ironclad: IroncladConfig;
   survivor: SurvivorConfig;
   executioner: ExecutionerConfig;
@@ -115,18 +101,6 @@ export const roleConfigs: RoleConfigs = {
 
   angel: {
     invulnerabilityDuration: 3000, // 3 seconds
-  },
-
-  medic: {
-    healCooldown: 15000, // 15 seconds
-    healDuration: 5000, // 5 seconds
-    healPerSecond: 20, // 20 HP/s
-    selfRegenerationRate: 5, // 5 HP/s passive
-    healPoints: 2,
-  },
-
-  assassin: {
-    targetKillPoints: 10,
   },
 
   ironclad: {

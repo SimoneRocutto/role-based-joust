@@ -274,7 +274,7 @@ Main game interface displayed on player's phone (chest-mounted, portrait mode).
 **Target Display** (Middle):
 
 ```tsx
-// For roles with targets (Beast Hunter, Assassin)
+// For roles with targets (Beast Hunter)
 {
   hasTarget && <div className="text-xl">🎯 Target: #{targetNumber}</div>;
 }

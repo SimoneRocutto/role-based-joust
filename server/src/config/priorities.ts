@@ -50,17 +50,14 @@ export const STATUS_EFFECT_PRIORITIES = {
  */
 export const ROLE_PRIORITIES = {
   ANGEL: Priority.HIGH, // 50 - Death prevention first
-  ASSASSIN: Priority.MEDIUM_HIGH, // 30 - Offensive ability
-  MEDIC: Priority.MEDIUM_HIGH, // 25 - Support ability
   VAMPIRE: Priority.MEDIUM, // 20 - Standard ability
-  BERSERKER: Priority.MEDIUM_LOW, // 15 - Modified movement
   BEAST: Priority.MEDIUM_LOW, // 10 - Passive ability
   BEAST_HUNTER: Priority.LOW, // 5  - Reactive ability
   IRONCLAD: Priority.LOW, // 5  - Defensive ability (activated)
   SURVIVOR: Priority.LOW, // 5  - Passive point generation
   EXECUTIONER: Priority.MEDIUM_LOW, // 10 - Target tracking
   BODYGUARD: Priority.MEDIUM_LOW, // 10 - Target observation
-  NEW_BERSERKER: Priority.MEDIUM_LOW, // 10 - Reactive defense
+  BERSERKER: Priority.MEDIUM_LOW, // 10 - Reactive defense
   NINJA: Priority.MEDIUM_LOW, // 10 - Modified damage behavior
   MASOCHIST: Priority.LOW, // 5  - Passive point generation
   SIBLING: Priority.MEDIUM_LOW, // 10 - Reactive damage sharing

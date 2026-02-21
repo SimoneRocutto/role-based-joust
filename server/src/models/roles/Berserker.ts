@@ -15,7 +15,7 @@ const logger = Logger.getInstance();
  * while toughened.
  */
 export class Berserker extends BasePlayer {
-  static override priority: number = ROLE_PRIORITIES.NEW_BERSERKER;
+  static override priority: number = ROLE_PRIORITIES.BERSERKER;
   static displayName: string = "Berserker";
   static description: string =
     "Taking damage gives you tough skin for 3 seconds";
