@@ -152,7 +152,7 @@ export const roleConfigs: RoleConfigs = {
   },
 
   villager: {
-    placementBonusIncrease: 1,
+    placementBonusIncrease: 3,
     topN: 1,
   },
 
