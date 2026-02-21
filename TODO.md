@@ -14,6 +14,7 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 - FEATURES:
 
 - BUGS:
+    - sometimes a player gets stuck with "#2 Player waiting for game to start" but it isn't really connected. I have to track down how this happens because with refresh there's no way to get unstuck
     - sometimes all players have the skull at the end of the round. Points are not cumulative. I have to track down when this happens
     - in classic mode, it happened that game didn't start even though everyone put ready
     - heartbeat sound cannot be heard on phone (but works on pc)
@@ -24,6 +25,7 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 - Death count mode specific:
 
 - Domination mode specific:
+    - check for exact number of bases before starting (or, instead, remove number of bases setting)
 
 - Team mode specific:
     - end of round scoreboard is confusing: it should list players in order of round points. We should also find a way to represent total points for the entire teams
