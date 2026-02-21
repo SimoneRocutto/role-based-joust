@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { useAdminSettings } from "@/hooks/useAdminSettings";
 import GameSettingsPanel from "./GameSettingsPanel";
 import LobbyActionBar from "./LobbyActionBar";
+import SettingsModal from "./SettingsModal";
 
 function AdminControls() {
   const settings = useAdminSettings();
+  const [showSettings, setShowSettings] = useState(false);
 
   return (
     <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
@@ -14,6 +17,13 @@ function AdminControls() {
             [DEV MODE]
           </span>
         )}
+        <button
+          onClick={() => setShowSettings(true)}
+          className="ml-auto p-1 text-2xl text-gray-400 hover:text-white transition-colors"
+          aria-label="Open advanced settings"
+        >
+          ⚙
+        </button>
       </div>
 
       <GameSettingsPanel
@@ -21,7 +31,6 @@ function AdminControls() {
         selectedTheme={settings.selectedTheme}
         selectedSensitivity={settings.selectedSensitivity}
         sensitivityPresets={settings.sensitivityPresets}
-        dangerThreshold={settings.dangerThreshold}
         roundCount={settings.roundCount}
         roundDuration={settings.roundDuration}
         combinedModeKey={settings.combinedModeKey}
@@ -31,13 +40,10 @@ function AdminControls() {
         handleCombinedModeChange={settings.handleCombinedModeChange}
         handleThemeChange={settings.handleThemeChange}
         handleSensitivityChange={settings.handleSensitivityChange}
-        handleThresholdChange={settings.handleThresholdChange}
         handleRoundCountChange={settings.handleRoundCountChange}
         handleRoundDurationChange={settings.handleRoundDurationChange}
         handleTeamCountChange={settings.handleTeamCountChange}
         dominationPointTarget={settings.dominationPointTarget}
-        dominationControlInterval={settings.dominationControlInterval}
-        dominationRespawnTime={settings.dominationRespawnTime}
         dominationBaseCount={settings.dominationBaseCount}
         handleDominationSettingChange={settings.handleDominationSettingChange}
       />
@@ -53,6 +59,19 @@ function AdminControls() {
         qrDataUrl={settings.qrDataUrl}
         joinUrl={settings.joinUrl}
         handleStartClick={settings.handleStartClick}
+      />
+
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        dangerThreshold={settings.dangerThreshold}
+        dominationControlInterval={settings.dominationControlInterval}
+        dominationRespawnTime={settings.dominationRespawnTime}
+        deathCountRespawnTime={settings.deathCountRespawnTime}
+        loading={settings.loading}
+        handleThresholdChange={settings.handleThresholdChange}
+        handleDominationSettingChange={settings.handleDominationSettingChange}
+        handleDeathCountRespawnChange={settings.handleDeathCountRespawnChange}
       />
     </div>
   );

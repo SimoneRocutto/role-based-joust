@@ -54,6 +54,7 @@ function createTestSettings(overrides?: Partial<PersistedSettings>): PersistedSe
     dominationControlInterval: 5,
     dominationRespawnTime: 10,
     dominationBaseCount: 1,
+    deathCountRespawnTime: 5,
     ...overrides,
   };
 }

@@ -125,8 +125,44 @@ describe('AdminControls', () => {
     })
   })
 
-  it('renders movement threshold slider', async () => {
+  it('renders a gear settings button', async () => {
     render(<AdminControls />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Open advanced settings')).toBeInTheDocument()
+    })
+  })
+
+  it('opens the settings modal when gear button is clicked', async () => {
+    render(<AdminControls />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Open advanced settings')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByLabelText('Open advanced settings'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Advanced Settings')).toBeInTheDocument()
+    })
+  })
+
+  it('does not show settings modal before gear is clicked', async () => {
+    render(<AdminControls />)
+
+    await waitFor(() => {
+      expect(screen.queryByText('Advanced Settings')).not.toBeInTheDocument()
+    })
+  })
+
+  it('shows movement threshold slider inside the settings modal', async () => {
+    render(<AdminControls />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Open advanced settings')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByLabelText('Open advanced settings'))
 
     await waitFor(() => {
       expect(screen.getByText(/Movement Threshold/)).toBeInTheDocument()
@@ -138,8 +174,14 @@ describe('AdminControls', () => {
     expect(slider).toHaveValue('10') // default 0.10 = 10%
   })
 
-  it('calls updateSettings with dangerThreshold when slider changes', async () => {
+  it('calls updateSettings with dangerThreshold when slider changes inside modal', async () => {
     render(<AdminControls />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Open advanced settings')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByLabelText('Open advanced settings'))
 
     await waitFor(() => {
       expect(screen.getByRole('slider')).toBeInTheDocument()

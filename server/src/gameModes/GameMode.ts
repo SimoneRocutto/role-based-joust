@@ -16,6 +16,8 @@ const gameEvents = GameEvents.getInstance();
 export interface GameModeOptions {
   roundCount?: number;
   roundDuration?: number;
+  respawnDelayMs?: number;
+  [key: string]: unknown;
 }
 
 /**

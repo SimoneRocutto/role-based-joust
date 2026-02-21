@@ -31,6 +31,8 @@ export interface PersistedSettings {
   dominationRespawnTime: number;
   /** Domination: expected number of bases (1-3) */
   dominationBaseCount: number;
+  /** Death Count: seconds before respawn (3-30) */
+  deathCountRespawnTime: number;
 }
 
 class SettingsStore {

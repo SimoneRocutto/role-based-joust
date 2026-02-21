@@ -94,6 +94,7 @@ export interface UserPreferences {
   dominationControlInterval: number; // Seconds of control per point (3-15)
   dominationRespawnTime: number; // Seconds before respawn (5-30)
   dominationBaseCount: number; // Expected number of bases (1-3)
+  deathCountRespawnTime: number; // Seconds before respawn in death count mode (3-30)
 }
 
 export interface SensitivityPreset {
@@ -158,6 +159,7 @@ const defaultPreferences: UserPreferences = {
   dominationControlInterval: 5,
   dominationRespawnTime: 10,
   dominationBaseCount: 1,
+  deathCountRespawnTime: 5,
 };
 
 export const gameConfig: GameConfig = {
@@ -243,6 +245,7 @@ function persistSettings(): void {
     dominationControlInterval: userPreferences.dominationControlInterval,
     dominationRespawnTime: userPreferences.dominationRespawnTime,
     dominationBaseCount: userPreferences.dominationBaseCount,
+    deathCountRespawnTime: userPreferences.deathCountRespawnTime,
   };
   settingsStore.save(settings);
 }
@@ -392,6 +395,14 @@ export function setDominationBaseCountPreference(count: number): void {
   persistSettings();
 }
 
+/**
+ * Update death count respawn time preference (seconds).
+ */
+export function setDeathCountRespawnTimePreference(seconds: number): void {
+  userPreferences.deathCountRespawnTime = Math.max(3, Math.min(30, seconds));
+  persistSettings();
+}
+
 export function resetMovementConfig(): void {
   Object.assign(gameConfig.movement, defaultMovement);
   Object.assign(userPreferences, defaultPreferences);
@@ -439,6 +450,9 @@ export function initSettings(): void {
     }
     if (saved.dominationBaseCount !== undefined) {
       userPreferences.dominationBaseCount = saved.dominationBaseCount;
+    }
+    if (saved.deathCountRespawnTime !== undefined) {
+      userPreferences.deathCountRespawnTime = saved.deathCountRespawnTime;
     }
   }
 }

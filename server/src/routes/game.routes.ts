@@ -21,6 +21,7 @@ import {
   setDominationControlIntervalPreference,
   setDominationRespawnTimePreference,
   setDominationBaseCountPreference,
+  setDeathCountRespawnTimePreference,
   userPreferences,
 } from "@/config/gameConfig";
 import { getAvailableThemes, themeExists } from "@/config/roleThemes";
@@ -260,6 +261,10 @@ router.post(
       modeOptions.controlIntervalMs = userPreferences.dominationControlInterval * 1000;
       modeOptions.respawnDelayMs = userPreferences.dominationRespawnTime * 1000;
     }
+    // Pass death count respawn delay
+    if (effectiveMode === "death-count") {
+      modeOptions.respawnDelayMs = userPreferences.deathCountRespawnTime * 1000;
+    }
     const gameMode = factory.createMode(effectiveMode, modeOptions);
 
     // Set mode on engine
@@ -419,6 +424,8 @@ router.get(
       dominationControlInterval: userPreferences.dominationControlInterval,
       dominationRespawnTime: userPreferences.dominationRespawnTime,
       dominationBaseCount: userPreferences.dominationBaseCount,
+      // Death Count settings
+      deathCountRespawnTime: userPreferences.deathCountRespawnTime,
       // Movement details
       movement: {
         dangerThreshold: gameConfig.movement.dangerThreshold,
@@ -463,6 +470,7 @@ router.post(
       dominationControlInterval,
       dominationRespawnTime,
       dominationBaseCount,
+      deathCountRespawnTime,
     } = req.body;
     const updates: string[] = [];
 
@@ -630,6 +638,15 @@ router.post(
       updates.push(`dominationBaseCount=${dominationBaseCount}`);
     }
 
+    if (deathCountRespawnTime !== undefined) {
+      if (typeof deathCountRespawnTime !== "number" || deathCountRespawnTime < 3 || deathCountRespawnTime > 30) {
+        res.status(400).json({ success: false, error: "deathCountRespawnTime must be a number between 3 and 30" });
+        return;
+      }
+      setDeathCountRespawnTimePreference(deathCountRespawnTime);
+      updates.push(`deathCountRespawnTime=${deathCountRespawnTime}`);
+    }
+
     // Custom sensitivity values (overrides preset)
     if (dangerThreshold !== undefined || damageMultiplier !== undefined) {
       const update: Partial<{
@@ -668,6 +685,7 @@ router.post(
       dominationControlInterval: userPreferences.dominationControlInterval,
       dominationRespawnTime: userPreferences.dominationRespawnTime,
       dominationBaseCount: userPreferences.dominationBaseCount,
+      deathCountRespawnTime: userPreferences.deathCountRespawnTime,
       movement: {
         dangerThreshold: gameConfig.movement.dangerThreshold,
         damageMultiplier: gameConfig.movement.damageMultiplier,

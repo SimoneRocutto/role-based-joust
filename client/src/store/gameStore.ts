@@ -167,7 +167,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   updatePlayer: (player) => {
     // Ensure statusEffects is always an array (reconnect payloads may omit it)
-    const normalized = { statusEffects: [] as PlayerState["statusEffects"], ...player };
+    const normalized = { ...player, statusEffects: (player.statusEffects ?? []) as PlayerState["statusEffects"] };
 
     // Update my player if it's me
     if (get().myPlayerId === normalized.id) {

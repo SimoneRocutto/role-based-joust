@@ -6,6 +6,7 @@ import {
   resetMovementConfig,
   userPreferences,
   setRoundCountPreference,
+  setDeathCountRespawnTimePreference,
 } from "@/config/gameConfig";
 
 const runner = new TestRunner();
@@ -210,6 +211,50 @@ runner.test("setRoundCountPreference clamps value to 1-10 range", (engine) => {
     userPreferences.roundCount,
     10,
     "roundCount should be clamped to maximum 10"
+  );
+
+  resetMovementConfig();
+});
+
+// ============================================================================
+// DEATH COUNT RESPAWN TIME TESTS
+// ============================================================================
+
+runner.test("Default deathCountRespawnTime is 5", (engine) => {
+  resetMovementConfig();
+  assertEqual(
+    userPreferences.deathCountRespawnTime,
+    5,
+    "Default deathCountRespawnTime should be 5"
+  );
+});
+
+runner.test("setDeathCountRespawnTimePreference updates deathCountRespawnTime", (engine) => {
+  resetMovementConfig();
+  setDeathCountRespawnTimePreference(10);
+  assertEqual(
+    userPreferences.deathCountRespawnTime,
+    10,
+    "deathCountRespawnTime should be updated to 10"
+  );
+  resetMovementConfig();
+});
+
+runner.test("setDeathCountRespawnTimePreference clamps value to 3-30 range", (engine) => {
+  resetMovementConfig();
+
+  setDeathCountRespawnTimePreference(1);
+  assertEqual(
+    userPreferences.deathCountRespawnTime,
+    3,
+    "deathCountRespawnTime should be clamped to minimum 3"
+  );
+
+  setDeathCountRespawnTimePreference(60);
+  assertEqual(
+    userPreferences.deathCountRespawnTime,
+    30,
+    "deathCountRespawnTime should be clamped to maximum 30"
   );
 
   resetMovementConfig();

@@ -162,6 +162,7 @@ class ApiService {
     dominationControlInterval?: number;
     dominationRespawnTime?: number;
     dominationBaseCount?: number;
+    deathCountRespawnTime?: number;
   }> {
     return this.request("/game/settings");
   }
@@ -177,6 +178,11 @@ class ApiService {
     damageMultiplier?: number;
     teamsEnabled?: boolean;
     teamCount?: number;
+    dominationPointTarget?: number;
+    dominationControlInterval?: number;
+    dominationRespawnTime?: number;
+    dominationBaseCount?: number;
+    deathCountRespawnTime?: number;
   }): Promise<{
     success: boolean;
     sensitivity: string;

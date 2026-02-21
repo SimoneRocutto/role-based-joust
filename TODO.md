@@ -12,13 +12,6 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
     - use special animations/cool backgrounds to distinguish between speedshift slow and fast phases. Red and blue will be mistaken for red and blue team colors. We should use a different way to convey velocity info to players
 
 - FEATURES:
-    - UI: add a settings screen (accessible from the UI) where all the more complex settings (like sensibility of movement detection) can be accessed. In the future, other settings will be accessed through this screen. The goal is to move settings that are rarely changed here to avoid UI clutter in the dashboard
-        - here, we should have other settings that are mode specific:
-            - domination:
-                - respawn time
-                - control interval
-            - death count:
-                - respawn time
 
 - BUGS:
     - sometimes all players have the skull at the end of the round. Points are not cumulative. I have to track down when this happens

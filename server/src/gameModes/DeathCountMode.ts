@@ -40,7 +40,8 @@ export class DeathCountMode extends GameMode {
       this.roundCount = 3;
     }
     this.multiRound = true;
-    this.respawnManager = new RespawnManager(gameConfig.modeDefaults.deathCount.respawnDelayMs);
+    const respawnDelayMs = options?.respawnDelayMs ?? gameConfig.modeDefaults.deathCount.respawnDelayMs;
+    this.respawnManager = new RespawnManager(respawnDelayMs);
   }
 
   override onModeSelected(engine: GameEngine): void {

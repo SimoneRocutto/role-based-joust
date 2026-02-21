@@ -44,6 +44,70 @@ runner.test("DeathCountMode accepts custom roundDuration", (engine) => {
   resetMovementConfig();
 });
 
+runner.test("DeathCountMode uses configured respawnDelayMs when passed as option", (engine) => {
+  resetMovementConfig();
+  const mode = GameModeFactory.getInstance().createMode("death-count", {
+    roundDuration: 30000,
+    respawnDelayMs: 10000,
+  });
+  engine.setGameMode(mode);
+
+  const players = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" as const },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" as const },
+  ];
+  engine.startGame(players);
+
+  // Kill player 1
+  const player1 = engine.getPlayerById("p1")!;
+  player1.die(engine.gameTime);
+
+  assert(!player1.isAlive, "Player should be dead after die()");
+
+  // Fast-forward 9.9s — should still be dead (respawn delay is 10s)
+  engine.fastForward(9900);
+  assert(!player1.isAlive, "Player should still be dead at 9.9s with 10s respawn delay");
+
+  // Fast-forward past 10s total — should respawn
+  engine.fastForward(200);
+  assert(player1.isAlive, "Player should be alive after 10s respawn delay");
+
+  mode.onGameEnd(engine);
+  resetMovementConfig();
+});
+
+runner.test("DeathCountMode falls back to default respawn delay when no option provided", (engine) => {
+  resetMovementConfig();
+  const mode = GameModeFactory.getInstance().createMode("death-count", {
+    roundDuration: 30000,
+    // no respawnDelayMs option
+  });
+  engine.setGameMode(mode);
+
+  const players = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" as const },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" as const },
+  ];
+  engine.startGame(players);
+
+  // Kill player 1
+  const player1 = engine.getPlayerById("p1")!;
+  player1.die(engine.gameTime);
+
+  assert(!player1.isAlive, "Player should be dead after die()");
+
+  // Fast-forward 4.9s — should still be dead (default 5s delay)
+  engine.fastForward(4900);
+  assert(!player1.isAlive, "Player should still be dead at 4.9s with default 5s respawn delay");
+
+  // Fast-forward past 5s — should respawn
+  engine.fastForward(200);
+  assert(player1.isAlive, "Player should be alive after default 5s respawn delay");
+
+  mode.onGameEnd(engine);
+  resetMovementConfig();
+});
+
 // ============================================================================
 // DEATH COUNT AND RESPAWN TESTS
 // ============================================================================

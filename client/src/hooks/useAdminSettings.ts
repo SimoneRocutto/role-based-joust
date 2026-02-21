@@ -25,6 +25,7 @@ export function useAdminSettings() {
   const [dominationControlInterval, setDominationControlInterval] = useState(5);
   const [dominationRespawnTime, setDominationRespawnTime] = useState(10);
   const [dominationBaseCount, setDominationBaseCount] = useState(1);
+  const [deathCountRespawnTime, setDeathCountRespawnTime] = useState(5);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -93,6 +94,9 @@ export function useAdminSettings() {
           }
           if (data.dominationBaseCount !== undefined) {
             setDominationBaseCount(data.dominationBaseCount);
+          }
+          if (data.deathCountRespawnTime !== undefined) {
+            setDeathCountRespawnTime(data.deathCountRespawnTime);
           }
         }
       })
@@ -239,6 +243,15 @@ export function useAdminSettings() {
     }
   };
 
+  const handleDeathCountRespawnChange = async (value: number) => {
+    setDeathCountRespawnTime(value);
+    try {
+      await apiService.updateSettings({ deathCountRespawnTime: value });
+    } catch (err) {
+      console.error("Failed to update deathCountRespawnTime:", err);
+    }
+  };
+
   const handleShuffleTeams = async () => {
     try {
       await apiService.shuffleTeams();
@@ -293,6 +306,7 @@ export function useAdminSettings() {
     dominationControlInterval,
     dominationRespawnTime,
     dominationBaseCount,
+    deathCountRespawnTime,
     combinedModeKey,
     loading,
     error,
@@ -313,6 +327,7 @@ export function useAdminSettings() {
     handleTeamsEnabledChange,
     handleTeamCountChange,
     handleDominationSettingChange,
+    handleDeathCountRespawnChange,
     handleShuffleTeams,
     handleLaunchGame,
     handleStartClick,
