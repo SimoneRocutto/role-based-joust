@@ -4,6 +4,14 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 
 - PRIORITIES:
 
+- SHORT TERM PRIORITIES:
+    - rework round end/game end UI for death count and team matches in general
+    - write roles combinations for every number of players from 3 up to 16 for easy level of difficulty
+    - write roles combinations for every number of players from 3 up to 16 for medium level of difficulty
+    - record sounds and replace every TTS entry
+    - maybe implement timeshift role and the bomb/bomb faker
+    - maybe implement king game mode
+
 - IMPROVEMENTS:
     - victory music
     - numbers of deaths in death count mode should be highly visible from a distance. We could also consider showing them on the player screen (or maybe showing a trophy or somthing like that on the player ahead)
@@ -32,11 +40,8 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 - Roles to implement:
 
 - Role mode specific:
-    - berserker right now is probably bugged: damage is usually taken in multiple instances when falling or being pushed. So, it risks triggering with the first instance of damage (usually very small) and then preventing the rest. I think we should implement a debounce directly in the core logic (see troll debounce -> needed for the same reason). This way, berserker would need a full second before actually going in toughened status
-    - audio cues need to be added:
     - charges should be hidden from the screen. Actually right now we have this bug but we can bypass it. I'll leave it here as history: charges are shown on player screen even though he has no charges (0/1). Maybe this happens when being ironclad in the first round and beast/beasthunter in the second.
     - sound from dashboard with player number: it should say 7 eliminated
-    - record sounds for audio to avoid using tts on iPhone (doesn't work)
 
 - New roles (E = easy, M = medium, H = hard):
     - (M) vampire: every 20 seconds he enters bloodlust -> for 5 seconds, he gains 1 point and gains 20% HP if someone else dies during this mode
