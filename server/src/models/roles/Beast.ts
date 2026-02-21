@@ -1,19 +1,19 @@
-import { BasePlayer as BeastBasePlayer } from "../BasePlayer";
-import type { PlayerData as BeastPlayerData } from "@/types/player.types";
-import { Logger as BeastLogger } from "@/utils/Logger";
+import { BasePlayer as BasePlayer } from "../BasePlayer";
+import type { PlayerData } from "@/types/player.types";
+import { Logger as Logger } from "@/utils/Logger";
 import { roleConfigs as beastRoleConfigs } from "@/config/roleConfig";
-import { ROLE_PRIORITIES as BEAST_PRIORITIES } from "@/config/priorities";
+import { ROLE_PRIORITIES } from "@/config/priorities";
 
-const beastLogger = BeastLogger.getInstance();
+const beastLogger = Logger.getInstance();
 
-export class Beast extends BeastBasePlayer {
-  static override priority: number = BEAST_PRIORITIES.BEAST;
+export class Beast extends BasePlayer {
+  static override priority: number = ROLE_PRIORITIES.BEAST;
   static displayName: string = "Beast";
   static description: string =
     "Increased toughness, but hunted by BeastHunters";
   static difficulty: string = "easy";
 
-  constructor(data: BeastPlayerData) {
+  constructor(data: PlayerData) {
     super(data);
     this.toughness = beastRoleConfigs.beast.toughnessMultiplier;
   }
