@@ -7,7 +7,7 @@ class AudioManager {
   private sounds: Map<string, Howl> = new Map();
   private bannedSoundList: Set<string> = new Set();
   private currentMusic: Howl | null = null;
-  private silentKeepAlive: Howl | null = null;
+  private isSilencePlaying = false;
   private currentTrack: string | null = null;
   private originalMusicVolume: number = AUDIO_VOLUMES.MUSIC;
   private _isInitialized = false;
@@ -325,15 +325,9 @@ class AudioManager {
 
     // Keep a looping silent sound running so Bluetooth earbuds never power-gate
     // between SFX plays, which causes the first milliseconds of audio to be clipped.
-    if (!this.silentKeepAlive) {
-      this.silentKeepAlive = new Howl({
-        src: [
-          "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=",
-        ],
-        loop: true,
-        volume: 0,
-      });
-      this.silentKeepAlive.play();
+    if (!this.isSilencePlaying) {
+      audioManager.loop("silence");
+      this.isSilencePlaying = true;
     }
 
     useAudioStore.getState().setAudioUnlocked(true);
