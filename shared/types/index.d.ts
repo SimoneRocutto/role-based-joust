@@ -39,4 +39,5 @@ export type {
   BasePointPayload,
   BaseStatusPayload,
   DominationWinPayload,
+  PlayerDamagePayload,
 } from "./payloads.types";

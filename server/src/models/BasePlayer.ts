@@ -53,6 +53,12 @@ export class BasePlayer {
   accumulatedDamage: number = 0;
   isInvulnerable: boolean = false;
 
+  // ========== DAMAGE EVENT DEBOUNCE ==========
+  // Trailing-edge debounce: fire onDamageEvent once after 3 quiet ticks post-burst.
+  private _damageEventAccumulator: number = 0;
+  private _damageEventQuietTicks: number = 0;
+  private static readonly DAMAGE_EVENT_QUIET_TICKS = 3;
+
   // ========== STATUS EFFECTS ==========
   statusEffects: Map<string, StatusEffect> = new Map();
 
@@ -247,6 +253,12 @@ export class BasePlayer {
     // Accumulate damage
     this.accumulatedDamage += actualDamage;
 
+    // Feed trailing-edge debounce accumulator
+    if (actualDamage > 0) {
+      this._damageEventAccumulator += actualDamage;
+      this._damageEventQuietTicks = 0;
+    }
+
     // Check if damage is lethal
     if (this.accumulatedDamage >= this.deathThreshold && !this.isInvulnerable) {
       this.beforeDeath(gameTime);
@@ -437,6 +449,18 @@ export class BasePlayer {
     // Process ability cooldown
     this.processCooldown(gameTime, deltaTime);
 
+    // Process trailing-edge damage event
+    if (this._damageEventAccumulator > 0 && this.isAlive) {
+      this._damageEventQuietTicks++;
+      if (this._damageEventQuietTicks >= BasePlayer.DAMAGE_EVENT_QUIET_TICKS) {
+        const totalDamage = this._damageEventAccumulator;
+        this._damageEventAccumulator = 0;
+        this._damageEventQuietTicks = 0;
+        this.onDamageEvent(totalDamage, gameTime);
+        gameEvents.emitPlayerDamageEvent({ player: this, totalDamage, gameTime });
+      }
+    }
+
     // Execute bot behavior if this is a bot
     if (this.isBot && this.autoPlayEnabled && this.isAlive) {
       this.executeBotBehavior(gameTime);
@@ -504,6 +528,17 @@ export class BasePlayer {
     this.lastMovementData = null;
     this.accumulatedDamage = 0;
     this.movementHistory = [];
+    this._damageEventAccumulator = 0;
+    this._damageEventQuietTicks = 0;
+  }
+
+  /**
+   * Called once after a burst of damage ends (3 consecutive quiet ticks).
+   * Override in role classes to react to damage events.
+   * @param totalDamage - accumulated actual damage from the entire burst
+   */
+  onDamageEvent(totalDamage: number, gameTime: number): void {
+    // Override in role subclasses
   }
 
   /**

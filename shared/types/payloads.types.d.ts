@@ -205,3 +205,7 @@ export interface DominationWinPayload {
   winningTeamName: string;
   teamScores: Record<number, number>;
 }
+
+export interface PlayerDamagePayload {
+  totalDamage: number;
+}

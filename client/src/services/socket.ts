@@ -27,6 +27,7 @@ import type {
   BasePointPayload,
   BaseStatusPayload,
   DominationWinPayload,
+  PlayerDamagePayload,
 } from "@/types/socket.types";
 
 // In development, use empty string to connect via Vite proxy (same origin)
@@ -259,6 +260,10 @@ class SocketService {
 
   onPlayerKicked(callback: (data: { reason: string }) => void) {
     this.on("player:kicked", callback);
+  }
+
+  onPlayerDamage(callback: (data: PlayerDamagePayload) => void) {
+    this.on("player:damage", callback);
   }
 
   onBaseRegistered(callback: (data: BaseRegisteredPayload) => void) {

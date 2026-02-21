@@ -575,8 +575,15 @@ runner.test("Berserker gains Toughened on damage", (engine) => {
     "Should not start with Toughened"
   );
 
-  // Deal non-lethal damage
+  // Deal non-lethal damage; Toughened is applied after the burst ends (3 quiet ticks)
   berserker!.takeDamage(10, engine.gameTime);
+  assert(
+    !berserker!.hasStatusEffect(Toughened),
+    "Toughened should not apply immediately (trailing-edge debounce)"
+  );
+
+  // Advance 3 ticks (300ms) of quiet time for the debounce to fire
+  engine.fastForward(300);
 
   assert(
     berserker!.hasStatusEffect(Toughened),
@@ -599,11 +606,12 @@ runner.test("Berserker Toughened expires after duration", (engine) => {
   const berserker = engine.players.find((p) => p instanceof Berserker);
   assert(berserker !== undefined, "Should have berserker");
 
-  // Deal non-lethal damage to trigger tough skin
+  // Deal non-lethal damage; wait for debounce (3 ticks) for Toughened to apply
   berserker!.takeDamage(10, engine.gameTime);
+  engine.fastForward(300);
   assert(berserker!.hasStatusEffect(Toughened), "Should have Toughened");
 
-  // Fast-forward past duration
+  // Fast-forward past Toughened duration
   engine.fastForward(roleConfigs.berserker.toughnessDuration + 100);
 
   assert(
@@ -623,18 +631,21 @@ runner.test("Berserker takes less damage during tough skin", (engine) => {
   const berserker = engine.players.find((p) => p instanceof Berserker);
   assert(berserker !== undefined, "Should have berserker");
 
-  // First hit triggers tough skin. Damage before toughened: 10 / 1.0 = 10
+  // First burst of damage. Toughened only applies AFTER the burst ends (trailing-edge debounce).
   berserker!.takeDamage(10, engine.gameTime);
-  const damageAfterFirstHit = berserker!.accumulatedDamage;
+  const damageAfterFirstBurst = berserker!.accumulatedDamage;
 
-  // Second hit while toughened. Damage: 10 / 3.0 = 3.33
+  // Wait 3 quiet ticks (300ms) for the debounce to fire and Toughened to apply
+  engine.fastForward(300);
+  assert(berserker!.hasStatusEffect(Toughened), "Toughened should be active after burst");
+
+  // Second burst while Toughened is active. Damage: 10 / toughnessValue (e.g. 3.0) = ~3.33
   berserker!.takeDamage(10, engine.gameTime);
-  const damageFromSecondHit =
-    berserker!.accumulatedDamage - damageAfterFirstHit;
+  const damageFromSecondBurst = berserker!.accumulatedDamage - damageAfterFirstBurst;
 
   assert(
-    damageFromSecondHit < 10,
-    "Second hit should deal less damage due to toughened"
+    damageFromSecondBurst < 10,
+    "Second burst should deal less damage due to toughened"
   );
 });
 
@@ -1082,11 +1093,14 @@ runner.test("Troll heals damage after delay", (engine) => {
   const damageAfterHit = troll!.accumulatedDamage;
   assert(damageAfterHit > 0, "Troll should have taken damage");
 
-  // Before delay: no heal
+  // Wait for debounce (3 quiet ticks) — onDamageEvent fires here, starting the heal timer
+  engine.fastForward(300);
+
+  // Before heal delay elapses from when onDamageEvent fired: no heal
   engine.fastForward(roleConfigs.troll.healDelay - 500);
   assert(troll!.accumulatedDamage > 0, "Should not have healed before delay");
 
-  // After delay: healed
+  // After heal delay: healed
   engine.fastForward(600);
   assert(troll!.isAlive, "Troll should still be alive");
   assertEqual(troll!.accumulatedDamage, 0, "Troll should have healed all damage");
@@ -1104,23 +1118,24 @@ runner.test("Troll heal resets on repeated damage", (engine) => {
 
   const healDelay = roleConfigs.troll.healDelay;
 
-  // First hit
+  // First hit — onDamageEvent fires ~300ms later
   troll!.takeDamage(20, engine.gameTime);
 
-  // Advance partway, then hit again (resets timer)
+  // Advance partway (5s), then deal second hit — onDamageEvent fires ~300ms after this hit,
+  // accumulating both bursts into pendingHeal and resetting the heal timer.
   engine.fastForward(5000);
   troll!.takeDamage(20, engine.gameTime);
   const damageAfterBothHits = troll!.accumulatedDamage;
 
-  // 7s after second hit — not healed yet (need 8s)
+  // Not enough time since the second burst's onDamageEvent — no heal yet
   engine.fastForward(healDelay - 1000);
   assert(
     troll!.accumulatedDamage > 0,
     "Should not have healed before timer elapsed since last hit"
   );
 
-  // 8.1s after second hit — should have healed
-  engine.fastForward(1100);
+  // Past healDelay since second burst's onDamageEvent — should have healed
+  engine.fastForward(1500);
   assertEqual(troll!.accumulatedDamage, 0, "Should have healed all accumulated damage");
   assert(
     damageAfterBothHits > 0,

@@ -132,3 +132,9 @@ export interface RoleUpdatedEvent {
   targetName?: string;
   targetNumber?: number;
 }
+
+export interface PlayerDamageEvent {
+  player: import("../models/BasePlayer").BasePlayer;
+  totalDamage: number;
+  gameTime: number;
+}

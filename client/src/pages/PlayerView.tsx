@@ -109,13 +109,15 @@ function PlayerView() {
     enabled: shouldDetectShake,
   });
 
-  // Play damage sound when taking damage
+  // Play damage sound once per burst via server-side trailing-edge debounce
   useEffect(() => {
-    if (!myPlayer) return;
-    if (myPlayer.accumulatedDamage > 0) {
-      audioManager.playSfx("damage", { volume: 0.3, noRepeatFor: 1000 });
-    }
-  }, [myPlayer?.accumulatedDamage]);
+    if (!myPlayerId) return;
+    const handler = () => {
+      audioManager.playSfx("damage", { volume: 0.3 });
+    };
+    socketService.onPlayerDamage(handler);
+    return () => socketService.off("player:damage", handler);
+  }, [myPlayerId]);
 
   // Play heal sound when accumulatedDamage decreases
   const prevAccumDamageRef = useRef(0);

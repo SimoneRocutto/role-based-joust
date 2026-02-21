@@ -25,9 +25,7 @@ export class Troll extends BasePlayer {
   static difficulty: string = "easy";
 
   private pendingHeal: number = 0;
-  private lastDamageTime: number = -Infinity;
-  // TODO maybe use an event for player damage and implement debounce there
-  private readonly damageDebounce: number = 1000;
+  private lastDamageEventTime: number = -Infinity;
   private readonly healDelay: number;
 
   constructor(data: PlayerData) {
@@ -39,32 +37,22 @@ export class Troll extends BasePlayer {
   override onInit(gameTime: number): void {
     super.onInit(gameTime);
     this.pendingHeal = 0;
-    this.lastDamageTime = -Infinity;
+    this.lastDamageEventTime = -Infinity;
     logger.logRoleAbility(this, "TROLL_INIT", { healDelay: this.healDelay });
   }
 
   /**
-   * Intercept damage: track actual damage applied and reset the heal timer.
+   * Called once per damage burst (trailing-edge debounce in BasePlayer).
+   * Accumulates pending heal and resets the heal timer.
    */
-  override takeDamage(baseDamage: number, gameTime: number): void {
-    const damageBefore = this.accumulatedDamage;
-    super.takeDamage(baseDamage, gameTime);
-
+  override onDamageEvent(totalDamage: number, gameTime: number): void {
     if (!this.isAlive) return;
 
-    const actualDamage = this.accumulatedDamage - damageBefore;
-    if (actualDamage <= 0) return;
-
-    this.pendingHeal =
-      actualDamage +
-      // If troll gets damaged multiple times in a second, we want to make it so he can regain all that back.
-      (gameTime - this.lastDamageTime < this.damageDebounce
-        ? this.pendingHeal
-        : 0);
-    this.lastDamageTime = gameTime;
+    this.pendingHeal += totalDamage;
+    this.lastDamageEventTime = gameTime;
 
     logger.logRoleAbility(this, "TROLL_DAMAGE_TRACKED", {
-      actualDamage,
+      totalDamage,
       pendingHeal: this.pendingHeal,
       healIn: this.healDelay,
     });
@@ -79,7 +67,7 @@ export class Troll extends BasePlayer {
     if (
       this.isAlive &&
       this.pendingHeal > 0 &&
-      gameTime - this.lastDamageTime >= this.healDelay
+      gameTime - this.lastDamageEventTime >= this.healDelay
     ) {
       const healed = Math.min(this.pendingHeal, this.accumulatedDamage);
       this.accumulatedDamage = Math.max(
@@ -95,6 +83,6 @@ export class Troll extends BasePlayer {
   override onDeath(gameTime: number): void {
     super.onDeath(gameTime);
     this.pendingHeal = 0;
-    this.lastDamageTime = -Infinity;
+    this.lastDamageEventTime = -Infinity;
   }
 }

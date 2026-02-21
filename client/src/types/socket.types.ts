@@ -29,4 +29,5 @@ export type {
   BasePointPayload,
   BaseStatusPayload,
   DominationWinPayload,
+  PlayerDamagePayload,
 } from "@shared/types";

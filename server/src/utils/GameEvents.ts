@@ -20,6 +20,7 @@ import type {
   BaseStatusEvent,
   DominationWinEvent,
   RoleUpdatedEvent,
+  PlayerDamageEvent,
 } from "@/types/events.types";
 
 /**
@@ -145,6 +146,10 @@ export class GameEvents extends EventEmitter {
     this.emit("role:updated", payload);
   }
 
+  emitPlayerDamageEvent(payload: PlayerDamageEvent): void {
+    this.emit("player:damage", payload);
+  }
+
   // ========== TYPED EVENT LISTENERS ==========
 
   onGameTick(listener: (payload: GameTickEvent) => void): void {
@@ -245,6 +250,10 @@ export class GameEvents extends EventEmitter {
 
   onRoleUpdated(listener: (payload: RoleUpdatedEvent) => void): void {
     this.on("role:updated", listener);
+  }
+
+  onPlayerDamageEvent(listener: (payload: PlayerDamageEvent) => void): void {
+    this.on("player:damage", listener);
   }
 
   // ========== UTILITY METHODS ==========

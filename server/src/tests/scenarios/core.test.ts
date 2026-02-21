@@ -589,6 +589,105 @@ runner.test("Game tick includes connection status", (engine) => {
 });
 
 // ============================================================================
+// DAMAGE EVENT DEBOUNCE TESTS
+// ============================================================================
+
+runner.test("onDamageEvent fires after 3 quiet ticks", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+  engine.startGame(players);
+
+  const p1 = engine.players.find((p) => p.id === "p1")!;
+  p1.disableAutoPlay();
+
+  let eventCount = 0;
+  let capturedDamage = 0;
+  const origOnDamageEvent = p1.onDamageEvent.bind(p1);
+  p1.onDamageEvent = (totalDamage: number, gameTime: number) => {
+    origOnDamageEvent(totalDamage, gameTime);
+    eventCount++;
+    capturedDamage = totalDamage;
+  };
+
+  // Deal damage — should NOT immediately fire onDamageEvent
+  p1.takeDamage(10, engine.gameTime);
+  assertEqual(eventCount, 0, "onDamageEvent should not fire immediately");
+
+  // Advance 2 ticks — still not fired (need 3 quiet ticks)
+  engine.fastForward(200);
+  assertEqual(eventCount, 0, "onDamageEvent should not fire after 2 quiet ticks");
+
+  // Advance 1 more tick — fires now
+  engine.fastForward(100);
+  assertEqual(eventCount, 1, "onDamageEvent should fire after 3 quiet ticks");
+  assert(capturedDamage > 0, "totalDamage should be > 0");
+});
+
+runner.test("onDamageEvent accumulates burst damage and fires once", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+  engine.startGame(players);
+
+  const p1 = engine.players.find((p) => p.id === "p1")!;
+  p1.disableAutoPlay();
+
+  let eventCount = 0;
+  let capturedDamage = 0;
+  p1.onDamageEvent = (totalDamage: number) => {
+    eventCount++;
+    capturedDamage = totalDamage;
+  };
+
+  // 3 damage hits in quick succession (within 3 ticks)
+  p1.takeDamage(10, engine.gameTime);
+  engine.fastForward(100); // 1 quiet tick
+  p1.takeDamage(10, engine.gameTime); // resets quiet counter
+  engine.fastForward(100); // 1 quiet tick
+  p1.takeDamage(10, engine.gameTime); // resets quiet counter
+  assertEqual(eventCount, 0, "Should not have fired during burst");
+
+  // 3 more quiet ticks → fires
+  engine.fastForward(300);
+  assertEqual(eventCount, 1, "Should fire exactly once for the whole burst");
+  assert(capturedDamage > 0, "Should have accumulated all burst damage");
+});
+
+runner.test("onDamageEvent resets after death", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("classic");
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+  engine.startGame(players);
+
+  const p1 = engine.players.find((p) => p.id === "p1")!;
+  p1.disableAutoPlay();
+
+  let eventCount = 0;
+  p1.onDamageEvent = () => { eventCount++; };
+
+  // Kill the player — should reset debounce accumulator
+  p1.takeDamage(p1.deathThreshold, engine.gameTime);
+  assert(!p1.isAlive, "Player should be dead");
+
+  // Advance past the quiet window — should NOT fire (dead + accumulator reset)
+  engine.fastForward(500);
+  assertEqual(eventCount, 0, "onDamageEvent should not fire after death");
+});
+
+// ============================================================================
 // RUN TESTS
 // ============================================================================
 

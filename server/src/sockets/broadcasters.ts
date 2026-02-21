@@ -28,6 +28,7 @@ import type {
   BasePointPayload,
   BaseStatusPayload,
   DominationWinPayload,
+  PlayerDamagePayload,
 } from "@shared/types";
 
 const logger = Logger.getInstance();
@@ -245,6 +246,18 @@ export function registerGameEventBroadcasters(
   gameEvents.onDominationWin((payload) => {
     const clientPayload: DominationWinPayload = payload;
     io.emit("domination:win", clientPayload);
+  });
+
+  // Send damage event to the damaged player only (for client-side damage sound)
+  gameEvents.onPlayerDamageEvent((payload) => {
+    const socketId = payload.player.socketId;
+    const socket = io.sockets.sockets.get(socketId);
+    if (socket) {
+      const clientPayload: PlayerDamagePayload = {
+        totalDamage: payload.totalDamage,
+      };
+      socket.emit("player:damage", clientPayload);
+    }
   });
 
   // Send role assignment to individual players

@@ -40,17 +40,13 @@ export class Berserker extends BasePlayer {
   }
 
   /**
-   * Override takeDamage to apply Toughened effect when hit.
-   * The Toughened effect is applied AFTER the damage is processed,
-   * so the first hit lands normally but subsequent hits during the
-   * buff are reduced.
+   * Apply Toughened after a damage burst ends (trailing-edge debounce).
+   * This fires once per burst rather than on every damage tick, preventing
+   * the effect from being applied mid-burst when the player is still taking hits.
+   * Does not apply if already Toughened (prevents permanent Toughened loop).
    */
-  override takeDamage(baseDamage: number, gameTime: number): void {
-    super.takeDamage(baseDamage, gameTime);
-
-    // Apply tough skin if still alive after taking damage. This can only work if berskerker is
-    // not already toughened (otherwise it could always stay in that mode by refreshing it with damage).
-    if (this.isAlive && baseDamage > 0 && !this.hasStatusEffect(Toughened)) {
+  override onDamageEvent(totalDamage: number, gameTime: number): void {
+    if (this.isAlive && totalDamage > 0 && !this.hasStatusEffect(Toughened)) {
       this.applyStatusEffect(
         Toughened,
         gameTime,
