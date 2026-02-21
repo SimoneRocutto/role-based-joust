@@ -38,10 +38,18 @@ function PlayerView() {
     respawnCountdown,
   } = useGameState();
 
-  const { countdownSeconds, countdownPhase, myIsReady, setMyReady, modeRecap, setMyPlayer, clearIdentity } =
-    useGameStore();
+  const {
+    countdownSeconds,
+    countdownPhase,
+    myIsReady,
+    setMyReady,
+    modeRecap,
+    setMyPlayer,
+    clearIdentity,
+  } = useGameStore();
 
-  const { isReconnecting, isGivenUp, retryOnce, resetReconnect } = useReconnect();
+  const { isReconnecting, isGivenUp, retryOnce, resetReconnect } =
+    useReconnect();
 
   const { permissionsGranted, showPortraitLock } = usePlayerDevice(myPlayerId);
   const { chargeInfo, handleTap } = usePlayerAbility(myPlayerId);
@@ -109,11 +117,25 @@ function PlayerView() {
     enabled: shouldDetectShake,
   });
 
-  // Play damage sound once per burst via server-side trailing-edge debounce
+  // Damage sound: leading-edge (plays on the very first hit of a burst).
+  // inDamageBurst is reset when the server signals burst end via player:damage,
+  // so the next distinct burst can trigger the sound again.
+  const inDamageBurstRef = useRef(false);
+  const prevDamageForSoundRef = useRef(0);
+  useEffect(() => {
+    const current = myPlayer?.accumulatedDamage ?? 0;
+    const prev = prevDamageForSoundRef.current;
+    prevDamageForSoundRef.current = current;
+    if (current > prev && !inDamageBurstRef.current) {
+      inDamageBurstRef.current = true;
+      audioManager.playSfx("damage", { volume: 0.3 });
+    }
+  }, [myPlayer?.accumulatedDamage]);
+
   useEffect(() => {
     if (!myPlayerId) return;
     const handler = () => {
-      audioManager.playSfx("damage", { volume: 0.3 });
+      inDamageBurstRef.current = false;
     };
     socketService.onPlayerDamage(handler);
     return () => socketService.off("player:damage", handler);
