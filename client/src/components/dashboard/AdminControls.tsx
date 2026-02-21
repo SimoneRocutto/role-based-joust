@@ -45,7 +45,9 @@ function AdminControls() {
         handleTeamCountChange={settings.handleTeamCountChange}
         dominationPointTarget={settings.dominationPointTarget}
         dominationBaseCount={settings.dominationBaseCount}
+        withEarbud={settings.withEarbud}
         handleDominationSettingChange={settings.handleDominationSettingChange}
+        handleWithEarbudChange={settings.handleWithEarbudChange}
       />
 
       <LobbyActionBar

@@ -22,6 +22,7 @@ import {
   setDominationRespawnTimePreference,
   setDominationBaseCountPreference,
   setDeathCountRespawnTimePreference,
+  setWithEarbudPreference,
   userPreferences,
 } from "@/config/gameConfig";
 import { getAvailableThemes, themeExists } from "@/config/roleThemes";
@@ -426,6 +427,8 @@ router.get(
       dominationBaseCount: userPreferences.dominationBaseCount,
       // Death Count settings
       deathCountRespawnTime: userPreferences.deathCountRespawnTime,
+      // Earbud setting
+      withEarbud: userPreferences.withEarbud,
       // Movement details
       movement: {
         dangerThreshold: gameConfig.movement.dangerThreshold,
@@ -471,6 +474,7 @@ router.post(
       dominationRespawnTime,
       dominationBaseCount,
       deathCountRespawnTime,
+      withEarbud,
     } = req.body;
     const updates: string[] = [];
 
@@ -647,6 +651,15 @@ router.post(
       updates.push(`deathCountRespawnTime=${deathCountRespawnTime}`);
     }
 
+    if (withEarbud !== undefined) {
+      if (typeof withEarbud !== "boolean") {
+        res.status(400).json({ success: false, error: "withEarbud must be a boolean" });
+        return;
+      }
+      setWithEarbudPreference(withEarbud);
+      updates.push(`withEarbud=${withEarbud}`);
+    }
+
     // Custom sensitivity values (overrides preset)
     if (dangerThreshold !== undefined || damageMultiplier !== undefined) {
       const update: Partial<{
@@ -686,6 +699,7 @@ router.post(
       dominationRespawnTime: userPreferences.dominationRespawnTime,
       dominationBaseCount: userPreferences.dominationBaseCount,
       deathCountRespawnTime: userPreferences.deathCountRespawnTime,
+      withEarbud: userPreferences.withEarbud,
       movement: {
         dangerThreshold: gameConfig.movement.dangerThreshold,
         damageMultiplier: gameConfig.movement.damageMultiplier,

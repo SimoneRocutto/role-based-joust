@@ -61,6 +61,8 @@ const schemas = {
     dominationControlInterval: { type: "number", required: false, min: 3, max: 15 },
     dominationRespawnTime: { type: "number", required: false, min: 5, max: 30 },
     dominationBaseCount: { type: "number", required: false, min: 1, max: 3 },
+    deathCountRespawnTime: { type: "number", required: false, min: 3, max: 30 },
+    withEarbud: { type: "boolean", required: false },
   },
 };
 

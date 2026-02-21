@@ -163,6 +163,7 @@ class ApiService {
     dominationRespawnTime?: number;
     dominationBaseCount?: number;
     deathCountRespawnTime?: number;
+    withEarbud?: boolean;
   }> {
     return this.request("/game/settings");
   }
@@ -183,6 +184,7 @@ class ApiService {
     dominationRespawnTime?: number;
     dominationBaseCount?: number;
     deathCountRespawnTime?: number;
+    withEarbud?: boolean;
   }): Promise<{
     success: boolean;
     sensitivity: string;

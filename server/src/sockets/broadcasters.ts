@@ -107,6 +107,7 @@ export function registerGameEventBroadcasters(
       mode: gameEngine.lastModeKey,
       totalRounds: payload.totalRounds,
       sensitivity: userPreferences.sensitivity,
+      withEarbud: userPreferences.withEarbud,
     };
     io.emit("game:start", clientPayload);
   });

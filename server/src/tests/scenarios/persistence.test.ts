@@ -55,6 +55,7 @@ function createTestSettings(overrides?: Partial<PersistedSettings>): PersistedSe
     dominationRespawnTime: 10,
     dominationBaseCount: 1,
     deathCountRespawnTime: 5,
+    withEarbud: false,
     ...overrides,
   };
 }

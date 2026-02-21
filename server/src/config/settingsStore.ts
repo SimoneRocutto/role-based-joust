@@ -1,4 +1,10 @@
-import { readFileSync, writeFileSync, mkdirSync, unlinkSync, existsSync } from "fs";
+import {
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  unlinkSync,
+  existsSync,
+} from "fs";
 import { dirname, join } from "path";
 import type { MovementConfig } from "./gameConfig";
 
@@ -33,6 +39,8 @@ export interface PersistedSettings {
   dominationBaseCount: number;
   /** Death Count: seconds before respawn (3-30) */
   deathCountRespawnTime: number;
+  /** Whether players use earbuds (enables kill sound on other phones) */
+  withEarbud: boolean;
 }
 
 class SettingsStore {
@@ -51,7 +59,11 @@ class SettingsStore {
       if (!existsSync(this.filePath)) return null;
       const raw = readFileSync(this.filePath, "utf-8");
       const parsed = JSON.parse(raw);
-      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      if (
+        typeof parsed !== "object" ||
+        parsed === null ||
+        Array.isArray(parsed)
+      ) {
         return null;
       }
       // Handle legacy format (flat MovementConfig) for backwards compatibility

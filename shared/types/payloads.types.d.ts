@@ -94,6 +94,7 @@ export interface GameStartPayload {
   mode: string;
   totalRounds: number;
   sensitivity: string;
+  withEarbud?: boolean;
 }
 
 export interface GameEndPayload {

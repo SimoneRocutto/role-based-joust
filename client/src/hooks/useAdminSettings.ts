@@ -26,6 +26,7 @@ export function useAdminSettings() {
   const [dominationRespawnTime, setDominationRespawnTime] = useState(10);
   const [dominationBaseCount, setDominationBaseCount] = useState(1);
   const [deathCountRespawnTime, setDeathCountRespawnTime] = useState(5);
+  const [withEarbud, setWithEarbud] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -97,6 +98,9 @@ export function useAdminSettings() {
           }
           if (data.deathCountRespawnTime !== undefined) {
             setDeathCountRespawnTime(data.deathCountRespawnTime);
+          }
+          if (data.withEarbud !== undefined) {
+            setWithEarbud(data.withEarbud);
           }
         }
       })
@@ -252,6 +256,15 @@ export function useAdminSettings() {
     }
   };
 
+  const handleWithEarbudChange = async (enabled: boolean) => {
+    setWithEarbud(enabled);
+    try {
+      await apiService.updateSettings({ withEarbud: enabled });
+    } catch (err) {
+      console.error("Failed to update withEarbud:", err);
+    }
+  };
+
   const handleShuffleTeams = async () => {
     try {
       await apiService.shuffleTeams();
@@ -307,6 +320,7 @@ export function useAdminSettings() {
     dominationRespawnTime,
     dominationBaseCount,
     deathCountRespawnTime,
+    withEarbud,
     combinedModeKey,
     loading,
     error,
@@ -328,6 +342,7 @@ export function useAdminSettings() {
     handleTeamCountChange,
     handleDominationSettingChange,
     handleDeathCountRespawnChange,
+    handleWithEarbudChange,
     handleShuffleTeams,
     handleLaunchGame,
     handleStartClick,

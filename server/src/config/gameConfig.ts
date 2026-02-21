@@ -95,6 +95,7 @@ export interface UserPreferences {
   dominationRespawnTime: number; // Seconds before respawn (5-30)
   dominationBaseCount: number; // Expected number of bases (1-3)
   deathCountRespawnTime: number; // Seconds before respawn in death count mode (3-30)
+  withEarbud: boolean; // Whether players use earbuds (enables kill sound on other phones)
 }
 
 export interface SensitivityPreset {
@@ -160,6 +161,7 @@ const defaultPreferences: UserPreferences = {
   dominationRespawnTime: 10,
   dominationBaseCount: 1,
   deathCountRespawnTime: 5,
+  withEarbud: false,
 };
 
 export const gameConfig: GameConfig = {
@@ -246,6 +248,7 @@ function persistSettings(): void {
     dominationRespawnTime: userPreferences.dominationRespawnTime,
     dominationBaseCount: userPreferences.dominationBaseCount,
     deathCountRespawnTime: userPreferences.deathCountRespawnTime,
+    withEarbud: userPreferences.withEarbud,
   };
   settingsStore.save(settings);
 }
@@ -375,7 +378,10 @@ export function setDominationPointTargetPreference(target: number): void {
  * Update domination control interval preference (seconds).
  */
 export function setDominationControlIntervalPreference(seconds: number): void {
-  userPreferences.dominationControlInterval = Math.max(3, Math.min(15, seconds));
+  userPreferences.dominationControlInterval = Math.max(
+    3,
+    Math.min(15, seconds)
+  );
   persistSettings();
 }
 
@@ -400,6 +406,11 @@ export function setDominationBaseCountPreference(count: number): void {
  */
 export function setDeathCountRespawnTimePreference(seconds: number): void {
   userPreferences.deathCountRespawnTime = Math.max(3, Math.min(30, seconds));
+  persistSettings();
+}
+
+export function setWithEarbudPreference(enabled: boolean): void {
+  userPreferences.withEarbud = enabled;
   persistSettings();
 }
 
@@ -443,7 +454,8 @@ export function initSettings(): void {
       userPreferences.dominationPointTarget = saved.dominationPointTarget;
     }
     if (saved.dominationControlInterval !== undefined) {
-      userPreferences.dominationControlInterval = saved.dominationControlInterval;
+      userPreferences.dominationControlInterval =
+        saved.dominationControlInterval;
     }
     if (saved.dominationRespawnTime !== undefined) {
       userPreferences.dominationRespawnTime = saved.dominationRespawnTime;
@@ -453,6 +465,9 @@ export function initSettings(): void {
     }
     if (saved.deathCountRespawnTime !== undefined) {
       userPreferences.deathCountRespawnTime = saved.deathCountRespawnTime;
+    }
+    if (saved.withEarbud !== undefined) {
+      userPreferences.withEarbud = saved.withEarbud;
     }
   }
 }

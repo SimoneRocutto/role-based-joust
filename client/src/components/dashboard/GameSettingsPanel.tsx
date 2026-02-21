@@ -4,7 +4,11 @@ interface GameSettingsPanelProps {
   selectedMode: string;
   selectedTheme: string;
   selectedSensitivity: string;
-  sensitivityPresets: Array<{ key: string; label: string; description: string }>;
+  sensitivityPresets: Array<{
+    key: string;
+    label: string;
+    description: string;
+  }>;
   roundCount: number;
   roundDuration: number;
   combinedModeKey: string;
@@ -19,7 +23,9 @@ interface GameSettingsPanelProps {
   handleRoundCountChange: (count: number) => void;
   handleRoundDurationChange: (duration: number) => void;
   handleTeamCountChange: (count: number) => void;
+  withEarbud: boolean;
   handleDominationSettingChange: (key: string, value: number) => void;
+  handleWithEarbudChange: (enabled: boolean) => void;
 }
 
 function GameSettingsPanel({
@@ -41,7 +47,9 @@ function GameSettingsPanel({
   handleTeamCountChange,
   dominationPointTarget,
   dominationBaseCount,
+  withEarbud,
   handleDominationSettingChange,
+  handleWithEarbudChange,
 }: GameSettingsPanelProps) {
   const isDomination = selectedMode === "domination";
   return (
@@ -112,12 +120,19 @@ function GameSettingsPanel({
       {isDomination && (
         <>
           <div className="mb-4">
-            <label className="block text-sm text-gray-400 mb-2">Point Target</label>
+            <label className="block text-sm text-gray-400 mb-2">
+              Point Target
+            </label>
             <div className="flex gap-2">
               {[10, 15, 20, 30].map((target) => (
                 <button
                   key={target}
-                  onClick={() => handleDominationSettingChange("dominationPointTarget", target)}
+                  onClick={() =>
+                    handleDominationSettingChange(
+                      "dominationPointTarget",
+                      target
+                    )
+                  }
                   disabled={loading}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     dominationPointTarget === target
@@ -135,12 +150,16 @@ function GameSettingsPanel({
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm text-gray-400 mb-2">Base Count</label>
+            <label className="block text-sm text-gray-400 mb-2">
+              Base Count
+            </label>
             <div className="flex gap-2">
               {[1, 2, 3].map((count) => (
                 <button
                   key={count}
-                  onClick={() => handleDominationSettingChange("dominationBaseCount", count)}
+                  onClick={() =>
+                    handleDominationSettingChange("dominationBaseCount", count)
+                  }
                   disabled={loading}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     dominationBaseCount === count
@@ -247,6 +266,27 @@ function GameSettingsPanel({
         </p>
       </div>
 
+      {/* Earbud Toggle */}
+      <div className="mb-4">
+        <label className="flex items-center gap-3 cursor-pointer">
+          <div
+            onClick={() => handleWithEarbudChange(!withEarbud)}
+            className={`relative w-10 h-6 rounded-full transition-colors ${
+              withEarbud ? "bg-blue-600" : "bg-gray-600"
+            }`}
+          >
+            <span
+              className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                withEarbud ? "translate-x-5" : "translate-x-1"
+              }`}
+            />
+          </div>
+          <span className="text-sm text-gray-300">Earbuds</span>
+        </label>
+        <p className="text-xs text-gray-500 mt-1">
+          Play kill sound on every phone when a player dies
+        </p>
+      </div>
     </>
   );
 }

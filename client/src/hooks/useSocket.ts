@@ -28,7 +28,13 @@ export function useSocket() {
     const resetDominationState = () => {
       const store = useGameStore.getState();
       store.setDominationTeamScores({});
-      store.setBases(store.bases.map((b) => ({ ...b, ownerTeamId: null, controlProgress: 0 })));
+      store.setBases(
+        store.bases.map((b) => ({
+          ...b,
+          ownerTeamId: null,
+          controlProgress: 0,
+        }))
+      );
     };
 
     // Connection status — stored as named ref so cleanup removes ONLY this listener,
@@ -127,14 +133,22 @@ export function useSocket() {
     socketService.onPlayerDeath(({ victimId, victimNumber, victimName }) => {
       setLatestEvent(`Player #${victimNumber} ${victimName} eliminated!`);
 
-      // If it's me
+      // If it's me, play death sound
       if (victimId === myPlayerId) {
         audioManager.playSfx("death", { volume: 0.5 });
+      } else {
+        // Another player died — play kill sound on this phone if withEarbud is on
+        const { withEarbud } = useGameStore.getState();
+        if (withEarbud) {
+          audioManager.playSfx("kill", { volume: 0.5 });
+        }
       }
     });
 
-    socketService.onGameStart(({ mode, totalRounds, sensitivity }) => {
+    socketService.onGameStart(({ mode, totalRounds, sensitivity, withEarbud }) => {
       setMode(mode);
+      // Store earbud setting for kill sound logic
+      useGameStore.getState().setWithEarbud(withEarbud ?? false);
       // Determine if teams are enabled from store
       const teamsEnabled = useGameStore.getState().teamsEnabled;
       useGameStore.getState().setModeRecap({
@@ -246,8 +260,7 @@ export function useSocket() {
         store.setMyTarget(null);
       }
 
-      const targetChanged =
-        roleData.targetNumber !== previousTarget?.number;
+      const targetChanged = roleData.targetNumber !== previousTarget?.number;
 
       return { targetChanged };
     }

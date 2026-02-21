@@ -52,6 +52,9 @@ interface GameStore {
   bases: BaseState[];
   dominationTeamScores: Record<number, number>;
 
+  // Earbud setting (propagated from server on game:start)
+  withEarbud: boolean;
+
   // Mode recap (shown during pre-game)
   modeRecap: {
     modeName: string;
@@ -94,6 +97,7 @@ interface GameStore {
   setTeams: (teams: Record<number, string[]>) => void;
   setTeamSelectionActive: (active: boolean) => void;
   setTeamScores: (scores: TeamScore[] | null) => void;
+  setWithEarbud: (enabled: boolean) => void;
   setModeRecap: (
     recap: { modeName: string; roundCount: number; sensitivity: string } | null
   ) => void;
@@ -144,6 +148,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   bases: [],
   dominationTeamScores: {},
+
+  withEarbud: false,
 
   modeRecap: null,
 
@@ -260,6 +266,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setTeamSelectionActive: (active) => set({ teamSelectionActive: active }),
 
   setTeamScores: (scores) => set({ teamScores: scores }),
+
+  setWithEarbud: (enabled) => set({ withEarbud: enabled }),
 
   setModeRecap: (recap) => set({ modeRecap: recap }),
 
