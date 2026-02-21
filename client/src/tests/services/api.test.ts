@@ -100,6 +100,12 @@ class ApiService {
       body: JSON.stringify(payload),
     })
   }
+
+  async kickBase(baseId: string): Promise<{ success: boolean }> {
+    return this.request<{ success: boolean }>(`/game/kick-base/${baseId}`, {
+      method: 'POST',
+    })
+  }
 }
 
 describe('ApiService', () => {
@@ -316,6 +322,24 @@ describe('ApiService', () => {
           body: JSON.stringify({ token: 'session-token', socketId: 'socket-123' }),
         })
       )
+    })
+
+    it('kickBase sends POST to correct endpoint with baseId', async () => {
+      mockSuccessResponse({ success: true })
+
+      const result = await api.kickBase('base-2')
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/game/kick-base/base-2',
+        expect.objectContaining({ method: 'POST' })
+      )
+      expect(result).toEqual({ success: true })
+    })
+
+    it('kickBase throws when server returns error', async () => {
+      mockErrorResponse(400, 'Bad Request', { message: 'Cannot kick a base during active gameplay' })
+
+      await expect(api.kickBase('base-1')).rejects.toThrow('Cannot kick a base during active gameplay')
     })
   })
 })

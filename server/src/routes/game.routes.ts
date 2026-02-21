@@ -25,6 +25,7 @@ import {
 } from "@/config/gameConfig";
 import { getAvailableThemes, themeExists } from "@/config/roleThemes";
 import { TeamManager } from "@/managers/TeamManager";
+import { BaseManager } from "@/managers/BaseManager";
 import {
   getLobbyPlayersWithTeams,
   broadcastLobbyUpdate,
@@ -34,6 +35,7 @@ import {
 const router = Router();
 const logger = Logger.getInstance();
 const connectionManager = ConnectionManager.getInstance();
+const baseManager = BaseManager.getInstance();
 
 /**
  * GET /api/game/config
@@ -861,6 +863,54 @@ router.get(
       teamCount: teamManager.getTeamCount(),
       teams: teamManager.isEnabled() ? teamManager.getTeamAssignments() : {},
     });
+  })
+);
+
+/**
+ * POST /api/game/kick-base/:baseId
+ * Disconnect a base phone (admin action, not allowed during active gameplay)
+ */
+router.post(
+  "/kick-base/:baseId",
+  asyncHandler(async (req: Request, res: Response) => {
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
+    const io: SocketIOServer = req.app.locals.io;
+    const { baseId } = req.params;
+
+    if (gameEngine.gameState === "active") {
+      res.status(400).json({
+        success: false,
+        error: "Cannot kick a base during active gameplay",
+      });
+      return;
+    }
+
+    const base = baseManager.getBase(baseId);
+    if (!base) {
+      res.status(404).json({ success: false, error: "Base not found" });
+      return;
+    }
+
+    const socket = io.sockets.sockets.get(base.socketId);
+    if (socket) {
+      socket.emit("base:kicked", { reason: "Removed by admin" });
+      socket.disconnect(true);
+      // The disconnect handler in baseHandlers.ts will call removeBase + broadcastBaseStatus
+    } else {
+      // Socket already gone — remove manually and broadcast
+      baseManager.removeBase(base.socketId);
+      const bases = baseManager.getAllBases().map((b) => ({
+        baseId: b.baseId,
+        baseNumber: b.baseNumber,
+        ownerTeamId: b.ownerTeamId,
+        controlProgress: 0,
+        isConnected: b.isConnected,
+      }));
+      io.emit("base:status", { bases });
+    }
+
+    logger.info("GAME", "Base kicked", { baseId, baseNumber: base.baseNumber });
+    res.json({ success: true });
   })
 );
 

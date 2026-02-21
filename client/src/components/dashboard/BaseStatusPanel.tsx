@@ -1,9 +1,12 @@
 import { useGameStore } from "@/store/gameStore";
 import { TEAM_COLORS } from "@/utils/teamColors";
+import { apiService } from "@/services/api";
 
 function BaseStatusPanel() {
   const bases = useGameStore((state) => state.bases);
   const teamScores = useGameStore((state) => state.dominationTeamScores);
+  const gameState = useGameStore((state) => state.gameState);
+  const showKick = gameState === "waiting" || gameState === "pre-game";
 
   if (bases.length === 0) return null;
 
@@ -95,6 +98,15 @@ function BaseStatusPanel() {
                     ? teamColor.name.replace(" Team", "")
                     : "Neutral"}
               </span>
+              {showKick && (
+                <button
+                  onClick={() => apiService.kickBase(base.baseId)}
+                  className="text-red-400 hover:text-red-300 text-xs font-bold"
+                  title={`Kick base ${base.baseNumber}`}
+                >
+                  X
+                </button>
+              )}
             </div>
           );
         })}

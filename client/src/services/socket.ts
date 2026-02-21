@@ -265,6 +265,10 @@ class SocketService {
     this.on("base:registered", callback);
   }
 
+  onBaseKicked(callback: (data: { reason: string }) => void) {
+    this.on("base:kicked", callback);
+  }
+
   onBaseCaptured(callback: (data: BaseCapturedPayload) => void) {
     this.on("base:captured", callback);
   }

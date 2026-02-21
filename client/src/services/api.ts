@@ -231,6 +231,13 @@ class ApiService {
     });
   }
 
+  // POST /api/game/kick-base/:baseId
+  async kickBase(baseId: string): Promise<{ success: boolean }> {
+    return this.request(`/game/kick-base/${baseId}`, {
+      method: "POST",
+    });
+  }
+
   // GET /api/player/:playerId/role
   async getPlayerRole(playerId: string): Promise<{
     success: boolean;

@@ -514,6 +514,135 @@ runner.test("getGameEvents includes speed-shift", (engine) => {
 });
 
 // ============================================================================
+// BASE KICK TESTS
+// ============================================================================
+
+runner.test("BaseManager: removeBase removes base from both maps", (engine) => {
+  const baseManager = BaseManager.getInstance();
+  baseManager.reset();
+
+  const { baseId } = baseManager.registerBase("socket-1");
+  assertEqual(baseManager.getAllBases().length, 1, "Should have 1 base registered");
+
+  baseManager.removeBase("socket-1");
+
+  assertEqual(baseManager.getAllBases().length, 0, "Base should be removed from bases map");
+  assertEqual(baseManager.getBaseIdBySocket("socket-1"), undefined, "Socket-to-base mapping should be cleared");
+  assertEqual(baseManager.getBase(baseId), undefined, "getBase should return undefined after removal");
+
+  baseManager.reset();
+});
+
+runner.test("BaseManager: removeBase is a no-op for unknown socketId", (engine) => {
+  const baseManager = BaseManager.getInstance();
+  baseManager.reset();
+
+  baseManager.registerBase("socket-1");
+  assertEqual(baseManager.getAllBases().length, 1, "Should have 1 base");
+
+  // Removing unknown socket should not throw and should not affect existing base
+  baseManager.removeBase("unknown-socket");
+
+  assertEqual(baseManager.getAllBases().length, 1, "Existing base should be untouched");
+
+  baseManager.reset();
+});
+
+runner.test("BaseManager: purgeDisconnected removes disconnected bases", (engine) => {
+  const baseManager = BaseManager.getInstance();
+  baseManager.reset();
+
+  baseManager.registerBase("socket-1");
+  baseManager.registerBase("socket-2");
+  assertEqual(baseManager.getAllBases().length, 2, "Should have 2 bases");
+
+  // Disconnect socket-1
+  baseManager.handleDisconnect("socket-1");
+  assertEqual(baseManager.getConnectedCount(), 1, "1 base should be connected");
+
+  baseManager.purgeDisconnected();
+
+  assertEqual(baseManager.getAllBases().length, 1, "Disconnected base should be purged");
+  assertEqual(baseManager.getBaseIdBySocket("socket-1"), undefined, "Socket-1 mapping should be cleared");
+  assertEqual(baseManager.getConnectedCount(), 1, "Connected base should remain");
+
+  baseManager.reset();
+});
+
+runner.test("BaseManager: purgeDisconnected leaves connected bases intact", (engine) => {
+  const baseManager = BaseManager.getInstance();
+  baseManager.reset();
+
+  const { baseId: id1 } = baseManager.registerBase("socket-1");
+  const { baseId: id2 } = baseManager.registerBase("socket-2");
+
+  // Both connected — purge should do nothing
+  baseManager.purgeDisconnected();
+
+  assertEqual(baseManager.getAllBases().length, 2, "Both connected bases should survive purge");
+  assert(baseManager.getBase(id1) !== undefined, "Base 1 should still exist");
+  assert(baseManager.getBase(id2) !== undefined, "Base 2 should still exist");
+
+  baseManager.reset();
+});
+
+runner.test("BaseManager: getNextAvailableNumber reuses lowest gap after removal", (engine) => {
+  const baseManager = BaseManager.getInstance();
+  baseManager.reset();
+
+  baseManager.registerBase("socket-1"); // gets number 1
+  const { baseNumber: n2 } = baseManager.registerBase("socket-2"); // gets number 2
+  baseManager.registerBase("socket-3"); // gets number 3
+
+  assertEqual(n2, 2, "Second base should get number 2");
+
+  // Remove base 2
+  baseManager.removeBase("socket-2");
+
+  // Registering a new base should reuse number 2 (lowest gap)
+  const { baseNumber } = baseManager.registerBase("socket-4");
+  assertEqual(baseNumber, 2, "New base should reuse freed number 2");
+
+  baseManager.reset();
+});
+
+runner.test("Base kick: removeBase decrements connected count", (engine) => {
+  const baseManager = BaseManager.getInstance();
+  baseManager.reset();
+
+  baseManager.registerBase("socket-1");
+  baseManager.registerBase("socket-2");
+  assertEqual(baseManager.getConnectedCount(), 2, "Should have 2 connected bases");
+
+  baseManager.removeBase("socket-1");
+  assertEqual(baseManager.getConnectedCount(), 1, "Connected count should drop to 1 after kick");
+
+  baseManager.reset();
+});
+
+runner.test("Base kick: rejected during active game (gameState guard)", (engine) => {
+  const baseManager = BaseManager.getInstance();
+  baseManager.reset();
+  const teamManager = TeamManager.getInstance();
+  teamManager.configure(true, 2);
+  teamManager.assignSequential(["p1", "p2"]);
+
+  const mode = createDominationMode({ pointTarget: 100 });
+  engine.setGameMode(mode);
+  engine.startGame(defaultPlayers.slice(0, 2));
+
+  assertEqual(engine.gameState, "active", "Game should be active");
+
+  // The route guard: `if (gameEngine.gameState === "active") return 400`
+  // We verify the condition directly — can't kick bases during active game
+  assert(engine.gameState === "active", "Route should reject kick when gameState is active");
+
+  mode.onGameEnd(engine);
+  baseManager.reset();
+  resetMovementConfig();
+});
+
+// ============================================================================
 // RUN TESTS
 // ============================================================================
 

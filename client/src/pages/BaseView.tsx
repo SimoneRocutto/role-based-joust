@@ -16,6 +16,7 @@ export default function BaseView() {
   const [baseNumber, setBaseNumber] = useState<number>(0);
   const [ownerTeamId, setOwnerTeamId] = useState<number | null>(null);
   const [flashActive, setFlashActive] = useState(false);
+  const [kicked, setKicked] = useState(false);
   const gameState = useGameStore((s) => s.gameState);
   const isConnected = useGameStore((s) => s.isConnected);
   // Register as a base on mount, reusing a stored baseId if available so
@@ -35,11 +36,18 @@ export default function BaseView() {
     };
 
     socketService.onBaseRegistered(handleRegistered);
+
+    socketService.onBaseKicked(() => {
+      localStorage.removeItem("baseId");
+      setKicked(true);
+    });
+
     const storedBaseId = localStorage.getItem("baseId") ?? undefined;
     socketService.registerAsBase(storedBaseId);
 
     return () => {
       socketService.off("base:registered");
+      socketService.off("base:kicked");
     };
   }, []);
 
@@ -75,6 +83,15 @@ export default function BaseView() {
     if (gameState !== "active") return;
     socketService.tapBase(baseId);
   }, [baseId, gameState]);
+
+  if (kicked) {
+    return (
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-gray-900 select-none">
+        <p className="text-red-400 text-2xl font-bold">DISCONNECTED BY ADMIN</p>
+        <p className="text-gray-500 text-sm mt-2">Refresh to reconnect as a new base</p>
+      </div>
+    );
+  }
 
   const isNeutral = ownerTeamId === null;
   const teamColor = !isNeutral && ownerTeamId != null ? TEAM_COLORS[ownerTeamId] : null;
