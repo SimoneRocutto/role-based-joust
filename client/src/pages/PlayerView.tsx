@@ -66,7 +66,15 @@ function PlayerView() {
   useEffect(() => {
     const playerId = localStorage.getItem("playerId");
     const playerNumber = localStorage.getItem("playerNumber");
+    const sessionToken = localStorage.getItem("sessionToken");
     if (playerId && playerNumber) {
+      if (!sessionToken) {
+        // Token is gone but stale identity keys remain — clear them so the
+        // join form is shown instead of a stuck lobby screen.
+        localStorage.removeItem("playerId");
+        localStorage.removeItem("playerNumber");
+        return;
+      }
       setMyPlayer(playerId, parseInt(playerNumber));
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

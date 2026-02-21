@@ -14,7 +14,6 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 - FEATURES:
 
 - BUGS:
-    - sometimes a player gets stuck with "#2 Player waiting for game to start" but it isn't really connected. I have to track down how this happens because with refresh there's no way to get unstuck
     - sometimes all players have the skull at the end of the round. Points are not cumulative. I have to track down when this happens
     - in classic mode, it happened that game didn't start even though everyone put ready
     - TTS doesn't work on iOS -> it's fine, we'll replace it with real voice
