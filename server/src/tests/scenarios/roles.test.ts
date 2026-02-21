@@ -637,11 +637,15 @@ runner.test("Berserker takes less damage during tough skin", (engine) => {
 
   // Wait 3 quiet ticks (300ms) for the debounce to fire and Toughened to apply
   engine.fastForward(300);
-  assert(berserker!.hasStatusEffect(Toughened), "Toughened should be active after burst");
+  assert(
+    berserker!.hasStatusEffect(Toughened),
+    "Toughened should be active after burst"
+  );
 
   // Second burst while Toughened is active. Damage: 10 / toughnessValue (e.g. 3.0) = ~3.33
   berserker!.takeDamage(10, engine.gameTime);
-  const damageFromSecondBurst = berserker!.accumulatedDamage - damageAfterFirstBurst;
+  const damageFromSecondBurst =
+    berserker!.accumulatedDamage - damageAfterFirstBurst;
 
   assert(
     damageFromSecondBurst < 10,
@@ -1103,7 +1107,11 @@ runner.test("Troll heals damage after delay", (engine) => {
   // After heal delay: healed
   engine.fastForward(600);
   assert(troll!.isAlive, "Troll should still be alive");
-  assertEqual(troll!.accumulatedDamage, 0, "Troll should have healed all damage");
+  assertEqual(
+    troll!.accumulatedDamage,
+    0,
+    "Troll should have healed all damage"
+  );
 });
 
 runner.test("Troll heal resets on repeated damage", (engine) => {
@@ -1122,10 +1130,9 @@ runner.test("Troll heal resets on repeated damage", (engine) => {
   troll!.takeDamage(20, engine.gameTime);
 
   // Advance partway (5s), then deal second hit — onDamageEvent fires ~300ms after this hit,
-  // accumulating both bursts into pendingHeal and resetting the heal timer.
+  // losing previous pendingHeal (it becomes the new damage) and resetting the heal timer.
   engine.fastForward(5000);
-  troll!.takeDamage(20, engine.gameTime);
-  const damageAfterBothHits = troll!.accumulatedDamage;
+  troll!.takeDamage(30, engine.gameTime);
 
   // Not enough time since the second burst's onDamageEvent — no heal yet
   engine.fastForward(healDelay - 1000);
@@ -1136,10 +1143,10 @@ runner.test("Troll heal resets on repeated damage", (engine) => {
 
   // Past healDelay since second burst's onDamageEvent — should have healed
   engine.fastForward(1500);
-  assertEqual(troll!.accumulatedDamage, 0, "Should have healed all accumulated damage");
-  assert(
-    damageAfterBothHits > 0,
-    "Both damage instances were tracked and healed"
+  assertEqual(
+    troll!.accumulatedDamage,
+    20,
+    "Should have healed damage from the second hit"
   );
 });
 

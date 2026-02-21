@@ -11,7 +11,7 @@ const logger = Logger.getInstance();
  *
  * Every time the Troll takes damage, it schedules an instant heal for 8 seconds later.
  * If the Troll takes any damage before that 8 seconds is up, the timer resets and the
- * new damage is added to the pending heal pool.
+ * new damage overwrites the past pending heal.
  *
  * This promotes a chip damage playstyle: you need sustained focus to kill the Troll,
  * since isolated hits will just heal off. But if everyone targets them at once, the
@@ -43,12 +43,12 @@ export class Troll extends BasePlayer {
 
   /**
    * Called once per damage burst (trailing-edge debounce in BasePlayer).
-   * Accumulates pending heal and resets the heal timer.
+   * Loses previous pending heal (stores the new one) and resets the heal timer.
    */
   override onDamageEvent(totalDamage: number, gameTime: number): void {
     if (!this.isAlive) return;
 
-    this.pendingHeal += totalDamage;
+    this.pendingHeal = totalDamage;
     this.lastDamageEventTime = gameTime;
 
     logger.logRoleAbility(this, "TROLL_DAMAGE_TRACKED", {
