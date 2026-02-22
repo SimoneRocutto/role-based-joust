@@ -259,7 +259,8 @@ router.post(
     // Pass domination-specific options
     if (effectiveMode === "domination") {
       modeOptions.pointTarget = userPreferences.dominationPointTarget;
-      modeOptions.controlIntervalMs = userPreferences.dominationControlInterval * 1000;
+      modeOptions.controlIntervalMs =
+        userPreferences.dominationControlInterval * 1000;
       modeOptions.respawnDelayMs = userPreferences.dominationRespawnTime * 1000;
     }
     // Pass death count respawn delay
@@ -449,7 +450,7 @@ router.get(
  * Body:
  * - sensitivity: string (preset name like "low", "medium", "high", "extreme", "oneshot")
  * - gameMode: string (e.g., "classic", "role-based")
- * - theme: string (e.g., "standard", "halloween")
+ * - theme: string (e.g., "standard", "easy")
  * - roundCount: number (1-10)
  * - dangerThreshold, damageMultiplier: numbers (for custom sensitivity)
  *
@@ -607,8 +608,17 @@ router.post(
 
     // Update domination settings
     if (dominationPointTarget !== undefined) {
-      if (typeof dominationPointTarget !== "number" || dominationPointTarget < 5 || dominationPointTarget > 100) {
-        res.status(400).json({ success: false, error: "dominationPointTarget must be a number between 5 and 100" });
+      if (
+        typeof dominationPointTarget !== "number" ||
+        dominationPointTarget < 5 ||
+        dominationPointTarget > 100
+      ) {
+        res
+          .status(400)
+          .json({
+            success: false,
+            error: "dominationPointTarget must be a number between 5 and 100",
+          });
         return;
       }
       setDominationPointTargetPreference(dominationPointTarget);
@@ -616,8 +626,18 @@ router.post(
     }
 
     if (dominationControlInterval !== undefined) {
-      if (typeof dominationControlInterval !== "number" || dominationControlInterval < 3 || dominationControlInterval > 15) {
-        res.status(400).json({ success: false, error: "dominationControlInterval must be a number between 3 and 15" });
+      if (
+        typeof dominationControlInterval !== "number" ||
+        dominationControlInterval < 3 ||
+        dominationControlInterval > 15
+      ) {
+        res
+          .status(400)
+          .json({
+            success: false,
+            error:
+              "dominationControlInterval must be a number between 3 and 15",
+          });
         return;
       }
       setDominationControlIntervalPreference(dominationControlInterval);
@@ -625,8 +645,17 @@ router.post(
     }
 
     if (dominationRespawnTime !== undefined) {
-      if (typeof dominationRespawnTime !== "number" || dominationRespawnTime < 5 || dominationRespawnTime > 30) {
-        res.status(400).json({ success: false, error: "dominationRespawnTime must be a number between 5 and 30" });
+      if (
+        typeof dominationRespawnTime !== "number" ||
+        dominationRespawnTime < 5 ||
+        dominationRespawnTime > 30
+      ) {
+        res
+          .status(400)
+          .json({
+            success: false,
+            error: "dominationRespawnTime must be a number between 5 and 30",
+          });
         return;
       }
       setDominationRespawnTimePreference(dominationRespawnTime);
@@ -634,8 +663,17 @@ router.post(
     }
 
     if (dominationBaseCount !== undefined) {
-      if (typeof dominationBaseCount !== "number" || dominationBaseCount < 1 || dominationBaseCount > 3) {
-        res.status(400).json({ success: false, error: "dominationBaseCount must be a number between 1 and 3" });
+      if (
+        typeof dominationBaseCount !== "number" ||
+        dominationBaseCount < 1 ||
+        dominationBaseCount > 3
+      ) {
+        res
+          .status(400)
+          .json({
+            success: false,
+            error: "dominationBaseCount must be a number between 1 and 3",
+          });
         return;
       }
       setDominationBaseCountPreference(dominationBaseCount);
@@ -643,8 +681,17 @@ router.post(
     }
 
     if (deathCountRespawnTime !== undefined) {
-      if (typeof deathCountRespawnTime !== "number" || deathCountRespawnTime < 3 || deathCountRespawnTime > 30) {
-        res.status(400).json({ success: false, error: "deathCountRespawnTime must be a number between 3 and 30" });
+      if (
+        typeof deathCountRespawnTime !== "number" ||
+        deathCountRespawnTime < 3 ||
+        deathCountRespawnTime > 30
+      ) {
+        res
+          .status(400)
+          .json({
+            success: false,
+            error: "deathCountRespawnTime must be a number between 3 and 30",
+          });
         return;
       }
       setDeathCountRespawnTimePreference(deathCountRespawnTime);
@@ -653,7 +700,9 @@ router.post(
 
     if (withEarbud !== undefined) {
       if (typeof withEarbud !== "boolean") {
-        res.status(400).json({ success: false, error: "withEarbud must be a boolean" });
+        res
+          .status(400)
+          .json({ success: false, error: "withEarbud must be a boolean" });
         return;
       }
       setWithEarbudPreference(withEarbud);

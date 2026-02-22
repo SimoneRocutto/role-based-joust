@@ -19,7 +19,8 @@ const gameEvents = GameEvents.getInstance();
 export class Executioner extends BasePlayer {
   static override priority: number = ROLE_PRIORITIES.EXECUTIONER;
   static displayName: string = "Executioner";
-  static description: string = "Your target dies, you earn 2 points and get a new one";
+  static description: string =
+    "Your target dies, you earn 2 points and get a new one";
   static difficulty: string = "normal";
 
   private readonly targetKillPoints: number;
@@ -27,7 +28,9 @@ export class Executioner extends BasePlayer {
 
   constructor(data: PlayerData) {
     super(data);
-    this.targetKillPoints = roleConfigs.executioner.targetKillPoints;
+    const config = roleConfigs.executioner;
+    this.targetKillPoints = config.targetKillPoints;
+    this.placementBonusOverrides = config.placementBonusOverrides;
   }
 
   override onPreRoundSetup(allPlayers: BasePlayer[]): void {

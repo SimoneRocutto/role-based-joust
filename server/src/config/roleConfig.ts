@@ -30,6 +30,7 @@ export interface SurvivorConfig {
 
 export interface ExecutionerConfig {
   targetKillPoints: number; // Points for target dying
+  placementBonusOverrides: number[]; // Reduced last-standing bonus
 }
 
 export interface BodyguardConfig {
@@ -123,6 +124,7 @@ export const roleConfigs: RoleConfigs = {
 
   executioner: {
     targetKillPoints: 2,
+    placementBonusOverrides: [2, 2, 1],
   },
 
   bodyguard: {

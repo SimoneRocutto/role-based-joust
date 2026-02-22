@@ -19,7 +19,7 @@ export interface PersistedSettings {
   sensitivity: string;
   /** Default game mode key (e.g., "classic", "role-based") */
   gameMode: string;
-  /** Default role theme (e.g., "standard", "halloween") */
+  /** Default role theme (e.g., "standard", "easy") */
   theme: string;
   /** Number of rounds per game (1-10) */
   roundCount: number;

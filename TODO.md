@@ -5,6 +5,9 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 - PRIORITIES:
 
 - SHORT TERM PRIORITIES:
+    - audio cues:
+        - 5, 3 players remaining announcement
+        - audio that comes before role description (could be a jingle)
     - rework round end/game end UI for death count and team matches in general
     - rework domination active game UI
     - write roles combinations for every number of players from 3 up to 16 for easy level of difficulty

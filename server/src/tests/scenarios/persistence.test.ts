@@ -16,8 +16,15 @@ import { tmpdir } from "os";
 const runner = new TestRunner();
 
 /** Create a SettingsStore pointing at a temp file. */
-function createTempStore(): { store: SettingsStore; filePath: string; dir: string } {
-  const dir = join(tmpdir(), `joust-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+function createTempStore(): {
+  store: SettingsStore;
+  filePath: string;
+  dir: string;
+} {
+  const dir = join(
+    tmpdir(),
+    `joust-test-${Date.now()}-${Math.random().toString(36).slice(2)}`
+  );
   const filePath = join(dir, "settings.json");
   return { store: new SettingsStore(filePath), filePath, dir };
 }
@@ -34,7 +41,9 @@ function cleanup(dir: string): void {
 }
 
 /** Create a full PersistedSettings object for testing. */
-function createTestSettings(overrides?: Partial<PersistedSettings>): PersistedSettings {
+function createTestSettings(
+  overrides?: Partial<PersistedSettings>
+): PersistedSettings {
   return {
     movement: {
       dangerThreshold: 0.1,
@@ -83,9 +92,21 @@ runner.test("Settings persist to disk", () => {
 
     const loaded = store.load();
     assert(loaded !== null, "load() should return non-null");
-    assertEqual(loaded!.movement?.damageMultiplier, 80, "Loaded damageMultiplier should match saved value");
-    assertEqual(loaded!.movement?.dangerThreshold, 0.2, "Loaded dangerThreshold should match saved value");
-    assertEqual(loaded!.sensitivity, "high", "Loaded sensitivity should match saved value");
+    assertEqual(
+      loaded!.movement?.damageMultiplier,
+      80,
+      "Loaded damageMultiplier should match saved value"
+    );
+    assertEqual(
+      loaded!.movement?.dangerThreshold,
+      0.2,
+      "Loaded dangerThreshold should match saved value"
+    );
+    assertEqual(
+      loaded!.sensitivity,
+      "high",
+      "Loaded sensitivity should match saved value"
+    );
   } finally {
     cleanup(dir);
   }
@@ -97,19 +118,33 @@ runner.test("Settings load on init with new format", () => {
     // Write a settings file in new format
     mkdirSync(dir, { recursive: true });
     const settings: PersistedSettings = createTestSettings({
-      movement: { dangerThreshold: 0.1, damageMultiplier: 99, historySize: 5, smoothingEnabled: true, oneshotMode: false },
+      movement: {
+        dangerThreshold: 0.1,
+        damageMultiplier: 99,
+        historySize: 5,
+        smoothingEnabled: true,
+        oneshotMode: false,
+      },
       sensitivity: "custom",
       gameMode: "classic",
-      theme: "halloween",
+      theme: "easy",
       roundCount: 5,
     });
     writeFileSync(filePath, JSON.stringify(settings), "utf-8");
 
     const loaded = store.load();
     assert(loaded !== null, "load() should return non-null for valid file");
-    assertEqual(loaded!.movement?.damageMultiplier, 99, "Should load the written damageMultiplier");
-    assertEqual(loaded!.gameMode, "classic", "Should load the written gameMode");
-    assertEqual(loaded!.theme, "halloween", "Should load the written theme");
+    assertEqual(
+      loaded!.movement?.damageMultiplier,
+      99,
+      "Should load the written damageMultiplier"
+    );
+    assertEqual(
+      loaded!.gameMode,
+      "classic",
+      "Should load the written gameMode"
+    );
+    assertEqual(loaded!.theme, "easy", "Should load the written theme");
     assertEqual(loaded!.roundCount, 5, "Should load the written roundCount");
   } finally {
     cleanup(dir);
@@ -132,9 +167,21 @@ runner.test("Legacy format (flat MovementConfig) migrated on load", () => {
 
     const loaded = store.load();
     assert(loaded !== null, "load() should return non-null for legacy file");
-    assertEqual(loaded!.movement?.damageMultiplier, 70, "Should migrate damageMultiplier to movement object");
-    assertEqual(loaded!.movement?.dangerThreshold, 0.15, "Should migrate dangerThreshold to movement object");
-    assertEqual(loaded!.sensitivity, "custom", "Legacy format should get sensitivity=custom");
+    assertEqual(
+      loaded!.movement?.damageMultiplier,
+      70,
+      "Should migrate damageMultiplier to movement object"
+    );
+    assertEqual(
+      loaded!.movement?.dangerThreshold,
+      0.15,
+      "Should migrate dangerThreshold to movement object"
+    );
+    assertEqual(
+      loaded!.sensitivity,
+      "custom",
+      "Legacy format should get sensitivity=custom"
+    );
   } finally {
     cleanup(dir);
   }
@@ -162,7 +209,10 @@ runner.test("Disabled store does not write", () => {
     store.disable();
     store.save(createTestSettings());
 
-    assert(!existsSync(filePath), "File should not exist when store is disabled");
+    assert(
+      !existsSync(filePath),
+      "File should not exist when store is disabled"
+    );
 
     const loaded = store.load();
     assertEqual(loaded, null, "load() should return null when disabled");
@@ -186,13 +236,19 @@ runner.test("Corrupt file handled gracefully", () => {
 });
 
 runner.test("Missing directory auto-created on save", () => {
-  const dir = join(tmpdir(), `joust-test-nested-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const dir = join(
+    tmpdir(),
+    `joust-test-nested-${Date.now()}-${Math.random().toString(36).slice(2)}`
+  );
   const filePath = join(dir, "sub", "deep", "settings.json");
   const store = new SettingsStore(filePath);
   try {
     store.save(createTestSettings());
 
-    assert(existsSync(filePath), "File should be created even with missing parent dirs");
+    assert(
+      existsSync(filePath),
+      "File should be created even with missing parent dirs"
+    );
   } finally {
     cleanup(dir);
   }
@@ -200,7 +256,11 @@ runner.test("Missing directory auto-created on save", () => {
 
 runner.test("Global settingsStore is disabled during tests", () => {
   // The TestRunner disables the global settingsStore before running tests
-  assertEqual(settingsStore.isEnabled(), false, "Global settingsStore should be disabled in tests");
+  assertEqual(
+    settingsStore.isEnabled(),
+    false,
+    "Global settingsStore should be disabled in tests"
+  );
 });
 
 runner.test("Saved settings include all preferences", () => {

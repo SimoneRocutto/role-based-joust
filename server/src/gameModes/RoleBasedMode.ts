@@ -2,7 +2,7 @@ import { GameMode, type GameModeOptions } from "./GameMode";
 import type { GameEngine } from "@/managers/GameEngine";
 import type { BasePlayer } from "@/models/BasePlayer";
 import type { WinCondition, ScoreEntry, ModeInfo } from "@/types/index";
-import { roleThemes } from "@/config/roleThemes";
+import { expandRolePool, roleThemes } from "@/config/roleThemes";
 import { Logger } from "@/utils/Logger";
 
 const logger = Logger.getInstance();
@@ -36,9 +36,8 @@ export class RoleBasedMode extends GameMode {
 
   constructor(options?: RoleBasedModeOptions | string) {
     // Handle legacy string argument (theme only)
-    const opts: RoleBasedModeOptions = typeof options === "string"
-      ? { theme: options }
-      : options || {};
+    const opts: RoleBasedModeOptions =
+      typeof options === "string" ? { theme: options } : options || {};
 
     // Default roundCount to 3 for role-based mode if not specified
     if (opts.roundCount === undefined) {
@@ -59,24 +58,24 @@ export class RoleBasedMode extends GameMode {
    * Roles are repeated to match player count
    */
   getRolePool(playerCount: number): string[] {
-    const theme = roleThemes[this.roleTheme];
+    let theme = roleThemes[this.roleTheme];
 
-    if (!theme || theme.length === 0) {
+    if (!theme) {
       logger.warn(
         "MODE",
         `Theme '${this.roleTheme}' not found or empty, using standard`
       );
-      return roleThemes.standard || [];
+      theme = roleThemes.standard;
     }
 
-    // Build pool by repeating roles until we have enough
-    const pool: string[] = [];
-    while (pool.length < playerCount) {
-      pool.push(...theme);
+    const expandedRolePool = expandRolePool(theme, playerCount);
+    if (expandRolePool.length === 0) {
+      logger.warn(
+        "MODE",
+        `Player count ${playerCount} not supported for theme '${this.roleTheme}'`
+      );
     }
-
-    // Trim to exact player count
-    return pool.slice(0, playerCount);
+    return expandedRolePool;
   }
 
   /**

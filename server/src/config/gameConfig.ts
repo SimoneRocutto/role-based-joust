@@ -85,7 +85,7 @@ export interface GameConfig {
 export interface UserPreferences {
   sensitivity: string; // Preset key or "custom"
   gameMode: string; // e.g., "classic", "role-based"
-  theme: string; // e.g., "standard", "halloween"
+  theme: string; // e.g., "standard", "easy"
   roundCount: number; // Number of rounds per game (1-10)
   roundDuration: number; // Round duration in seconds for timed modes (30-300)
   teamsEnabled: boolean; // Whether team mode is active

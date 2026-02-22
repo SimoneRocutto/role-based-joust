@@ -82,7 +82,7 @@ function GameSettingsPanel({
               disabled={loading}
             >
               <option value="standard">Standard</option>
-              <option value="halloween">Halloween</option>
+              <option value="easy">Easy</option>
               <option value="mafia">Mafia</option>
               <option value="fantasy">Fantasy</option>
               <option value="scifi">Sci-Fi</option>
