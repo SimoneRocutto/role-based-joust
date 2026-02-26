@@ -8,9 +8,10 @@ This file is the primary entry point for Claude Code working on this repository.
 
 1. **Always write or update tests.** When implementing new functionality, write tests for it. When changing existing behavior, update the relevant tests to match. Tests are not optional — they are part of the implementation. See `docs/testing.md` for the test frameworks and patterns used in this project. Remember to add e2e tests too when appropriate.
 2. **Always run tests after changes.** After modifying server code, run `cd server && npm test`. After modifying client code, run `cd client && npm run test:run`. These are fast and should always pass before you consider a task done.
-3. **Suggest e2e tests when appropriate.** If changes affect game flow, socket events, UI interactions, or the join/play/dashboard user journey, remind the user to run e2e tests (`cd client && npm run test:e2e`). E2e tests are slower so don't run them automatically, but do flag when they're relevant.
-4. **Update docs when changing features.** If you change a socket event, REST endpoint, game flow, role mechanic, or any documented behavior, update the relevant doc file(s) in the same task. Use the doc index below to find which file to update. This is part of the work, not a separate step.
-5. **Track TODO.md.** After completing a task, check `TODO.md` to see if the work resolves any listed item. If it does, remove that line from the file. When a task is done and there are remaining items in `TODO.md`, suggest tackling the next one (top item = highest priority).
+3. **Always check TypeScript after changes.** After any implementation, run `cd client && npx tsc --noEmit` to catch type errors. The server compiles as part of `npm test` so no separate check is needed there. Fix all errors before considering a task done.
+4. **Suggest e2e tests when appropriate.** If changes affect game flow, socket events, UI interactions, or the join/play/dashboard user journey, remind the user to run e2e tests (`cd client && npm run test:e2e`). E2e tests are slower so don't run them automatically, but do flag when they're relevant.
+5. **Update docs when changing features.** If you change a socket event, REST endpoint, game flow, role mechanic, or any documented behavior, update the relevant doc file(s) in the same task. Use the doc index below to find which file to update. This is part of the work, not a separate step.
+6. **Track TODO.md.** After completing a task, check `TODO.md` to see if the work resolves any listed item. If it does, remove that line from the file. When a task is done and there are remaining items in `TODO.md`, suggest tackling the next one (top item = highest priority).
 
 ## Project Overview
 
