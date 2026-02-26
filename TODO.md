@@ -10,6 +10,7 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
         - audio that comes before role description (could be a jingle)
     - rework round end/game end UI for death count and team matches in general
     - rework domination active game UI
+    - domination: allow changing base team by clicking the right color. We should have it be divided into n parts, where n is the number of teams. each of them is colored. When the red one gets pressed, red players take the base. The issue here is understanding how to still make it clear which team is currently controlling the base
     - write roles combinations for every number of players from 3 up to 16 for easy level of difficulty
     - write roles combinations for every number of players from 3 up to 16 for medium level of difficulty
     - record sounds and replace every TTS entry
