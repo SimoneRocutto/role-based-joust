@@ -10,6 +10,7 @@ import {
 import { STATUS_ICONS } from "@/utils/constants";
 import { getTeamColor } from "@/utils/teamColors";
 import { useGameStore } from "@/store/gameStore";
+import { useDebug } from "@/contexts/DebugContext";
 
 interface PlayerCardProps {
   player: PlayerState;
@@ -64,6 +65,9 @@ function PlayerCard({ player }: PlayerCardProps) {
   };
 
   const statusIcon = getStatusIcon();
+
+  const { isDebugMode, roles } = useDebug();
+  const debugRole = isDebugMode ? (roles[player.id] ?? null) : null;
 
   const gameState = useGameStore((state) => state.gameState);
   const modeRecap = useGameStore((state) => state.modeRecap);
@@ -133,10 +137,44 @@ function PlayerCard({ player }: PlayerCardProps) {
         </div>
       )}
       {/* Number + Name */}
-      <div className="flex items-baseline gap-2 mb-3">
+      <div className="flex items-baseline gap-2 mb-1">
         <span className="text-5xl font-bold text-white">#{player.number}</span>
         <span className="text-3xl text-gray-200 truncate">{player.name}</span>
       </div>
+
+      {/* Debug overlay: role, toughness, status effects, grace timer */}
+      {isDebugMode && (
+        <div className="mb-2 space-y-1">
+          {debugRole && (
+            <div className="inline-block px-2 py-0.5 bg-purple-700/80 rounded text-xs font-bold text-purple-100 tracking-wide">
+              {debugRole}
+            </div>
+          )}
+          {(player.toughness ?? 1) !== 1 && (
+            <div className="text-xs text-yellow-400">
+              tough {((1 - (player.toughness ?? 1)) * 100).toFixed(0)}% resist
+            </div>
+          )}
+          {(player.graceTimeRemaining ?? 0) > 0 && (
+            <div className="text-xs text-blue-300 animate-pulse">
+              grace {((player.graceTimeRemaining ?? 0) / 1000).toFixed(1)}s
+            </div>
+          )}
+          {(player.statusEffects ?? []).length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {(player.statusEffects ?? []).map((e, i) => (
+                <span
+                  key={i}
+                  className="px-1.5 py-0.5 bg-gray-700/80 rounded text-xs text-gray-200"
+                >
+                  {e.type}
+                  {e.timeLeft != null ? ` ${(e.timeLeft / 1000).toFixed(1)}s` : ""}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Status Icon: Trophy for winner, Skull for dead, or status effect */}
       {/* In death count mode, skip trophy/skull since everyone respawns */}

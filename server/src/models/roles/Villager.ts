@@ -26,11 +26,11 @@ export class Villager extends BasePlayer {
     });
   }
 
-  // By default, this increases score by 3 when the villager is the last man standing.
+  // Increases placement score by placementBonusIncrease for the top N placements.
   private getPlacementBonus() {
     const config = roleConfigs.villager;
     return gameConfig.scoring.placementBonuses.map((value, i) =>
-      i < config.topN ? value + 1 : value
+      i < config.topN ? value + config.placementBonusIncrease : value
     );
   }
 }

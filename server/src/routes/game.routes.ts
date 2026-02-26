@@ -32,6 +32,7 @@ import {
   getLobbyPlayersWithTeams,
   broadcastLobbyUpdate,
   broadcastTeamUpdate,
+  formatScoresForClient,
 } from "@/sockets/helpers";
 
 const router = Router();
@@ -172,9 +173,15 @@ router.get(
 
     const snapshot = gameEngine.getGameSnapshot();
 
+    // Include final scores for reconnecting clients on the game-end screen
+    const finalScores =
+      snapshot.state === "finished"
+        ? formatScoresForClient(gameEngine.getLastFinalScores())
+        : null;
+
     res.json({
       success: true,
-      state: snapshot,
+      state: { ...snapshot, finalScores },
       teamSelectionActive: TeamManager.getInstance().isSelectionActive(),
     });
   })

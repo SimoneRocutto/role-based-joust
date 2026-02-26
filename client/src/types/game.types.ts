@@ -7,10 +7,12 @@ export interface GameState {
   gameTime: number;
   state: import("@shared/types").GameStateType;
   currentRound: number;
+  roundCount?: number;
   mode: string;
   playerCount: number;
   alivePlayers: number;
   players: PlayerState[];
+  finalScores?: import("@shared/types").ClientScoreEntry[] | null;
 }
 
 export interface GameMode {

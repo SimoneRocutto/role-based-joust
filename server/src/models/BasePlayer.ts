@@ -524,12 +524,13 @@ export class BasePlayer {
    * Override in role classes for death-related cleanup
    */
   onDeath(gameTime: number): void {
-    // Reset these in case of future respawn
     this.lastMovementData = null;
-    this.accumulatedDamage = 0;
     this.movementHistory = [];
     this._damageEventAccumulator = 0;
     this._damageEventQuietTicks = 0;
+    // Note: accumulatedDamage is intentionally NOT reset here so dead players
+    // retain their final damage in snapshots. It is reset in RespawnManager
+    // when a player is actually revived.
   }
 
   /**

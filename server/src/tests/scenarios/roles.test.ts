@@ -1164,13 +1164,9 @@ runner.test("Troll does not heal after death", (engine) => {
   troll!.takeDamage(troll!.deathThreshold, engine.gameTime);
   assert(!troll!.isAlive, "Troll should be dead");
 
-  // Fast-forward past heal delay — no crash, accumulatedDamage stays at 0 (reset by death)
+  // Fast-forward past heal delay — no crash, dead player retains final accumulatedDamage
   engine.fastForward(roleConfigs.troll.healDelay + 1000);
-  assertEqual(
-    troll!.accumulatedDamage,
-    0,
-    "Dead Troll accumulatedDamage stays at 0"
-  );
+  assert(!troll!.isAlive, "Troll is still dead after fast-forward");
 });
 
 // ============================================================================

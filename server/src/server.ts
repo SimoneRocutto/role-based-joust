@@ -87,6 +87,9 @@ TeamManager.getInstance();
 app.locals.gameEngine = gameEngine;
 app.locals.io = io;
 
+// Expose gameEngine to the Logger (reads global.gameEngine.gameTime for log entries)
+(global as any).gameEngine = gameEngine;
+
 // ============================================================================
 // WIRE UP SOCKET HANDLERS + GAME EVENT BROADCASTERS
 // ============================================================================

@@ -2,7 +2,7 @@ import { useGameState } from "@/hooks/useGameState";
 import { useAudioStore } from "@/store/audioStore";
 
 function EventFeed() {
-  const { latestEvent, aliveCount, players } = useGameState();
+  const { latestEvent, aliveCount, players, isFinished } = useGameState();
   const isSpeaking = useAudioStore((state) => state.isSpeaking);
 
   return (
@@ -18,11 +18,13 @@ function EventFeed() {
           </span>
         </div>
 
-        {/* Alive Counter */}
-        <div className="text-2xl font-bold text-white">
-          ALIVE: <span className="text-green-400">{aliveCount}</span> /{" "}
-          {players.length}
-        </div>
+        {/* Alive Counter (hidden on game-end screen) */}
+        {!isFinished && (
+          <div className="text-2xl font-bold text-white">
+            ALIVE: <span className="text-green-400">{aliveCount}</span> /{" "}
+            {players.length}
+          </div>
+        )}
       </div>
     </div>
   );

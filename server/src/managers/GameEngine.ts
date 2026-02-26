@@ -1,7 +1,7 @@
 import { BasePlayer } from "@/models/BasePlayer";
 import type { PlayerData, MovementData } from "@/types/player.types";
 import type { GameMode } from "@/gameModes/GameMode";
-import type { GameState, WinCondition } from "@/types/game.types";
+import type { GameState, WinCondition, ScoreEntry } from "@/types/game.types";
 import { RoleFactory } from "@/factories/RoleFactory";
 import { GameEvents } from "@/utils/GameEvents";
 import { Logger } from "@/utils/Logger";
@@ -13,6 +13,7 @@ import {
 } from "@/config/gameConfig";
 import { ReadyStateManager } from "@/managers/ReadyStateManager";
 import { RoundSetupManager } from "@/managers/RoundSetupManager";
+import { ConnectionManager } from "@/managers/ConnectionManager";
 import { buildTickPlayerState } from "@/utils/tickPayload";
 
 const logger = Logger.getInstance();
@@ -51,6 +52,13 @@ export class GameEngine {
   readonly tickRate: number;
   private gameLoop: NodeJS.Timeout | null = null;
   private lastTickTime: number = 0;
+
+  // ========== FINAL SCORES (persisted after game ends for reconnecting clients) ==========
+  private _lastFinalScores: ScoreEntry[] = [];
+
+  getLastFinalScores(): ScoreEntry[] {
+    return this._lastFinalScores;
+  }
 
   // ========== TEST MODE ==========
   testMode: boolean = false;
@@ -487,6 +495,7 @@ export class GameEngine {
 
     // Calculate final scores
     const finalScores = this.currentMode?.calculateFinalScores(this) || [];
+    this._lastFinalScores = finalScores;
 
     // Notify mode
     if (this.currentMode) {
@@ -529,6 +538,7 @@ export class GameEngine {
     this.gameState = "waiting";
     this.players = [];
     this.playerDataCache = [];
+    this._lastFinalScores = [];
     this.currentRound = 0;
     this.gameTime = 0;
 
@@ -715,6 +725,13 @@ export class GameEngine {
       roles: roleNames,
     });
 
+    // Register bots in ConnectionManager so they get sequential player numbers
+    // (displayed as #1, #2, etc. in the leaderboard and player cards)
+    const connectionManager = ConnectionManager.getInstance();
+    botData.forEach((bot) => {
+      connectionManager.registerConnection(bot.id, bot.socketId!, bot.name, false);
+    });
+
     // Pass roleNames as the role pool override to ensure exact role assignment
     this.startGame(botData, roleNames);
   }
@@ -748,6 +765,7 @@ export class GameEngine {
       gameTime: this.gameTime,
       state: this.gameState,
       currentRound: this.currentRound,
+      roundCount: this.currentMode?.roundCount || 1,
       mode: this.currentMode?.name || null,
       playerCount: this.players.length,
       alivePlayers: this.players.filter((p) => p.isAlive).length,

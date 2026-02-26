@@ -14,6 +14,7 @@ import CountdownDisplay from "@/components/dashboard/CountdownDisplay";
 import BaseStatusPanel from "@/components/dashboard/BaseStatusPanel";
 import { useAudioStore } from "@/store/audioStore";
 import { audioManager } from "@/services/audio";
+import { DebugProvider } from "@/contexts/DebugContext";
 
 function DashboardView() {
   const {
@@ -33,6 +34,8 @@ function DashboardView() {
     setDevMode,
     setPlayerReady,
     setReadyCount,
+    setRound,
+    setMode,
   } = useGameStore();
   const isAudioUnlocked = useAudioStore((state) => state.isAudioUnlocked);
   const { background } = useModeEvents();
@@ -117,6 +120,18 @@ function DashboardView() {
           const state = gameResult.state;
           if (state.state !== "waiting") {
             setGameState(state.state);
+            // Restore round counter
+            if (state.currentRound) {
+              setRound(state.currentRound, state.roundCount || state.currentRound);
+            }
+            // Restore mode name
+            if (state.mode) {
+              setMode(state.mode);
+            }
+            // Restore final scores for game-end screen
+            if (state.state === "finished" && state.finalScores) {
+              setScores(state.finalScores);
+            }
             // Update players from game state
             if (state.players && state.players.length > 0) {
               updatePlayers(state.players);
@@ -231,6 +246,7 @@ function DashboardView() {
   }, [roundTimeRemaining, isActive]);
 
   return (
+    <DebugProvider>
     <div
       className="min-h-screen max-h-screen flex flex-col text-white overflow-hidden"
       style={{ background, transition: "background 0.5s ease-in-out" }}
@@ -295,6 +311,7 @@ function DashboardView() {
       {/* Event Feed */}
       <EventFeed />
     </div>
+    </DebugProvider>
   );
 }
 

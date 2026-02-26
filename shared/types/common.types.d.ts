@@ -62,6 +62,7 @@ export interface PlayerState {
 export interface GameTickPlayerState {
   id: string;
   name: string;
+  number: number;
   isAlive: boolean;
   accumulatedDamage: number;
   points: number;

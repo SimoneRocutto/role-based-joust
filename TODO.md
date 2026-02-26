@@ -5,6 +5,7 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 - PRIORITIES:
 
 - SHORT TERM PRIORITIES:
+    - classic and role based games should end based on a defined target score (e.g. first who arrives to 20 points). There shouldn't be a number of rounds
     - audio cues:
         - 5, 3 players remaining announcement
         - audio that comes before role description (could be a jingle)

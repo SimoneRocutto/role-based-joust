@@ -116,8 +116,8 @@ export function useSocket() {
               // Connection status
               isDisconnected: tp.isDisconnected,
               graceTimeRemaining: tp.graceTimeRemaining,
-              // Preserve fields not in tick
-              number: existing?.number ?? 0,
+              // Prefer tick's authoritative number; fall back to existing
+              number: tp.number ?? existing?.number ?? 0,
               role: existing?.role ?? "",
               statusEffects: tp.statusEffects,
               // Preserve team assignment (set from tick if available, else from existing)

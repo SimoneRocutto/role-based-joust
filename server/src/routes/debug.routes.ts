@@ -4,6 +4,9 @@ import { GameEngine } from "@/managers/GameEngine";
 import { Logger } from "@/utils/Logger";
 import { ConnectionManager } from "@/managers/ConnectionManager";
 import { resetMovementConfig } from "@/config/gameConfig";
+import { GameModeFactory } from "@/factories/GameModeFactory";
+import { TeamManager } from "@/managers/TeamManager";
+import { BaseManager } from "@/managers/BaseManager";
 import type { BotAction } from "@/types/bot.types";
 
 const router = Router();
@@ -203,7 +206,7 @@ router.get(
 router.post(
   "/test/create",
   asyncHandler(async (req: Request, res: Response) => {
-    const { roles } = req.body;
+    const { roles, mode, teams, teamCount, bases } = req.body;
     const gameEngine: GameEngine = req.app.locals.gameEngine;
 
     if (!roles || !Array.isArray(roles)) {
@@ -214,11 +217,48 @@ router.post(
       return;
     }
 
+    // Set game mode if not already set (or if explicitly provided)
+    if (!gameEngine.currentMode || mode) {
+      const factory = GameModeFactory.getInstance();
+      const gameMode = factory.createMode(mode || "classic");
+      gameEngine.setGameMode(gameMode);
+      gameEngine.lastModeKey = mode || "classic";
+    }
+
+    // Configure teams if requested
+    const teamManager = TeamManager.getInstance();
+    if (teams) {
+      teamManager.configure(true, teamCount ?? 2);
+    } else {
+      teamManager.configure(false, 2);
+    }
+
     gameEngine.createTestGame(roles);
+
+    // Assign bots to teams after game creation (bot IDs are bot-0, bot-1, ...)
+    if (teams) {
+      const botIds = roles.map((_: string, i: number) => `bot-${i}`);
+      teamManager.assignSequential(botIds);
+    }
+
+    // Register simulated bases for domination mode testing
+    const baseCount = typeof bases === "number" ? bases : 0;
+    if (baseCount > 0) {
+      const baseManager = BaseManager.getInstance();
+      const resolvedTeamCount = teamCount ?? 2;
+      for (let i = 0; i < baseCount; i++) {
+        const { baseId } = baseManager.registerBase(`debug-base-socket-${i}`);
+        // Distribute bases across teams (base 0 → team 0, base 1 → team 1, ...)
+        const teamId = teams ? i % resolvedTeamCount : 0;
+        baseManager.setOwner(baseId, teamId, 0);
+        logger.info("DEBUG", `Registered simulated base ${i + 1} owned by team ${teamId}`);
+      }
+    }
 
     logger.info("DEBUG", "Test game created", {
       roles,
       botCount: roles.length,
+      bases: baseCount,
     });
 
     res.json({
@@ -290,10 +330,10 @@ router.post(
     const gameEngine: GameEngine = req.app.locals.gameEngine;
     const connectionManager = ConnectionManager.getInstance();
 
-    // Stop any running game
-    if (gameEngine.isActive()) {
+    // Stop any running or finished game (clears players and resets state)
+    if (gameEngine.isActive() || gameEngine.isFinished()) {
       gameEngine.stopGame();
-      logger.info("DEBUG", "Stopped active game for reset");
+      logger.info("DEBUG", "Stopped game for reset");
     }
 
     // Reset countdown duration to default (10 seconds)
@@ -305,6 +345,10 @@ router.post(
     // Clear all connections
     connectionManager.clearAll();
     logger.info("DEBUG", "Cleared all connections for reset");
+
+    // Clear all bases (domination mode)
+    BaseManager.getInstance().reset();
+    logger.info("DEBUG", "Cleared all bases for reset");
 
     res.json({
       success: true,

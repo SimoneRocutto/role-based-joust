@@ -113,6 +113,12 @@ export class RoleFactory {
    */
   createRole(roleType: string, playerData: PlayerData): BasePlayer {
     const normalizedName = this.normalizeRoleName(roleType);
+
+    // "Player" and "BasePlayer" are explicit aliases for no role
+    if (normalizedName === "player" || normalizedName === "baseplayer") {
+      return new BasePlayer(playerData);
+    }
+
     const RoleClass = this.roleRegistry.get(normalizedName);
 
     if (!RoleClass) {

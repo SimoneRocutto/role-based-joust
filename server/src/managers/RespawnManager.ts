@@ -97,6 +97,7 @@ export class RespawnManager {
     this.pendingRespawns.delete(playerId);
 
     player.isAlive = true;
+    player.accumulatedDamage = 0;
     player.clearStatusEffects(gameTime);
 
     gameEvents.emitPlayerRespawn({ player, gameTime });

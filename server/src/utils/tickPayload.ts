@@ -1,6 +1,9 @@
 import type { BasePlayer } from "@/models/BasePlayer";
 import type { GameMode } from "@/gameModes/GameMode";
 import type { GameTickPlayerState } from "@/types/events.types";
+import { ConnectionManager } from "@/managers/ConnectionManager";
+
+const connectionManager = ConnectionManager.getInstance();
 
 /**
  * Build the per-player state object for game tick emissions.
@@ -14,6 +17,7 @@ export function buildTickPlayerState(
   return {
     id: player.id,
     name: player.name,
+    number: connectionManager.getPlayerNumber(player.id) ?? 0,
     isAlive: player.isAlive,
     accumulatedDamage: player.accumulatedDamage,
     points: player.points,
