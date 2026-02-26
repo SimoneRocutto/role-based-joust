@@ -7,6 +7,7 @@ import {
   restoreMovementConfig,
   gameConfig,
 } from "@/config/gameConfig";
+import { TeamManager } from "@/managers/TeamManager";
 
 const logger = Logger.getInstance();
 
@@ -28,8 +29,12 @@ export class ClassicMode extends GameMode {
 
   constructor(options?: GameModeOptions) {
     super(options);
-    // Default to 1 round if not specified
-    if (options?.roundCount === undefined) {
+    this.targetScore = options?.targetScore ?? null;
+    if (this.targetScore !== null) {
+      // Target score mode: always multi-round regardless of roundCount
+      this.multiRound = true;
+    } else if (options?.roundCount === undefined) {
+      // No targetScore and no roundCount: default to 1 round
       this.roundCount = 1;
       this.multiRound = false;
     }
@@ -51,9 +56,10 @@ export class ClassicMode extends GameMode {
   }
 
   /**
-   * Accumulate points on round end
+   * Accumulate points on round end.
+   * If teams + target score: awards team match points and signals game end when a team hits the target.
    */
-  override onRoundEnd(engine: GameEngine): void {
+  override onRoundEnd(engine: GameEngine): { gameEnded?: boolean } | void {
     super.onRoundEnd(engine);
 
     // Transfer round points to total points
@@ -68,6 +74,48 @@ export class ClassicMode extends GameMode {
       .join(", ");
 
     logger.info("MODE", `Round ${engine.currentRound} scores: ${roundScores}`);
+
+    // Team match point scoring (target score mode only)
+    const teamManager = TeamManager.getInstance();
+    if (teamManager.isEnabled() && this.targetScore !== null) {
+      // Rank players by their round points (highest first)
+      const rankedPlayers = [...engine.players].sort(
+        (a, b) => b.points - a.points
+      );
+
+      // First player per team (by their round ranking) determines team placement
+      const scoredTeams = new Set<number>();
+      const teamPlacement: number[] = [];
+      for (const player of rankedPlayers) {
+        const teamId = teamManager.getPlayerTeam(player.id);
+        if (teamId !== null && !scoredTeams.has(teamId)) {
+          scoredTeams.add(teamId);
+          teamPlacement.push(teamId);
+        }
+      }
+
+      // Award match points to teams based on placement (5, 3, 1, 0, ...)
+      for (let i = 0; i < teamPlacement.length; i++) {
+        const bonus = this.placementBonuses[i] ?? 0;
+        if (bonus > 0) {
+          teamManager.addMatchPoints(teamPlacement[i], bonus);
+          logger.info(
+            "MODE",
+            `Team ${teamPlacement[i]} earned ${bonus} match points (placement #${i + 1})`
+          );
+        }
+      }
+
+      // Check if any team has reached the target score
+      const topTeam = teamManager.getTeamsSortedByMatchPoints()[0];
+      if (topTeam && topTeam.matchPoints >= this.targetScore) {
+        logger.info(
+          "MODE",
+          `Team ${topTeam.teamId} reached target score ${this.targetScore} — game over`
+        );
+        return { gameEnded: true };
+      }
+    }
   }
 
   /**
@@ -87,8 +135,8 @@ export class ClassicMode extends GameMode {
 
   /**
    * Round ends when 1 or 0 players remain effectively alive
-   * (considers disconnection grace period)
-   * Game ends after configured number of rounds
+   * (considers disconnection grace period).
+   * Game ends when a player reaches targetScore (if set) or after roundCount rounds.
    */
   checkWinCondition(engine: GameEngine): WinCondition {
     const effectivelyAlive = this.getEffectivelyAlivePlayers(engine);
@@ -96,8 +144,6 @@ export class ClassicMode extends GameMode {
     if (effectivelyAlive.length > 1) {
       return { roundEnded: false, gameEnded: false, winner: null };
     }
-
-    const gameEnded = engine.currentRound >= this.roundCount;
 
     if (effectivelyAlive.length === 0) {
       logger.info(
@@ -107,6 +153,22 @@ export class ClassicMode extends GameMode {
     }
 
     this.awardPlacementBonuses(effectivelyAlive);
+
+    let gameEnded: boolean;
+    if (this.targetScore !== null) {
+      const teamManager = TeamManager.getInstance();
+      if (teamManager.isEnabled()) {
+        // Team game-end is determined in onRoundEnd after match points are updated
+        gameEnded = false;
+      } else {
+        // Solo: game ends when any player's cumulative points reach the target
+        gameEnded = engine.players.some(
+          (p) => p.totalPoints + p.points >= this.targetScore!
+        );
+      }
+    } else {
+      gameEnded = engine.currentRound >= this.roundCount;
+    }
 
     return { roundEnded: true, gameEnded, winner: null };
   }

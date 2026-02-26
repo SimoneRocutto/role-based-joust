@@ -145,16 +145,19 @@ export function useSocket() {
       }
     });
 
-    socketService.onGameStart(({ mode, totalRounds, sensitivity, withEarbud }) => {
+    socketService.onGameStart(({ mode, totalRounds, targetScore, sensitivity, withEarbud }) => {
       setMode(mode);
       // Store earbud setting for kill sound logic
       useGameStore.getState().setWithEarbud(withEarbud ?? false);
+      // Store target score
+      useGameStore.getState().setTargetScore(targetScore ?? null);
       // Determine if teams are enabled from store
       const teamsEnabled = useGameStore.getState().teamsEnabled;
       useGameStore.getState().setModeRecap({
         modeName: getModeDisplayName(mode, teamsEnabled),
-        roundCount: totalRounds,
+        roundCount: totalRounds ?? null,
         sensitivity: sensitivity || "medium",
+        targetScore: targetScore ?? null,
       });
       // Ensure ready is enabled — no delay for pre-game, players can ready immediately
       useGameStore.getState().setReadyEnabled(true);
@@ -165,7 +168,7 @@ export function useSocket() {
 
     // Round start
     socketService.onRoundStart(({ roundNumber, totalRounds, gameEvents }) => {
-      setRound(roundNumber, totalRounds);
+      setRound(roundNumber, totalRounds ?? null);
       useGameStore.getState().setActiveGameEvents(gameEvents ?? []);
       setGameState("active");
     });

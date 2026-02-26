@@ -82,7 +82,7 @@ function Scoreboard() {
         </h1>
         {!isFinished && (
           <p className="text-2xl text-gray-400">
-            {totalRounds - currentRound} rounds remaining
+            {totalRounds != null ? `${totalRounds - currentRound} rounds remaining` : 'Playing to target score'}
           </p>
         )}
       </div>

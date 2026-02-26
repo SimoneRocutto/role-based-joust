@@ -14,6 +14,7 @@ import { runReadyStateManagerTests } from "./scenarios/readyStateManager.test";
 import { runPreGameTests } from "./scenarios/preGame.test";
 import { runRespawnManagerTests } from "./scenarios/respawnManager.test";
 import { runDominationModeTests } from "./scenarios/dominationMode.test";
+import { runTargetScoreTests } from "./scenarios/targetScore.test";
 
 /**
  * Run all test suites
@@ -44,6 +45,7 @@ async function runAllTests() {
     preGame: { passed: 0, failed: 0, total: 0 },
     respawnManager: { passed: 0, failed: 0, total: 0 },
     dominationMode: { passed: 0, failed: 0, total: 0 },
+    targetScore: { passed: 0, failed: 0, total: 0 },
   };
 
   // Run core tests
@@ -110,6 +112,10 @@ async function runAllTests() {
   console.log("\n🏰 Running Domination Mode Tests...\n");
   results.dominationMode = await runDominationModeTests();
 
+  // Run target score tests
+  console.log("\n🎯 Running Target Score Tests...\n");
+  results.targetScore = await runTargetScoreTests();
+
   // Print overall summary
   console.log("\n");
   console.log("╔═══════════════════════════════════════════════════════════════╗");
@@ -140,6 +146,7 @@ async function runAllTests() {
   console.log(`Pre-Game Tests:      ${results.preGame.passed}/${results.preGame.total} passed`);
   console.log(`Respawn Manager:     ${results.respawnManager.passed}/${results.respawnManager.total} passed`);
   console.log(`Domination Mode:     ${results.dominationMode.passed}/${results.dominationMode.total} passed`);
+  console.log(`Target Score Tests:  ${results.targetScore.passed}/${results.targetScore.total} passed`);
   console.log("\n" + "─".repeat(65) + "\n");
   console.log(`TOTAL:               ${totalPassed}/${totalTests} passed`);
 

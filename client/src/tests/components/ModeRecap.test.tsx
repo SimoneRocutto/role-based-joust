@@ -27,4 +27,15 @@ describe("ModeRecap", () => {
     render(<ModeRecap modeName="Classic" roundCount={1} sensitivityKey="custom" />);
     expect(screen.getByText("1 round | custom")).toBeInTheDocument();
   });
+
+  it("shows targetScore instead of roundCount when targetScore is set", () => {
+    render(<ModeRecap modeName="Classic" roundCount={null} sensitivityKey="medium" targetScore={20} />);
+    expect(screen.getByText("First to 20 pts | Medium")).toBeInTheDocument();
+  });
+
+  it("shows only sensitivity when roundCount is null and no targetScore", () => {
+    render(<ModeRecap modeName="Classic" roundCount={null} sensitivityKey="medium" />);
+    expect(screen.getByText("Medium")).toBeInTheDocument();
+    expect(screen.queryByText(/rounds/)).not.toBeInTheDocument();
+  });
 });

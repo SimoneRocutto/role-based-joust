@@ -39,17 +39,19 @@ export class RoleBasedMode extends GameMode {
     const opts: RoleBasedModeOptions =
       typeof options === "string" ? { theme: options } : options || {};
 
-    // Default roundCount to 3 for role-based mode if not specified
-    if (opts.roundCount === undefined) {
+    // If using target score, roundCount is irrelevant; keep 1 as a fallback placeholder
+    // If not using target score, default roundCount to 3
+    if (opts.targetScore === undefined && opts.roundCount === undefined) {
       opts.roundCount = 3;
     }
 
     super(opts);
 
+    this.targetScore = opts.targetScore ?? null;
     this.roleTheme = opts.theme || "standard";
     this.description = `${this.description} Using ${this.roleTheme} roles.`;
 
-    // Default to multiRound for role-based mode
+    // Role-based is always multi-round
     this.multiRound = true;
   }
 
@@ -81,7 +83,7 @@ export class RoleBasedMode extends GameMode {
   /**
    * Round ends when 1 or 0 players remain effectively alive
    * (or when all remaining share a victory group).
-   * Game ends after configured number of rounds.
+   * Game ends when a player reaches targetScore (if set) or after roundCount rounds.
    */
   checkWinCondition(engine: GameEngine): WinCondition {
     const effectivelyAlive = this.getEffectivelyAlivePlayers(engine);
@@ -99,8 +101,17 @@ export class RoleBasedMode extends GameMode {
     }
 
     // Round is over — award placement bonuses
-    const gameEnded = engine.currentRound >= this.roundCount;
     this.awardPlacementBonuses(effectivelyAlive);
+
+    let gameEnded: boolean;
+    if (this.targetScore !== null) {
+      // Game ends when any player's cumulative points reach the target
+      gameEnded = engine.players.some(
+        (p) => p.totalPoints + p.points >= this.targetScore!
+      );
+    } else {
+      gameEnded = engine.currentRound >= this.roundCount;
+    }
 
     return { roundEnded: true, gameEnded, winner: null };
   }

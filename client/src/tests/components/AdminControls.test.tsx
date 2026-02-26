@@ -23,6 +23,7 @@ vi.mock('@/services/api', () => ({
     getSettings: vi.fn().mockResolvedValue({
       success: true,
       sensitivity: 'medium',
+      targetScore: 20,
       movement: { dangerThreshold: 0.1, damageMultiplier: 50 },
       presets: [
         { key: 'low', label: 'Low', description: 'Forgiving — need big movements to take damage' },
@@ -262,6 +263,32 @@ describe('AdminControls', () => {
 
     await waitFor(() => {
       expect(screen.getByText(`${window.location.origin}/join`)).toBeInTheDocument()
+    })
+  })
+
+  it('shows Target Score buttons for role-based mode (default)', async () => {
+    render(<AdminControls />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Target Score')).toBeInTheDocument()
+      expect(screen.getByText('First to 20 points wins')).toBeInTheDocument()
+    })
+  })
+
+  it('calls updateSettings with targetScore when a target score button is clicked', async () => {
+    render(<AdminControls />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Target Score')).toBeInTheDocument()
+    })
+
+    // The target score buttons are [10, 15, 20, 25, 30]
+    // Find the "25" button in the target score section
+    const buttons = screen.getAllByRole('button', { name: '25' })
+    fireEvent.click(buttons[0])
+
+    await waitFor(() => {
+      expect(apiService.updateSettings).toHaveBeenCalledWith({ targetScore: 25 })
     })
   })
 })

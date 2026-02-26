@@ -77,7 +77,7 @@ export interface PlayerDeathPayload {
 
 export interface RoundStartPayload {
   roundNumber: number;
-  totalRounds: number;
+  totalRounds: number | null;
   gameTime: number;
   gameEvents: string[];
 }
@@ -92,7 +92,8 @@ export interface RoundEndPayload {
 
 export interface GameStartPayload {
   mode: string;
-  totalRounds: number;
+  totalRounds: number | null;
+  targetScore?: number | null;
   sensitivity: string;
   withEarbud?: boolean;
 }
@@ -168,7 +169,7 @@ export interface CountdownPayload {
   totalSeconds: number;
   phase: "countdown" | "go";
   roundNumber: number;
-  totalRounds: number;
+  totalRounds: number | null;
 }
 
 // ---------------------------------------------------------------------------

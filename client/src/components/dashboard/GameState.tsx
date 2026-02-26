@@ -25,7 +25,7 @@ function GameState() {
           <h1 className="text-4xl font-bold tracking-wider">EXTENDED JOUST</h1>
           {!isWaiting && !isPreGame && (
             <div className="text-xl text-gray-300">
-              Round {currentRound}/{totalRounds}
+              {totalRounds ? `Round ${currentRound}/${totalRounds}` : `Round ${currentRound}`}
             </div>
           )}
           {isPreGame && <ReadyCounter />}

@@ -17,6 +17,7 @@ interface GameSettingsPanelProps {
   loading: boolean;
   dominationPointTarget: number;
   dominationBaseCount: number;
+  targetScore: number;
   handleCombinedModeChange: (combinedKey: string) => void;
   handleThemeChange: (theme: string) => void;
   handleSensitivityChange: (sensitivity: string) => void;
@@ -26,6 +27,7 @@ interface GameSettingsPanelProps {
   withEarbud: boolean;
   handleDominationSettingChange: (key: string, value: number) => void;
   handleWithEarbudChange: (enabled: boolean) => void;
+  handleTargetScoreChange: (score: number) => void;
 }
 
 function GameSettingsPanel({
@@ -47,11 +49,15 @@ function GameSettingsPanel({
   handleTeamCountChange,
   dominationPointTarget,
   dominationBaseCount,
+  targetScore,
   withEarbud,
   handleDominationSettingChange,
   handleWithEarbudChange,
+  handleTargetScoreChange,
 }: GameSettingsPanelProps) {
   const isDomination = selectedMode === "domination";
+  const isDeathCount = selectedMode === "death-count";
+  const usesTargetScore = !isDomination && !isDeathCount;
   return (
     <>
       {/* Mode Selection (combined with teams) */}
@@ -178,8 +184,36 @@ function GameSettingsPanel({
         </>
       )}
 
-      {/* Round Count Selection (hidden for domination) */}
-      {!isDomination && (
+      {/* Target Score (classic + role-based) */}
+      {usesTargetScore && (
+        <div className="mb-4">
+          <label className="block text-sm text-gray-400 mb-2">
+            Target Score
+          </label>
+          <div className="flex gap-2">
+            {[10, 15, 20, 25, 30].map((score) => (
+              <button
+                key={score}
+                onClick={() => handleTargetScoreChange(score)}
+                disabled={loading}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  targetScore === score
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                }`}
+              >
+                {score}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            First to {targetScore} points wins
+          </p>
+        </div>
+      )}
+
+      {/* Round Count (death-count only) */}
+      {isDeathCount && (
         <div className="mb-4">
           <label className="block text-sm text-gray-400 mb-2">
             Number of Rounds

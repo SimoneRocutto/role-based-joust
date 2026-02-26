@@ -8,8 +8,9 @@ interface PreGameScreenProps {
   playerName: string;
   modeRecap: {
     modeName: string;
-    roundCount: number;
+    roundCount: number | null;
     sensitivity: string;
+    targetScore?: number | null;
   } | null;
   isReady: boolean;
   isShaking: boolean;
@@ -45,6 +46,7 @@ export default function PreGameScreen({
           modeName={modeRecap.modeName}
           roundCount={modeRecap.roundCount}
           sensitivityKey={modeRecap.sensitivity}
+          targetScore={modeRecap.targetScore}
         />
       )}
 

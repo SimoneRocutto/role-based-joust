@@ -63,6 +63,7 @@ const schemas = {
     dominationBaseCount: { type: "number", required: false, min: 1, max: 3 },
     deathCountRespawnTime: { type: "number", required: false, min: 3, max: 30 },
     withEarbud: { type: "boolean", required: false },
+    targetScore: { type: "number", required: false, min: 5, max: 50 },
   },
 };
 

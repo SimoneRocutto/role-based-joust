@@ -20,7 +20,8 @@ interface GameStore {
   gameState: GameStateType;
   gameTime: number;
   currentRound: number;
-  totalRounds: number;
+  totalRounds: number | null;
+  targetScore: number | null;
   mode: string | null;
 
   // Countdown state
@@ -58,8 +59,9 @@ interface GameStore {
   // Mode recap (shown during pre-game)
   modeRecap: {
     modeName: string;
-    roundCount: number;
+    roundCount: number | null;
     sensitivity: string;
+    targetScore?: number | null;
   } | null;
 
   // UI state
@@ -78,7 +80,8 @@ interface GameStore {
   updatePlayers: (players: PlayerState[]) => void;
   setGameState: (state: GameStateType) => void;
   setGameTime: (time: number) => void;
-  setRound: (current: number, total: number) => void;
+  setRound: (current: number, total: number | null) => void;
+  setTargetScore: (score: number | null) => void;
   setMode: (mode: string | null) => void;
   setLatestEvent: (event: string) => void;
   setScores: (scores: ScoreEntry[]) => void;
@@ -99,7 +102,7 @@ interface GameStore {
   setTeamScores: (scores: TeamScore[] | null) => void;
   setWithEarbud: (enabled: boolean) => void;
   setModeRecap: (
-    recap: { modeName: string; roundCount: number; sensitivity: string } | null
+    recap: { modeName: string; roundCount: number | null; sensitivity: string; targetScore?: number | null } | null
   ) => void;
   setBases: (bases: BaseState[]) => void;
   setDominationTeamScores: (scores: Record<number, number>) => void;
@@ -123,7 +126,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   gameState: "waiting",
   gameTime: 0,
   currentRound: 0,
-  totalRounds: 0,
+  totalRounds: null,
+  targetScore: null,
   mode: null,
 
   countdownSeconds: 0,
@@ -205,6 +209,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setRound: (current, total) =>
     set({ currentRound: current, totalRounds: total }),
+
+  setTargetScore: (score) => set({ targetScore: score }),
 
   setMode: (mode) => set({ mode }),
 
@@ -308,7 +314,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       gameState: "waiting",
       gameTime: 0,
       currentRound: 0,
-      totalRounds: 0,
+      totalRounds: null,
+      targetScore: null,
       mode: null,
       countdownSeconds: 0,
       countdownPhase: null,

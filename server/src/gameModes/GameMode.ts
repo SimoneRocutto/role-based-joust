@@ -17,6 +17,7 @@ export interface GameModeOptions {
   roundCount?: number;
   roundDuration?: number;
   respawnDelayMs?: number;
+  targetScore?: number;
   [key: string]: unknown;
 }
 
@@ -44,6 +45,7 @@ export abstract class GameMode {
   multiRound: boolean = false;
   roundCount: number = 1;
   roundDuration: number | null = null; // null = no time limit
+  targetScore: number | null = null; // null = use roundCount; set to end game when a player/team reaches this score
 
   // Placement scoring
   protected placementBonuses: number[] = gameConfig.scoring.placementBonuses;
@@ -168,9 +170,11 @@ export abstract class GameMode {
   }
 
   /**
-   * Called at the end of each round
+   * Called at the end of each round.
+   * Subclasses may return { gameEnded: true } to signal the game should end
+   * (used for team target score checks computed inside onRoundEnd).
    */
-  onRoundEnd(engine: GameEngine): void {
+  onRoundEnd(engine: GameEngine): { gameEnded?: boolean } | void {
     this.eventManager.cleanup(engine, engine.gameTime);
     logger.info("MODE", `${this.name} round ended`, {
       currentRound: engine.currentRound,

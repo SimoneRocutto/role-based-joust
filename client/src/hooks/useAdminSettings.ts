@@ -27,6 +27,7 @@ export function useAdminSettings() {
   const [dominationBaseCount, setDominationBaseCount] = useState(1);
   const [deathCountRespawnTime, setDeathCountRespawnTime] = useState(5);
   const [withEarbud, setWithEarbud] = useState(false);
+  const [targetScore, setTargetScoreState] = useState(20);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -101,6 +102,9 @@ export function useAdminSettings() {
           }
           if (data.withEarbud !== undefined) {
             setWithEarbud(data.withEarbud);
+          }
+          if (data.targetScore !== undefined) {
+            setTargetScoreState(data.targetScore);
           }
         }
       })
@@ -265,6 +269,15 @@ export function useAdminSettings() {
     }
   };
 
+  const handleTargetScoreChange = async (score: number) => {
+    setTargetScoreState(score);
+    try {
+      await apiService.updateSettings({ targetScore: score });
+    } catch (err) {
+      console.error("Failed to update target score:", err);
+    }
+  };
+
   const handleShuffleTeams = async () => {
     try {
       await apiService.shuffleTeams();
@@ -321,6 +334,7 @@ export function useAdminSettings() {
     dominationBaseCount,
     deathCountRespawnTime,
     withEarbud,
+    targetScore,
     combinedModeKey,
     loading,
     error,
@@ -343,6 +357,7 @@ export function useAdminSettings() {
     handleDominationSettingChange,
     handleDeathCountRespawnChange,
     handleWithEarbudChange,
+    handleTargetScoreChange,
     handleShuffleTeams,
     handleLaunchGame,
     handleStartClick,

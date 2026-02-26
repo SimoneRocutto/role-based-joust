@@ -65,6 +65,7 @@ function createTestSettings(
     dominationBaseCount: 1,
     deathCountRespawnTime: 5,
     withEarbud: false,
+    targetScore: 20,
     ...overrides,
   };
 }

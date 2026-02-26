@@ -166,7 +166,8 @@ export class GameEngine {
     // Emit game start event
     gameEvents.emitGameStart({
       mode: this.lastModeKey,
-      totalRounds: this.currentMode?.roundCount || 1,
+      totalRounds: this.currentMode?.targetScore ? null : (this.currentMode?.roundCount || 1),
+      targetScore: this.currentMode?.targetScore ?? null,
       sensitivity: userPreferences.sensitivity,
     });
 
@@ -315,7 +316,7 @@ export class GameEngine {
     // Emit round start event
     gameEvents.emitRoundStart({
       roundNumber: this.currentRound,
-      totalRounds: this.currentMode?.roundCount || 1,
+      totalRounds: this.currentMode?.targetScore ? null : (this.currentMode?.roundCount || 1),
       gameTime: this.gameTime,
       gameEvents: this.currentMode?.getGameEvents() || [],
     });
@@ -413,9 +414,13 @@ export class GameEngine {
     // Start ready delay (disabled for a few seconds after round end)
     this.readyStateManager.startReadyDelay(this.testMode);
 
-    // Notify mode
+    // Notify mode; it may signal game end (e.g. team target score reached)
+    let shouldEndGame = condition.gameEnded;
     if (this.currentMode) {
-      this.currentMode.onRoundEnd(this);
+      const roundEndResult = this.currentMode.onRoundEnd(this);
+      if (roundEndResult && roundEndResult.gameEnded) {
+        shouldEndGame = true;
+      }
     }
 
     // Emit round end event with winner ID
@@ -430,7 +435,7 @@ export class GameEngine {
     });
 
     // Check if game is over
-    if (condition.gameEnded) {
+    if (shouldEndGame) {
       this.endGame();
     } else if (this.testMode) {
       // In test mode, auto-advance to next round for automated testing
@@ -457,12 +462,15 @@ export class GameEngine {
       return { success: false, message: "No game mode set" };
     }
 
-    const totalRounds = this.currentMode.roundCount;
-    if (this.currentRound >= totalRounds) {
-      return {
-        success: false,
-        message: "All rounds completed",
-      };
+    // Target score modes allow unlimited rounds; only enforce round limit for fixed-round modes
+    if (!this.currentMode.targetScore) {
+      const totalRounds = this.currentMode.roundCount;
+      if (this.currentRound >= totalRounds) {
+        return {
+          success: false,
+          message: "All rounds completed",
+        };
+      }
     }
 
     // Advance to next round
@@ -766,6 +774,7 @@ export class GameEngine {
       state: this.gameState,
       currentRound: this.currentRound,
       roundCount: this.currentMode?.roundCount || 1,
+      targetScore: this.currentMode?.targetScore ?? null,
       mode: this.currentMode?.name || null,
       playerCount: this.players.length,
       alivePlayers: this.players.filter((p) => p.isAlive).length,

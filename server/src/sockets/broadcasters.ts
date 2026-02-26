@@ -106,6 +106,7 @@ export function registerGameEventBroadcasters(
     const clientPayload: GameStartPayload = {
       mode: gameEngine.lastModeKey,
       totalRounds: payload.totalRounds,
+      targetScore: payload.targetScore ?? null,
       sensitivity: userPreferences.sensitivity,
       withEarbud: userPreferences.withEarbud,
     };

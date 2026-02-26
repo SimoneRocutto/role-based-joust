@@ -36,6 +36,8 @@ export class TeamManager {
   private teamCount: number = 2;
   private enabled: boolean = false;
   private selectionActive: boolean = false;
+  /** Accumulated match points per team across rounds (for target score mode) */
+  private teamMatchPoints: Map<number, number> = new Map();
 
   private constructor() {}
 
@@ -222,12 +224,51 @@ export class TeamManager {
     return this.selectionActive;
   }
 
+  // ========================================================================
+  // MATCH POINTS (target score mode)
+  // ========================================================================
+
+  /**
+   * Add match points to a team for the current round's placement.
+   */
+  addMatchPoints(teamId: number, pts: number): void {
+    const current = this.teamMatchPoints.get(teamId) ?? 0;
+    this.teamMatchPoints.set(teamId, current + pts);
+  }
+
+  /**
+   * Get accumulated match points for a team.
+   */
+  getMatchPoints(teamId: number): number {
+    return this.teamMatchPoints.get(teamId) ?? 0;
+  }
+
+  /**
+   * Get all teams sorted by match points (highest first).
+   */
+  getTeamsSortedByMatchPoints(): Array<{ teamId: number; matchPoints: number }> {
+    const result: Array<{ teamId: number; matchPoints: number }> = [];
+    for (let i = 0; i < this.teamCount; i++) {
+      result.push({ teamId: i, matchPoints: this.getMatchPoints(i) });
+    }
+    return result.sort((a, b) => b.matchPoints - a.matchPoints);
+  }
+
+  /**
+   * Reset all accumulated match points. Called when a game stops or resets.
+   */
+  resetMatchPoints(): void {
+    this.teamMatchPoints.clear();
+    logger.debug("TEAMS", "Team match points cleared");
+  }
+
   /**
    * Clear all team assignments. Called on game stop / new game.
    */
   reset(): void {
     this.assignments.clear();
     this.selectionActive = false;
+    this.resetMatchPoints();
     logger.debug("TEAMS", "Team assignments cleared");
   }
 

@@ -17,7 +17,7 @@ export interface PlayerEliminatedEvent {
 
 export interface RoundStartEvent {
   roundNumber: number;
-  totalRounds: number;
+  totalRounds: number | null;
   gameTime: number;
   gameEvents: string[];
 }
@@ -31,7 +31,8 @@ export interface RoundEndEvent {
 
 export interface GameStartEvent {
   mode: string;
-  totalRounds: number;
+  totalRounds: number | null;
+  targetScore?: number | null;
   sensitivity: string;
 }
 

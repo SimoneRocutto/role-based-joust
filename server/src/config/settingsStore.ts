@@ -41,6 +41,8 @@ export interface PersistedSettings {
   deathCountRespawnTime: number;
   /** Whether players use earbuds (enables kill sound on other phones) */
   withEarbud: boolean;
+  /** Target score for classic/role-based modes (5-50) */
+  targetScore: number;
 }
 
 class SettingsStore {

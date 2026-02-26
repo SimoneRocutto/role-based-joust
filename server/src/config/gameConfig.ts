@@ -96,6 +96,7 @@ export interface UserPreferences {
   dominationBaseCount: number; // Expected number of bases (1-3)
   deathCountRespawnTime: number; // Seconds before respawn in death count mode (3-30)
   withEarbud: boolean; // Whether players use earbuds (enables kill sound on other phones)
+  targetScore: number; // Points needed to win classic/role-based mode (5-50)
 }
 
 export interface SensitivityPreset {
@@ -162,6 +163,7 @@ const defaultPreferences: UserPreferences = {
   dominationBaseCount: 1,
   deathCountRespawnTime: 5,
   withEarbud: false,
+  targetScore: 20,
 };
 
 export const gameConfig: GameConfig = {
@@ -249,6 +251,7 @@ function persistSettings(): void {
     dominationBaseCount: userPreferences.dominationBaseCount,
     deathCountRespawnTime: userPreferences.deathCountRespawnTime,
     withEarbud: userPreferences.withEarbud,
+    targetScore: userPreferences.targetScore,
   };
   settingsStore.save(settings);
 }
@@ -414,6 +417,14 @@ export function setWithEarbudPreference(enabled: boolean): void {
   persistSettings();
 }
 
+/**
+ * Update target score preference (for classic/role-based modes).
+ */
+export function setTargetScorePreference(score: number): void {
+  userPreferences.targetScore = Math.max(5, Math.min(50, score));
+  persistSettings();
+}
+
 export function resetMovementConfig(): void {
   Object.assign(gameConfig.movement, defaultMovement);
   Object.assign(userPreferences, defaultPreferences);
@@ -468,6 +479,9 @@ export function initSettings(): void {
     }
     if (saved.withEarbud !== undefined) {
       userPreferences.withEarbud = saved.withEarbud;
+    }
+    if (saved.targetScore !== undefined) {
+      userPreferences.targetScore = saved.targetScore;
     }
   }
 }

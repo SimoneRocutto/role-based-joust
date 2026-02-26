@@ -23,6 +23,7 @@ import {
   setDominationBaseCountPreference,
   setDeathCountRespawnTimePreference,
   setWithEarbudPreference,
+  setTargetScorePreference,
   userPreferences,
 } from "@/config/gameConfig";
 import { getAvailableThemes, themeExists } from "@/config/roleThemes";
@@ -251,15 +252,19 @@ router.post(
 
     // Use persisted preferences as defaults
     const effectiveTheme = theme || userPreferences.theme;
-    const effectiveRoundCount = userPreferences.roundCount;
 
     // Create mode instance with options
     const factory = GameModeFactory.getInstance();
-    const modeOptions: Record<string, any> = {
-      roundCount: effectiveRoundCount,
-    };
+    const modeOptions: Record<string, any> = {};
     if (effectiveMode === "role-based") {
       modeOptions.theme = effectiveTheme;
+    }
+    // Pass targetScore for classic and role-based modes (target score win condition)
+    if (effectiveMode === "classic" || effectiveMode === "role-based") {
+      modeOptions.targetScore = userPreferences.targetScore;
+    } else {
+      // For other modes (death-count, domination), use roundCount as fallback
+      modeOptions.roundCount = userPreferences.roundCount;
     }
     // Pass roundDuration in ms for timed modes
     modeOptions.roundDuration = userPreferences.roundDuration * 1000;
@@ -437,6 +442,8 @@ router.get(
       deathCountRespawnTime: userPreferences.deathCountRespawnTime,
       // Earbud setting
       withEarbud: userPreferences.withEarbud,
+      // Target score (classic/role-based)
+      targetScore: userPreferences.targetScore,
       // Movement details
       movement: {
         dangerThreshold: gameConfig.movement.dangerThreshold,
@@ -483,6 +490,7 @@ router.post(
       dominationBaseCount,
       deathCountRespawnTime,
       withEarbud,
+      targetScore,
     } = req.body;
     const updates: string[] = [];
 
@@ -716,6 +724,22 @@ router.post(
       updates.push(`withEarbud=${withEarbud}`);
     }
 
+    if (targetScore !== undefined) {
+      if (
+        typeof targetScore !== "number" ||
+        targetScore < 5 ||
+        targetScore > 50
+      ) {
+        res.status(400).json({
+          success: false,
+          error: "targetScore must be a number between 5 and 50",
+        });
+        return;
+      }
+      setTargetScorePreference(targetScore);
+      updates.push(`targetScore=${targetScore}`);
+    }
+
     // Custom sensitivity values (overrides preset)
     if (dangerThreshold !== undefined || damageMultiplier !== undefined) {
       const update: Partial<{
@@ -756,6 +780,7 @@ router.post(
       dominationBaseCount: userPreferences.dominationBaseCount,
       deathCountRespawnTime: userPreferences.deathCountRespawnTime,
       withEarbud: userPreferences.withEarbud,
+      targetScore: userPreferences.targetScore,
       movement: {
         dangerThreshold: gameConfig.movement.dangerThreshold,
         damageMultiplier: gameConfig.movement.damageMultiplier,

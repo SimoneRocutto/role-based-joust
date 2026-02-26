@@ -92,7 +92,9 @@ export class RoundSetupManager {
     });
 
     const roundNumber = ctx.currentRound;
-    const totalRounds = ctx.currentMode?.roundCount || 1;
+    const totalRounds = ctx.currentMode?.targetScore
+      ? null
+      : (ctx.currentMode?.roundCount || 1);
 
     // If countdown is 0, skip directly to game start
     if (this.countdownDuration <= 0) {

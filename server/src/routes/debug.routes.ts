@@ -350,6 +350,10 @@ router.post(
     BaseManager.getInstance().reset();
     logger.info("DEBUG", "Cleared all bases for reset");
 
+    // Clear all team assignments and match points
+    TeamManager.getInstance().reset();
+    logger.info("DEBUG", "Reset team state for reset");
+
     res.json({
       success: true,
       message: "Server state reset",
