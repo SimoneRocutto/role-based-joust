@@ -5,10 +5,10 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 - PRIORITIES:
 
 - SHORT TERM PRIORITIES:
+    - rework round end/game end UI for death count and team matches in general
     - audio cues:
         - 5, 3 players remaining announcement
         - audio that comes before role description (could be a jingle)
-    - rework round end/game end UI for death count and team matches in general
     - rework domination active game UI
     - domination: allow changing base team by clicking the right color. We should have it be divided into n parts, where n is the number of teams. each of them is colored. When the red one gets pressed, red players take the base. The issue here is understanding how to still make it clear which team is currently controlling the base
     - write roles combinations for every number of players from 3 up to 16 for easy level of difficulty
@@ -20,7 +20,6 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 
 - IMPROVEMENTS:
     - victory music
-    - numbers of deaths in death count mode should be highly visible from a distance. We could also consider showing them on the player screen (or maybe showing a trophy or somthing like that on the player ahead)
     - introduce the possibility of having different background music tracks that are picked at random for a certain mode
     - teams mode should not be able to start with empty teams
     - use special animations/cool backgrounds to distinguish between speedshift slow and fast phases. Red and blue will be mistaken for red and blue team colors. We should use a different way to convey velocity info to players

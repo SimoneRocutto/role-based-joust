@@ -15,6 +15,8 @@ interface ActiveGameScreenProps {
   onTap: () => void;
   onTakeDamage: () => void;
   isDevMode: boolean;
+  isDeathCountMode: boolean;
+  medal: string | null;
 }
 
 export default function ActiveGameScreen({
@@ -25,6 +27,8 @@ export default function ActiveGameScreen({
   onTap,
   onTakeDamage,
   isDevMode,
+  isDeathCountMode,
+  medal,
 }: ActiveGameScreenProps) {
   return (
     <div className="fullscreen flex flex-col" onClick={onTap}>
@@ -48,6 +52,24 @@ export default function ActiveGameScreen({
       <div className="h-[70%] relative">
         <HealthBackground player={player} teamId={teamId} />
         <PlayerNumber number={playerNumber} />
+
+        {/* Death count mode: skull+deaths on left, medal on right */}
+        {isDeathCountMode && (
+          <div className="absolute bottom-6 left-0 right-0 flex items-center justify-between px-8 pointer-events-none">
+            <div
+              className={`text-5xl font-black drop-shadow-lg ${
+                (player.deathCount ?? 0) === 0
+                  ? "text-white/60"
+                  : "text-red-300"
+              }`}
+            >
+              💀 {player.deathCount ?? 0}
+            </div>
+            <div className="text-5xl leading-none drop-shadow-lg">
+              {medal ?? <span className="text-white/20">—</span>}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Take damage button (dev mode) */}

@@ -1,12 +1,21 @@
+import { useMemo } from "react";
 import { useGameState } from "@/hooks/useGameState";
 import { useGameStore } from "@/store/gameStore";
 import PlayerCard from "./PlayerCard";
 import CompactPlayerCard from "./CompactPlayerCard";
 import { TEAM_COLORS, getTeamName } from "@/utils/teamColors";
+import { computeDeathCountRanks } from "@/utils/ranking";
 
 function PlayerGrid() {
   const { sortedPlayers, players } = useGameState();
   const { teamsEnabled, teams } = useGameStore();
+  const modeRecap = useGameStore((state) => state.modeRecap);
+  const isDeathCountMode = modeRecap?.modeName?.includes("Death Count") ?? false;
+
+  const deathCountRanks = useMemo(
+    () => (isDeathCountMode ? computeDeathCountRanks(players) : new Map<string, number>()),
+    [isDeathCountMode, players]
+  );
 
   if (players.length === 0) {
     return (
@@ -34,7 +43,11 @@ function PlayerGrid() {
       }}
     >
       {sortedPlayers.map((player) => (
-        <PlayerCard key={player.id} player={player} />
+        <PlayerCard
+          key={player.id}
+          player={player}
+          rank={isDeathCountMode ? deathCountRanks.get(player.id) : undefined}
+        />
       ))}
     </div>
   );

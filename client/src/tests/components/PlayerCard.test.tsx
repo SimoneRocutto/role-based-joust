@@ -144,11 +144,14 @@ describe('PlayerCard', () => {
       expect(screen.queryByText('🏆')).not.toBeInTheDocument()
     })
 
-    it('does not show skull for dead player at round end', () => {
-      const player = createMockPlayer({ isAlive: false })
+    it('shows death count display (not the elimination skull) for dead player at round end', () => {
+      const player = createMockPlayer({ isAlive: false, deathCount: 2 })
       render(<PlayerCard player={player} />)
 
-      expect(screen.queryByText('💀')).not.toBeInTheDocument()
+      // Death count number is shown prominently
+      expect(screen.getByText('2')).toBeInTheDocument()
+      // Trophy is never shown in death count mode
+      expect(screen.queryByText('🏆')).not.toBeInTheDocument()
     })
 
     it('also applies to Death Count Team mode', () => {
@@ -164,6 +167,94 @@ describe('PlayerCard', () => {
       render(<PlayerCard player={player} />)
 
       expect(screen.queryByText('🏆')).not.toBeInTheDocument()
+    })
+
+    it('shows death count as 0 in muted color when player has no deaths', () => {
+      const player = createMockPlayer({ isAlive: true, deathCount: 0 })
+      render(<PlayerCard player={player} />)
+
+      expect(screen.getByText('0')).toBeInTheDocument()
+    })
+
+    it('does not show death count in lobby/pre-game state', () => {
+      act(() => { useGameStore.getState().setGameState('waiting') })
+      const player = createMockPlayer({ isAlive: true, deathCount: 0 })
+      render(<PlayerCard player={player} />)
+
+      expect(screen.queryByText('0')).not.toBeInTheDocument()
+    })
+
+    it('shows death count during countdown (previous round deaths still visible)', () => {
+      act(() => { useGameStore.getState().setGameState('countdown') })
+      const player = createMockPlayer({ isAlive: true, deathCount: 3 })
+      render(<PlayerCard player={player} />)
+
+      expect(screen.getByText('3')).toBeInTheDocument()
+    })
+  })
+
+  describe('death count mode — rank medals', () => {
+    beforeEach(() => {
+      act(() => {
+        useGameStore.getState().setModeRecap({
+          modeName: 'Death Count',
+          roundCount: 3,
+          sensitivity: 'medium',
+        })
+        useGameStore.getState().setGameState('active')
+      })
+    })
+
+    it('shows 🥇 for rank 1', () => {
+      const player = createMockPlayer({ isAlive: true })
+      render(<PlayerCard player={player} rank={1} />)
+      expect(screen.getByText('🥇')).toBeInTheDocument()
+    })
+
+    it('shows 🥈 for rank 2', () => {
+      const player = createMockPlayer({ isAlive: true })
+      render(<PlayerCard player={player} rank={2} />)
+      expect(screen.getByText('🥈')).toBeInTheDocument()
+    })
+
+    it('shows 🥉 for rank 3', () => {
+      const player = createMockPlayer({ isAlive: true })
+      render(<PlayerCard player={player} rank={3} />)
+      expect(screen.getByText('🥉')).toBeInTheDocument()
+    })
+
+    it('shows no medal for rank 4 or above', () => {
+      const player = createMockPlayer({ isAlive: true })
+      render(<PlayerCard player={player} rank={4} />)
+      expect(screen.queryByText('🥇')).not.toBeInTheDocument()
+      expect(screen.queryByText('🥈')).not.toBeInTheDocument()
+      expect(screen.queryByText('🥉')).not.toBeInTheDocument()
+    })
+
+    it('shows no medal when rank is not provided', () => {
+      const player = createMockPlayer({ isAlive: true })
+      render(<PlayerCard player={player} />)
+      expect(screen.queryByText('🥇')).not.toBeInTheDocument()
+    })
+
+    it('shows no medal when game state is not active', () => {
+      act(() => { useGameStore.getState().setGameState('round-ended') })
+      const player = createMockPlayer({ isAlive: true })
+      render(<PlayerCard player={player} rank={1} />)
+      expect(screen.queryByText('🥇')).not.toBeInTheDocument()
+    })
+
+    it('shows no medal when not in death-count mode', () => {
+      act(() => {
+        useGameStore.getState().setModeRecap({
+          modeName: 'Role Based',
+          roundCount: 3,
+          sensitivity: 'medium',
+        })
+      })
+      const player = createMockPlayer({ isAlive: true })
+      render(<PlayerCard player={player} rank={1} />)
+      expect(screen.queryByText('🥇')).not.toBeInTheDocument()
     })
   })
 

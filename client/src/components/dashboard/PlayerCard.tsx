@@ -14,9 +14,11 @@ import { useDebug } from "@/contexts/DebugContext";
 
 interface PlayerCardProps {
   player: PlayerState;
+  /** Standard competition rank in death-count mode (1 = fewest deaths). */
+  rank?: number;
 }
 
-function PlayerCard({ player }: PlayerCardProps) {
+function PlayerCard({ player, rank }: PlayerCardProps) {
   const { isRoundEnded } = useGameState();
   const teamsEnabled = useGameStore((state) => state.teamsEnabled);
   const [justBecameReady, setJustBecameReady] = useState(false);
@@ -106,6 +108,18 @@ function PlayerCard({ player }: PlayerCardProps) {
 
   const cardStyles = getCardStyles();
 
+  // Medal for top-3 standard competition rank in death-count mode (only during active game)
+  const medal =
+    isDeathCountMode && gameState === "active" && rank !== undefined
+      ? rank === 1
+        ? "🥇"
+        : rank === 2
+          ? "🥈"
+          : rank === 3
+            ? "🥉"
+            : null
+      : null;
+
   return (
     <div
       className={`
@@ -123,7 +137,7 @@ function PlayerCard({ player }: PlayerCardProps) {
           OFFLINE
         </div>
       )}
-      {/* Ready Badge (top-right corner) */}
+      {/* Ready Badge (top-right corner) — shown in lobby/pre-game/round-ended */}
       {showReadyBadge && (
         <div
           className={`
@@ -134,6 +148,12 @@ function PlayerCard({ player }: PlayerCardProps) {
           `}
         >
           ✓
+        </div>
+      )}
+      {/* Medal badge (top-right corner) — shown during active death-count game */}
+      {medal && (
+        <div className="absolute -top-4 -right-4 text-5xl leading-none">
+          {medal}
         </div>
       )}
       {/* Number + Name */}
@@ -176,23 +196,28 @@ function PlayerCard({ player }: PlayerCardProps) {
         </div>
       )}
 
-      {/* Status Icon: Trophy for winner, Skull for dead, or status effect */}
-      {/* In death count mode, skip trophy/skull since everyone respawns */}
-      {isRoundWinner && !isDeathCountMode ? (
+      {/* Center area: death count (death-count mode, active/round-ended only) or trophy/skull/status */}
+      {isDeathCountMode && (gameState === "active" || gameState === "round-ended" || gameState === "countdown") ? (
+        <div className="flex items-center justify-center gap-2 h-12">
+          <span className="text-4xl">💀</span>
+          <span
+            className={`text-5xl font-black ${
+              (player.deathCount ?? 0) === 0 ? "text-gray-500" : "text-red-400"
+            }`}
+          >
+            {player.deathCount ?? 0}
+          </span>
+        </div>
+      ) : isDeathCountMode ? (
+        <div className="h-12" />
+      ) : isRoundWinner ? (
         <div className="text-6xl">🏆</div>
-      ) : isDead && !isDeathCountMode ? (
+      ) : isDead ? (
         <div className="text-6xl">💀</div>
       ) : statusIcon ? (
         <div className="text-4xl">{statusIcon}</div>
       ) : (
-        <div className="h-12" /> // Spacer for consistent card height
-      )}
-
-      {/* Death count badge (bottom left) */}
-      {(player.deathCount ?? 0) > 0 && (
-        <div className="absolute bottom-2 left-2 text-sm text-red-400">
-          💀×{player.deathCount}
-        </div>
+        <div className="h-12" />
       )}
 
       {/* Points (bottom right, small) - show totalPoints for cumulative score */}

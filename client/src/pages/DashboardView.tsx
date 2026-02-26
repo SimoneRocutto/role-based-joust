@@ -258,7 +258,7 @@ function DashboardView() {
       {isCountdown && <CountdownDisplay />}
 
       {/* Main Content */}
-      <div className="p-6 overflow-scroll">
+      <div className="flex-1 p-6 overflow-scroll">
         {/* Admin Controls (only show in waiting/lobby) */}
         {isWaiting && (
           <div className="mb-6">

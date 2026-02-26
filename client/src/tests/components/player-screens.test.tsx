@@ -227,19 +227,28 @@ describe("CountdownScreen", () => {
 });
 
 describe("RoundEndedScreen", () => {
+  const baseRoundEndedProps = {
+    playerNumber: 1,
+    playerName: "Alice",
+    totalPoints: 0,
+    isRoundWinner: false,
+    readyEnabled: false,
+    isReady: false,
+    isShaking: false,
+    shakeProgress: 0,
+    onReadyClick: vi.fn(),
+    isDevMode: false,
+    isDeathCountMode: false,
+    deathCount: 0,
+    medal: null as string | null,
+  };
+
   it("shows winner state for round winner", () => {
     render(
       <RoundEndedScreen
-        playerNumber={1}
-        playerName="Alice"
+        {...baseRoundEndedProps}
         totalPoints={5}
         isRoundWinner={true}
-        readyEnabled={false}
-        isReady={false}
-        isShaking={false}
-        shakeProgress={0}
-        onReadyClick={vi.fn()}
-        isDevMode={false}
       />
     );
 
@@ -248,82 +257,63 @@ describe("RoundEndedScreen", () => {
   });
 
   it("shows eliminated state for non-winner", () => {
-    render(
-      <RoundEndedScreen
-        playerNumber={1}
-        playerName="Alice"
-        totalPoints={0}
-        isRoundWinner={false}
-        readyEnabled={false}
-        isReady={false}
-        isShaking={false}
-        shakeProgress={0}
-        onReadyClick={vi.fn()}
-        isDevMode={false}
-      />
-    );
+    render(<RoundEndedScreen {...baseRoundEndedProps} />);
 
     expect(screen.getByText("ELIMINATED")).toBeInTheDocument();
   });
 
   it("shows total points", () => {
-    render(
-      <RoundEndedScreen
-        playerNumber={1}
-        playerName="Alice"
-        totalPoints={10}
-        isRoundWinner={false}
-        readyEnabled={false}
-        isReady={false}
-        isShaking={false}
-        shakeProgress={0}
-        onReadyClick={vi.fn()}
-        isDevMode={false}
-      />
-    );
+    render(<RoundEndedScreen {...baseRoundEndedProps} totalPoints={10} />);
 
     expect(screen.getByText("Total: 10 pts")).toBeInTheDocument();
   });
 
   it("shows 'Get ready...' when ready is not enabled", () => {
-    render(
-      <RoundEndedScreen
-        playerNumber={1}
-        playerName="Alice"
-        totalPoints={0}
-        isRoundWinner={false}
-        readyEnabled={false}
-        isReady={false}
-        isShaking={false}
-        shakeProgress={0}
-        onReadyClick={vi.fn()}
-        isDevMode={false}
-      />
-    );
+    render(<RoundEndedScreen {...baseRoundEndedProps} />);
 
     expect(screen.getByText("Get ready...")).toBeInTheDocument();
   });
 
   it("shows ShakeToReady when ready is enabled", () => {
-    render(
-      <RoundEndedScreen
-        playerNumber={1}
-        playerName="Alice"
-        totalPoints={0}
-        isRoundWinner={false}
-        readyEnabled={true}
-        isReady={false}
-        isShaking={false}
-        shakeProgress={0}
-        onReadyClick={vi.fn()}
-        isDevMode={false}
-      />
-    );
+    render(<RoundEndedScreen {...baseRoundEndedProps} readyEnabled={true} />);
 
     expect(screen.getByTestId("shake-to-ready")).toBeInTheDocument();
     expect(screen.getByTestId("shake-label")).toHaveTextContent(
       "SHAKE FOR NEXT ROUND"
     );
+  });
+
+  describe("death count mode", () => {
+    it("shows medal and death count instead of trophy/skull", () => {
+      render(
+        <RoundEndedScreen
+          {...baseRoundEndedProps}
+          isDeathCountMode={true}
+          deathCount={2}
+          medal="🥇"
+        />
+      );
+
+      expect(screen.getByText("🥇")).toBeInTheDocument();
+      expect(screen.getByText("💀 2")).toBeInTheDocument();
+      expect(screen.queryByText("WINNER!")).not.toBeInTheDocument();
+      expect(screen.queryByText("ELIMINATED")).not.toBeInTheDocument();
+    });
+
+    it("shows no medal when rank > 3", () => {
+      render(
+        <RoundEndedScreen
+          {...baseRoundEndedProps}
+          isDeathCountMode={true}
+          deathCount={5}
+          medal={null}
+        />
+      );
+
+      expect(screen.queryByText("🥇")).not.toBeInTheDocument();
+      expect(screen.queryByText("🥈")).not.toBeInTheDocument();
+      expect(screen.queryByText("🥉")).not.toBeInTheDocument();
+    });
   });
 });
 
@@ -336,6 +326,8 @@ describe("ActiveGameScreen", () => {
     onTap: vi.fn(),
     onTakeDamage: vi.fn(),
     isDevMode: false,
+    isDeathCountMode: false,
+    medal: null as string | null,
   };
 
   it("renders health background and player number", () => {
@@ -413,6 +405,7 @@ describe("DeadScreen", () => {
         respawnCountdown={null}
         deathCount={0}
         points={5}
+        medal={null}
       />
     );
 
@@ -420,32 +413,49 @@ describe("DeadScreen", () => {
     expect(screen.getByText("Final Score: 5 pts")).toBeInTheDocument();
   });
 
-  it("shows RESPAWNING... with countdown", () => {
+  it("shows RESPAWNING... with countdown and death count", () => {
     render(
       <DeadScreen
         teamId={null}
         respawnCountdown={3000}
         deathCount={1}
         points={0}
+        medal={null}
       />
     );
 
     expect(screen.getByText("RESPAWNING...")).toBeInTheDocument();
     expect(screen.getByText("3")).toBeInTheDocument();
-    expect(screen.getByText("Deaths: 1")).toBeInTheDocument();
+    expect(screen.getByText("💀 1")).toBeInTheDocument();
   });
 
-  it("hides death count when 0", () => {
+  it("shows death count as 0 when player hasn't died yet", () => {
     render(
       <DeadScreen
         teamId={null}
         respawnCountdown={3000}
         deathCount={0}
         points={0}
+        medal={null}
       />
     );
 
-    expect(screen.queryByText(/Deaths:/)).not.toBeInTheDocument();
+    expect(screen.getByText("💀 0")).toBeInTheDocument();
+  });
+
+  it("shows medal when provided", () => {
+    render(
+      <DeadScreen
+        teamId={null}
+        respawnCountdown={3000}
+        deathCount={2}
+        points={0}
+        medal="🥈"
+      />
+    );
+
+    expect(screen.getByText("🥈")).toBeInTheDocument();
+    expect(screen.getByText("💀 2")).toBeInTheDocument();
   });
 });
 

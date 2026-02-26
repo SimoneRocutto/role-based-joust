@@ -1,6 +1,7 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useMemo } from "react";
 import { useGameState } from "@/hooks/useGameState";
 import { useGameStore } from "@/store/gameStore";
+import { computeDeathCountRanks, rankToMedal } from "@/utils/ranking";
 import { useShakeDetection } from "@/hooks/useShakeDetection";
 import { usePlayerDevice, isDevMode } from "@/hooks/usePlayerDevice";
 import { usePlayerAbility } from "@/hooks/usePlayerAbility";
@@ -26,6 +27,7 @@ function PlayerView() {
     myPlayerId,
     myPlayerNumber,
     myPlayer,
+    players,
     isWaiting,
     isPreGame,
     isCountdown,
@@ -50,6 +52,16 @@ function PlayerView() {
 
   const { isReconnecting, isGivenUp, retryOnce, resetReconnect } =
     useReconnect();
+
+  const isDeathCountMode =
+    modeRecap?.modeName?.includes("Death Count") ?? false;
+
+  // Compute this player's rank and medal in death count mode
+  const medal = useMemo(() => {
+    if (!isDeathCountMode || !myPlayerId) return null;
+    const ranks = computeDeathCountRanks(players);
+    return rankToMedal(ranks.get(myPlayerId));
+  }, [isDeathCountMode, players, myPlayerId]);
 
   const { permissionsGranted, showPortraitLock } = usePlayerDevice(myPlayerId);
   const { chargeInfo, handleTap } = usePlayerAbility(myPlayerId);
@@ -248,6 +260,9 @@ function PlayerView() {
           totalPoints={myPlayer?.totalPoints || myPlayer?.points || 0}
           isRoundWinner={isRoundWinner}
           readyEnabled={readyEnabled}
+          isDeathCountMode={isDeathCountMode}
+          deathCount={myPlayer?.deathCount ?? 0}
+          medal={medal}
           {...shakeProps}
         />
       )}
@@ -265,6 +280,8 @@ function PlayerView() {
             onTap={handleTap}
             onTakeDamage={takeDamage}
             isDevMode={isDevMode}
+            isDeathCountMode={isDeathCountMode}
+            medal={medal}
           />
         )}
 
@@ -278,6 +295,7 @@ function PlayerView() {
             respawnCountdown={respawnCountdown}
             deathCount={myPlayer?.deathCount ?? 0}
             points={myPlayer?.points || 0}
+            medal={medal}
           />
         )}
 

@@ -6,6 +6,7 @@ interface DeadScreenProps {
   respawnCountdown: number | null;
   deathCount: number;
   points: number;
+  medal: string | null;
 }
 
 export default function DeadScreen({
@@ -13,6 +14,7 @@ export default function DeadScreen({
   respawnCountdown,
   deathCount,
   points,
+  medal,
 }: DeadScreenProps) {
   const [displayRespawnSeconds, setDisplayRespawnSeconds] = useState<
     number | null
@@ -54,11 +56,16 @@ export default function DeadScreen({
         <div className="text-4xl sm:text-6xl font-bold text-gray-300 text-center">
           {displayRespawnSeconds ?? "..."}
         </div>
-        {deathCount > 0 && (
-          <div className="text-lg sm:text-xl text-gray-500">
-            Deaths: {deathCount}
-          </div>
+        {medal && (
+          <div className="text-7xl leading-none mt-2">{medal}</div>
         )}
+        <div
+          className={`text-5xl font-black ${
+            deathCount === 0 ? "text-gray-500" : "text-red-400"
+          }`}
+        >
+          💀 {deathCount}
+        </div>
       </div>
     );
   }
