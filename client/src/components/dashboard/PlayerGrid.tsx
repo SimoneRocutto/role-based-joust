@@ -17,6 +17,15 @@ function PlayerGrid() {
     [isDeathCountMode, players]
   );
 
+  // In death count mode, show fewest deaths first (rank 1 = top-left)
+  const displayPlayers = useMemo(() => {
+    if (!isDeathCountMode) return sortedPlayers;
+    return [...players].sort((a, b) => {
+      const diff = (a.deathCount ?? 0) - (b.deathCount ?? 0);
+      return diff !== 0 ? diff : a.number - b.number;
+    });
+  }, [isDeathCountMode, players, sortedPlayers]);
+
   if (players.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -42,7 +51,7 @@ function PlayerGrid() {
         gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
       }}
     >
-      {sortedPlayers.map((player) => (
+      {displayPlayers.map((player) => (
         <PlayerCard
           key={player.id}
           player={player}
