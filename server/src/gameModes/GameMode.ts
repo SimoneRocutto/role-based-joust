@@ -87,6 +87,16 @@ export abstract class GameMode {
   abstract calculateFinalScores(engine: GameEngine): ScoreEntry[];
 
   /**
+   * Optional hook for modes that track team-level scores separately from
+   * individual player totals (e.g. DeathCountMode team scoring).
+   * Called by broadcasters when building TeamScore payloads.
+   * Returns null to fall back to summing individual player scores.
+   */
+  getTeamScoreData(): Map<number, { score: number; roundPoints: number }> | null {
+    return null;
+  }
+
+  /**
    * Standard-competition ranking for a pre-sorted array of numeric scores.
    * Tied entries share the same rank; the next rank skips by group size.
    * e.g. [10, 10, 5, 3] → [1, 1, 3, 4]

@@ -9,8 +9,12 @@ const teamManager = TeamManager.getInstance();
 
 /**
  * Map ScoreEntry[] (with BasePlayer) to flat client objects with playerNumber + teamId.
+ * @param getDeathCount - Optional getter for per-player death count (used in death-tracking modes)
  */
-export function formatScoresForClient(scores: ScoreEntry[]): ClientScoreEntry[] {
+export function formatScoresForClient(
+  scores: ScoreEntry[],
+  getDeathCount?: (playerId: string) => number
+): ClientScoreEntry[] {
   return scores.map((s) => ({
     playerId: s.player.id,
     playerName: s.player.name,
@@ -20,21 +24,34 @@ export function formatScoresForClient(scores: ScoreEntry[]): ClientScoreEntry[] 
     rank: s.rank,
     status: s.status,
     teamId: teamManager.isEnabled() ? teamManager.getPlayerTeam(s.player.id) : null,
+    deathCount: getDeathCount ? getDeathCount(s.player.id) : undefined,
   }));
 }
 
 /**
  * Build team score aggregations from individual player scores.
+ *
+ * @param teamScoreData - Optional override for modes that track team-level
+ *   scores separately (e.g. DeathCountMode team scoring). When provided,
+ *   score/roundPoints come from this map instead of summing player entries.
  */
-export function buildTeamScores(scores: ClientScoreEntry[]): TeamScore[] {
+export function buildTeamScores(
+  scores: ClientScoreEntry[],
+  teamScoreData?: Map<number, { score: number; roundPoints: number }> | null
+): TeamScore[] {
   const teamCount = teamManager.getTeamCount();
   const teamScores: TeamScore[] = [];
 
   for (let i = 0; i < teamCount; i++) {
     const info = teamManager.getTeamInfo(i);
     const teamPlayers = scores.filter((s) => s.teamId === i);
-    const totalScore = teamPlayers.reduce((sum, s) => sum + s.score, 0);
-    const totalRoundPoints = teamPlayers.reduce((sum, s) => sum + s.roundPoints, 0);
+    const override = teamScoreData?.get(i);
+    const totalScore = override !== undefined
+      ? override.score
+      : teamPlayers.reduce((sum, s) => sum + s.score, 0);
+    const totalRoundPoints = override !== undefined
+      ? override.roundPoints
+      : teamPlayers.reduce((sum, s) => sum + s.roundPoints, 0);
 
     teamScores.push({
       teamId: i,

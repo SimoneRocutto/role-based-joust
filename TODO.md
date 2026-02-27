@@ -44,6 +44,7 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 - Role mode specific:
     - charges should be hidden from the screen. Actually right now we have this bug but we can bypass it. I'll leave it here as history: charges are shown on player screen even though he has no charges (0/1). Maybe this happens when being ironclad in the first round and beast/beasthunter in the second.
     - sound from dashboard with player number: it should say 7 eliminated
+    - end of round screen should show players roles next to their name. An icon/svg would be even better
 
 - New roles (E = easy, M = medium, H = hard):
     - (M) vampire: every 20 seconds he enters bloodlust -> for 5 seconds, he gains 1 point and gains 20% HP if someone else dies during this mode

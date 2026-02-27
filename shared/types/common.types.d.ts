@@ -88,6 +88,7 @@ export interface ClientScoreEntry {
   rank: number;
   status: string;
   teamId?: number | null;
+  deathCount?: number;
 }
 
 export interface TeamScore {

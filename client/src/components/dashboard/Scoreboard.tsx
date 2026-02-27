@@ -273,9 +273,9 @@ function TeamLeaderboard({
         const teamColor = TEAM_COLORS[team.teamId] || TEAM_COLORS[0]
         const isWinner = team.rank === 1
 
-        // Team deaths = sum of individual deaths in death count mode
+        // Team deaths = sum of individual deaths from server-authoritative score entries
         const teamDeaths = (team.players || []).reduce(
-          (sum, p) => sum + (deathCountMap.get(p.playerId) ?? 0),
+          (sum, p) => sum + (p.deathCount ?? deathCountMap.get(p.playerId) ?? 0),
           0
         )
 
@@ -297,13 +297,18 @@ function TeamLeaderboard({
                 </span>
               </div>
               {isDeathCountMode ? (
-                <div className="text-right">
-                  <div className={`font-black text-white text-5xl`}>
+                <div className="flex items-center gap-5">
+                  <div className="text-right">
+                    <div className="text-5xl font-black text-white">
+                      {team.score} pts
+                    </div>
+                    {isRoundEnded && team.roundPoints > 0 && (
+                      <div className="text-xl text-white/60">+{team.roundPoints} this round</div>
+                    )}
+                  </div>
+                  <div className="font-black text-white text-5xl">
                     💀 {teamDeaths}
                   </div>
-                  {isRoundEnded && (
-                    <div className="text-xl text-white/60">total deaths</div>
-                  )}
                 </div>
               ) : (
                 <div className="text-right">
@@ -325,12 +330,13 @@ function TeamLeaderboard({
               {(team.players || [])
                 .sort((a, b) => {
                   if (isDeathCountMode) {
-                    return (deathCountMap.get(a.playerId) ?? 0) - (deathCountMap.get(b.playerId) ?? 0)
+                    return (a.deathCount ?? deathCountMap.get(a.playerId) ?? 0) -
+                           (b.deathCount ?? deathCountMap.get(b.playerId) ?? 0)
                   }
                   return b.score - a.score
                 })
                 .map((player) => {
-                  const deaths = deathCountMap.get(player.playerId) ?? 0
+                  const deaths = player.deathCount ?? deathCountMap.get(player.playerId) ?? 0
                   return (
                     <div
                       key={player.playerId}

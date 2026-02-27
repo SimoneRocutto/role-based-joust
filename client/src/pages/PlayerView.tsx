@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useMemo } from "react";
 import { useGameState } from "@/hooks/useGameState";
 import { useGameStore } from "@/store/gameStore";
-import { computeDeathCountRanks, rankToMedal } from "@/utils/ranking";
+import { computeDeathCountRanks, computeTeamDeathCountRanks, rankToMedal } from "@/utils/ranking";
 import { useShakeDetection } from "@/hooks/useShakeDetection";
 import { usePlayerDevice, isDevMode } from "@/hooks/usePlayerDevice";
 import { usePlayerAbility } from "@/hooks/usePlayerAbility";
@@ -56,12 +56,20 @@ function PlayerView() {
   const isDeathCountMode =
     modeRecap?.modeName?.includes("Death Count") ?? false;
 
-  // Compute this player's rank and medal in death count mode
+  // Compute this player's rank and medal in death count mode.
+  // In team mode (teamId present in tick): rank is based on the team's total deaths
+  // so all teammates share the same medal. We rely on teamId from the tick (not teamsEnabled
+  // which may be stale if the player joined before teams were configured).
   const medal = useMemo(() => {
     if (!isDeathCountMode || !myPlayerId) return null;
+    const myTeamId = myPlayer?.teamId ?? null;
+    if (myTeamId != null) {
+      const teamRanks = computeTeamDeathCountRanks(players);
+      return rankToMedal(teamRanks.get(myTeamId));
+    }
     const ranks = computeDeathCountRanks(players);
     return rankToMedal(ranks.get(myPlayerId));
-  }, [isDeathCountMode, players, myPlayerId]);
+  }, [isDeathCountMode, players, myPlayerId, myPlayer?.teamId]);
 
   const { permissionsGranted, showPortraitLock } = usePlayerDevice(myPlayerId);
   const { chargeInfo, handleTap } = usePlayerAbility(myPlayerId);

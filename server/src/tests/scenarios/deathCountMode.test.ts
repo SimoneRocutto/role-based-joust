@@ -2,6 +2,7 @@ import { TestRunner, assert, assertEqual } from "../testRunner";
 import { GameModeFactory } from "@/factories/GameModeFactory";
 import { gameConfig, resetMovementConfig } from "@/config/gameConfig";
 import { GameEvents } from "@/utils/GameEvents";
+import { TeamManager } from "@/managers/TeamManager";
 import type { PlayerData } from "@/types/index";
 
 const RESPAWN_DELAY = gameConfig.modeDefaults.deathCount.respawnDelayMs;
@@ -205,8 +206,9 @@ runner.test("No respawn in last 5 seconds of round", (engine) => {
 // SCORING TESTS
 // ============================================================================
 
-runner.test("Players beaten scoring with ties", (engine) => {
+runner.test("Placement bonus scoring: 1st gets 5, 2nd gets 3, 3rd gets 1, rest 0", (engine) => {
   resetMovementConfig();
+  TeamManager.getInstance().configure(false, 2); // ensure no team contamination from prior tests
   const mode = GameModeFactory.getInstance().createMode("death-count", {
     roundDuration: 10000,
     roundCount: 1,
@@ -222,36 +224,33 @@ runner.test("Players beaten scoring with ties", (engine) => {
 
   engine.startGame(players);
 
-  // Alice: 2 deaths, Bob: 4, Carol: 4, Dave: 7
-  // Kill patterns to achieve this
-  const killPlayer = (id: string) => {
-    const p = engine.getPlayerById(id)!;
-    p.die(engine.gameTime);
-  };
+  // Alice: 0 deaths (rank 1 → 5 pts)
+  // Bob: 1 death (rank 2 → 3 pts)
+  // Carol: 2 deaths (rank 3 → 1 pt)
+  // Dave: 3 deaths (rank 4 → 0 pts)
+  engine.getPlayerById("p2")!.die(engine.gameTime);
+  engine.fastForward(5100); // wait for respawn
+  engine.getPlayerById("p3")!.die(engine.gameTime);
+  engine.getPlayerById("p3")!.die(engine.gameTime); // may need 2 if already respawned
 
-  // At 0ms: kill p1, p2, p3, p4
-  killPlayer("p1");
-  killPlayer("p2");
-  killPlayer("p3");
-  killPlayer("p4");
-  // All have 1 death, fast-forward past respawn
-  engine.fastForward(5100);
+  // Just kill Dave 3 times total across the round (quick approach: re-use the engine state)
+  // Actually, deaths are tracked by the mode's death counter regardless of alive state.
+  // Let's use direct die() calls — the mode counts deaths, not alive state.
+  const dave = engine.getPlayerById("p4")!;
+  dave.die(engine.gameTime);
+  dave.die(engine.gameTime);
+  dave.die(engine.gameTime);
 
-  // At ~5.1s: kill p1, p2, p3, p4 again
-  killPlayer("p1");
-  killPlayer("p2");
-  killPlayer("p3");
-  killPlayer("p4");
-  // All have 2 deaths now
+  assertEqual(mode.getPlayerDeathCount("p1"), 0, "Alice should have 0 deaths");
+  assertEqual(mode.getPlayerDeathCount("p2"), 1, "Bob should have 1 death");
 
-  // Only let Bob, Carol, Dave die more (don't kill Alice again)
-  // But we need to wait for respawn first
-  // Actually the round is 10s and we're at ~5.1s already
-  // Just verify death counts are tracked correctly
-  assertEqual(mode.getPlayerDeathCount("p1"), 2, "Alice should have 2 deaths");
-  assertEqual(mode.getPlayerDeathCount("p2"), 2, "Bob should have 2 deaths");
-  assertEqual(mode.getPlayerDeathCount("p3"), 2, "Carol should have 2 deaths");
-  assertEqual(mode.getPlayerDeathCount("p4"), 2, "Dave should have 2 deaths");
+  // Fast-forward to end of round — triggers checkWinCondition and awardRoundPoints
+  engine.fastForward(5000);
+
+  const alice = engine.getPlayerById("p1")!;
+  const bob = engine.getPlayerById("p2")!;
+  assertEqual(alice.points, 5, "Alice (rank 1) should get 5 pts");
+  assertEqual(bob.points, 3, "Bob (rank 2) should get 3 pts");
 
   mode.onGameEnd(engine);
   resetMovementConfig();
@@ -286,6 +285,7 @@ runner.test("Round ends at roundDuration", (engine) => {
 
 runner.test("Multi-round point accumulation", (engine) => {
   resetMovementConfig();
+  TeamManager.getInstance().configure(false, 2); // ensure no team contamination from prior tests
   const mode = GameModeFactory.getInstance().createMode("death-count", {
     roundDuration: 5000, // 5s round
     roundCount: 2,
@@ -309,9 +309,9 @@ runner.test("Multi-round point accumulation", (engine) => {
   // In test mode, it auto-advances to round 2
   assertEqual(engine.currentRound, 2, "Should be on round 2");
 
-  // Check that Alice got 1 point (beat 1 player) in round 1, transferred to totalPoints
+  // Check that Alice got 5 points (rank 1 placement bonus) in round 1, transferred to totalPoints
   let alice = engine.getPlayerById("p1")!;
-  assertEqual(alice.totalPoints, 1, "Alice should have 1 total point after round 1 (beat 1 player)");
+  assertEqual(alice.totalPoints, 5, "Alice should have 5 total points after round 1 (rank 1 placement bonus)");
 
   resetMovementConfig();
 });
@@ -446,6 +446,7 @@ runner.test("Death emits player:respawn-pending event", (engine) => {
 
 runner.test("calculateFinalScores sorts by totalPoints", (engine) => {
   resetMovementConfig();
+  TeamManager.getInstance().configure(false, 2); // ensure no team contamination from prior tests
   const mode = GameModeFactory.getInstance().createMode("death-count", {
     roundDuration: 5000,
     roundCount: 1,
@@ -473,13 +474,212 @@ runner.test("calculateFinalScores sorts by totalPoints", (engine) => {
   const scores = mode.calculateFinalScores(engine);
   assertEqual(scores.length, 3, "Should have 3 score entries");
 
-  // Alice: 0 deaths, beat 2 players → 2 points
-  // Bob: 1 death, beat 0 (tied with Carol) → 0 points
-  // Carol: 1 death, beat 0 (tied with Bob) → 0 points
+  // Alice: 0 deaths → rank 1 → 5 pts
+  // Bob: 1 death → rank 2 (tied with Carol) → 3 pts
+  // Carol: 1 death → rank 2 (tied with Bob) → 3 pts
   const aliceScore = scores.find((s) => s.player.id === "p1")!;
-  assertEqual(aliceScore.score, 2, "Alice should have 2 total points");
+  assertEqual(aliceScore.score, 5, "Alice should have 5 total points (rank 1)");
   assertEqual(aliceScore.rank, 1, "Alice should be rank 1");
 
+  const bobScore = scores.find((s) => s.player.id === "p2")!;
+  const carolScore = scores.find((s) => s.player.id === "p3")!;
+  assertEqual(bobScore.score, 3, "Bob should have 3 pts (tied rank 2)");
+  assertEqual(carolScore.score, 3, "Carol should have 3 pts (tied rank 2)");
+  assertEqual(bobScore.rank, 2, "Bob should be rank 2");
+  assertEqual(carolScore.rank, 2, "Carol should be rank 2 (tied)");
+
+  resetMovementConfig();
+});
+
+// ============================================================================
+// TEAM DEATH COUNT SCORING TESTS
+// ============================================================================
+
+runner.test("Team DC: team with fewest total deaths gets 5 pts", (engine) => {
+  resetMovementConfig();
+  const teamManager = TeamManager.getInstance();
+  teamManager.reset();
+  teamManager.configure(true, 2);
+
+  const mode = GameModeFactory.getInstance().createMode("death-count", {
+    roundDuration: 5000,
+    roundCount: 1,
+  });
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" }, // Red
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },   // Red
+    { id: "p3", name: "Carol", socketId: "s3", isBot: true, behavior: "idle" }, // Blue
+    { id: "p4", name: "Dave", socketId: "s4", isBot: true, behavior: "idle" },  // Blue
+  ];
+
+  engine.startGame(players);
+  teamManager.assignSequential(["p1", "p2", "p3", "p4"]);
+  // p1, p3 → team 0 (Red); p2, p4 → team 1 (Blue)
+
+  // Kill Blue team players: Carol 2 deaths, Dave 1 death → Blue total 3 deaths
+  // Red team: Alice 0 deaths, Bob 1 death → Red total 1 death
+  engine.getPlayerById("p2")!.die(engine.gameTime); // Bob (team 1) - 1 death
+  engine.getPlayerById("p4")!.die(engine.gameTime); // Dave (team 1) - 1 death
+
+  engine.fastForward(5100); // end of round → triggers awardRoundPoints
+
+  // Red (1 total death) should be rank 1 → 5 pts
+  // Blue (2 total deaths) should be rank 2 → 3 pts
+  assertEqual(teamManager.getMatchPoints(0), 5, "Red team (1 death) should get 5 pts");
+  assertEqual(teamManager.getMatchPoints(1), 3, "Blue team (2 deaths) should get 3 pts");
+
+  mode.onGameEnd(engine);
+  teamManager.reset();
+  resetMovementConfig();
+});
+
+runner.test("Team DC: tied teams share the same rank and bonus", (engine) => {
+  resetMovementConfig();
+  const teamManager = TeamManager.getInstance();
+  teamManager.reset();
+  teamManager.configure(true, 2);
+
+  const mode = GameModeFactory.getInstance().createMode("death-count", {
+    roundDuration: 5000,
+    roundCount: 1,
+  });
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+    { id: "p3", name: "Carol", socketId: "s3", isBot: true, behavior: "idle" },
+    { id: "p4", name: "Dave", socketId: "s4", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+  teamManager.assignSequential(["p1", "p2", "p3", "p4"]);
+  // p1, p3 → team 0; p2, p4 → team 1
+
+  // Each team gets exactly 1 total death → tied rank 1 → both get 5 pts
+  engine.getPlayerById("p1")!.die(engine.gameTime); // team 0: 1 death
+  engine.getPlayerById("p2")!.die(engine.gameTime); // team 1: 1 death
+
+  engine.fastForward(5100);
+
+  assertEqual(teamManager.getMatchPoints(0), 5, "Tied team 0 should get 5 pts (shared rank 1)");
+  assertEqual(teamManager.getMatchPoints(1), 5, "Tied team 1 should get 5 pts (shared rank 1)");
+
+  mode.onGameEnd(engine);
+  teamManager.reset();
+  resetMovementConfig();
+});
+
+runner.test("Team DC: match points accumulate across rounds", (engine) => {
+  resetMovementConfig();
+  const teamManager = TeamManager.getInstance();
+  teamManager.reset();
+  teamManager.configure(true, 2);
+
+  const mode = GameModeFactory.getInstance().createMode("death-count", {
+    roundDuration: 5000,
+    roundCount: 2,
+  });
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+  teamManager.assignSequential(["p1", "p2"]);
+  // p1 → team 0; p2 → team 1
+
+  // Round 1: Bob dies once → team 1 has more deaths → team 0 wins round (+5)
+  engine.getPlayerById("p2")!.die(engine.gameTime);
+  engine.fastForward(5100); // end of round 1, auto-advance to round 2
+
+  assertEqual(teamManager.getMatchPoints(0), 5, "Team 0 should have 5 pts after round 1");
+  assertEqual(teamManager.getMatchPoints(1), 3, "Team 1 should have 3 pts after round 1");
+
+  // Round 2: Alice dies once → team 1 wins round 2 (+5 to team 1)
+  engine.getPlayerById("p1")!.die(engine.gameTime);
+  engine.fastForward(5100); // end of round 2
+
+  assertEqual(teamManager.getMatchPoints(0), 8, "Team 0 should have 8 pts after round 2 (5+3)");
+  assertEqual(teamManager.getMatchPoints(1), 8, "Team 1 should have 8 pts after round 2 (3+5)");
+
+  teamManager.reset();
+  resetMovementConfig();
+});
+
+runner.test("Team DC: calculateFinalScores uses team match points", (engine) => {
+  resetMovementConfig();
+  const teamManager = TeamManager.getInstance();
+  teamManager.reset();
+  teamManager.configure(true, 2);
+
+  const mode = GameModeFactory.getInstance().createMode("death-count", {
+    roundDuration: 5000,
+    roundCount: 1,
+  });
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+  teamManager.assignSequential(["p1", "p2"]);
+  // p1 → team 0; p2 → team 1
+
+  // Bob dies → team 1 has more deaths → team 0 wins (+5)
+  engine.getPlayerById("p2")!.die(engine.gameTime);
+  engine.fastForward(5100);
+
+  const scores = mode.calculateFinalScores(engine);
+  const aliceEntry = scores.find((s) => s.player.id === "p1")!;
+  const bobEntry = scores.find((s) => s.player.id === "p2")!;
+
+  assertEqual(aliceEntry.score, 5, "Alice's score should be team 0 match points (5)");
+  assertEqual(bobEntry.score, 3, "Bob's score should be team 1 match points (3)");
+  assertEqual(aliceEntry.rank, 1, "Alice (winning team) should be rank 1");
+  assertEqual(bobEntry.rank, 2, "Bob (losing team) should be rank 2");
+
+  teamManager.reset();
+  resetMovementConfig();
+});
+
+runner.test("Team DC: getTeamScoreData returns team-level scores", (engine) => {
+  resetMovementConfig();
+  const teamManager = TeamManager.getInstance();
+  teamManager.reset();
+  teamManager.configure(true, 2);
+
+  const mode = GameModeFactory.getInstance().createMode("death-count", {
+    roundDuration: 5000,
+    roundCount: 1,
+  });
+  engine.setGameMode(mode);
+
+  const players: PlayerData[] = [
+    { id: "p1", name: "Alice", socketId: "s1", isBot: true, behavior: "idle" },
+    { id: "p2", name: "Bob", socketId: "s2", isBot: true, behavior: "idle" },
+  ];
+
+  engine.startGame(players);
+  teamManager.assignSequential(["p1", "p2"]);
+
+  engine.getPlayerById("p2")!.die(engine.gameTime);
+  engine.fastForward(5100);
+
+  const data = mode.getTeamScoreData();
+  assert(data !== null, "getTeamScoreData should return data when teams enabled");
+  assertEqual(data!.get(0)?.score, 5, "Team 0 score should be 5");
+  assertEqual(data!.get(1)?.score, 3, "Team 1 score should be 3");
+  assertEqual(data!.get(0)?.roundPoints, 5, "Team 0 round points should be 5 (this round)");
+  assertEqual(data!.get(1)?.roundPoints, 3, "Team 1 round points should be 3 (this round)");
+
+  teamManager.reset();
   resetMovementConfig();
 });
 

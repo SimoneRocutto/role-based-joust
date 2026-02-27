@@ -85,14 +85,19 @@ export function registerGameEventBroadcasters(
     const playerCount = gameEngine.players.length;
     gameEvents.emitReadyCountUpdate({ ready: 0, total: playerCount });
 
-    const scores = formatScoresForClient(payload.scores);
+    const scores = formatScoresForClient(
+      payload.scores,
+      (id) => gameEngine.currentMode?.getPlayerDeathCount(id) ?? 0
+    );
 
     const clientPayload: RoundEndPayload = {
       roundNumber: payload.roundNumber,
       scores,
       gameTime: payload.gameTime,
       winnerId: payload.winnerId || null,
-      teamScores: teamManager.isEnabled() ? buildTeamScores(scores) : null,
+      teamScores: teamManager.isEnabled()
+        ? buildTeamScores(scores, gameEngine.currentMode?.getTeamScoreData())
+        : null,
     };
     io.emit("round:end", clientPayload);
   });
@@ -120,7 +125,10 @@ export function registerGameEventBroadcasters(
     const lobbyPlayers = connectionManager.getLobbyPlayers();
     gameEvents.emitReadyCountUpdate({ ready: 0, total: lobbyPlayers.length });
 
-    const scores = formatScoresForClient(payload.scores);
+    const scores = formatScoresForClient(
+      payload.scores,
+      (id) => gameEngine.currentMode?.getPlayerDeathCount(id) ?? 0
+    );
 
     const clientPayload: GameEndPayload = {
       winner: payload.winner
@@ -132,7 +140,9 @@ export function registerGameEventBroadcasters(
         : null,
       scores,
       totalRounds: payload.totalRounds,
-      teamScores: teamManager.isEnabled() ? buildTeamScores(scores) : null,
+      teamScores: teamManager.isEnabled()
+        ? buildTeamScores(scores, gameEngine.currentMode?.getTeamScoreData())
+        : null,
     };
     io.emit("game:end", clientPayload);
   });
