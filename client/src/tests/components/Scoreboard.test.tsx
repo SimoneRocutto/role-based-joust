@@ -130,7 +130,7 @@ describe('Scoreboard', () => {
     it('shows game complete title', () => {
       render(<Scoreboard />)
 
-      expect(screen.getByText('GAME COMPLETE')).toBeInTheDocument()
+      expect(screen.getByText('GAME OVER')).toBeInTheDocument()
     })
 
     it('calls stopGame API when NEW GAME is clicked', async () => {
@@ -204,11 +204,12 @@ describe('Scoreboard', () => {
       render(<Scoreboard />)
 
       // mockScores: Alice has score=10, roundPoints=5; Bob has score=0, roundPoints=0
-      // Should show roundPoints, not total score
-      expect(screen.getByText('(+5 this round)')).toBeInTheDocument()
-      expect(screen.getByText('(+0 this round)')).toBeInTheDocument()
+      // Should show roundPoints for Alice (> 0), not total score
+      expect(screen.getByText('+5 this round')).toBeInTheDocument()
+      // Bob has roundPoints=0 so "this round" is not shown for Bob
+      expect(screen.queryByText('+0 this round')).not.toBeInTheDocument()
       // Should NOT show total score as "this round"
-      expect(screen.queryByText('(+10 this round)')).not.toBeInTheDocument()
+      expect(screen.queryByText('+10 this round')).not.toBeInTheDocument()
     })
 
     it('does not show "this round" text when game is finished', () => {
@@ -220,8 +221,8 @@ describe('Scoreboard', () => {
 
       render(<Scoreboard />)
 
-      expect(screen.queryByText('(+5 this round)')).not.toBeInTheDocument()
-      expect(screen.queryByText('(+0 this round)')).not.toBeInTheDocument()
+      expect(screen.queryByText('+5 this round')).not.toBeInTheDocument()
+      expect(screen.queryByText('+0 this round')).not.toBeInTheDocument()
     })
   })
 })

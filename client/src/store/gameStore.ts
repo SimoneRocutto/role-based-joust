@@ -339,3 +339,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       activeGameEvents: [],
     }),
 }));
+
+
+// Expose store for dev-mode testing (e.g. state injection in e2e screenshot specs)
+if (import.meta.env.DEV) {
+  (window as any).__gameStore = useGameStore;
+}

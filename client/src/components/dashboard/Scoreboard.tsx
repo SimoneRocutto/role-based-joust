@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useGameState } from '@/hooks/useGameState'
 import { useGameStore } from '@/store/gameStore'
 import { apiService } from '@/services/api'
@@ -12,22 +12,31 @@ function Scoreboard() {
     totalRounds,
     isFinished,
     isRoundEnded,
-    readyCount
+    readyCount,
   } = useGameState()
 
-  const { setGameState, setScores, updatePlayers, teamScores } = useGameStore()
+  const { setGameState, setScores, updatePlayers, teamScores, players } = useGameStore()
+  const mode = useGameStore((state) => state.mode)
+  const isDeathCountMode = mode === 'death-count'
+
   const [isResetting, setIsResetting] = useState(false)
   const [isStartingRound, setIsStartingRound] = useState(false)
 
+  // Build playerId → deathCount map from live players state (current/last round)
+  const deathCountMap = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const p of players) {
+      map.set(p.id, p.deathCount ?? 0)
+    }
+    return map
+  }, [players])
+
   const handleNextRound = async () => {
     if (isStartingRound) return
-
     setIsStartingRound(true)
     try {
       const result = await apiService.startNextRound()
-      if (!result.success) {
-        console.error('Failed to start next round:', result.error)
-      }
+      if (!result.success) console.error('Failed to start next round:', result.error)
     } catch (error) {
       console.error('Failed to start next round:', error)
     } finally {
@@ -37,13 +46,11 @@ function Scoreboard() {
 
   const handleNewGame = async () => {
     if (isResetting) return
-
     setIsResetting(true)
     try {
       await apiService.stopGame()
       setGameState('waiting')
       setScores([])
-
       const lobbyResult = await apiService.getLobbyPlayers()
       if (lobbyResult.success && lobbyResult.players.length > 0) {
         const playerStates = lobbyResult.players.map((p) => ({
@@ -72,41 +79,42 @@ function Scoreboard() {
   const hasTeamScores = teamScores && teamScores.length > 0
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       {/* Title */}
       <div className="text-center mb-8">
-        <h1 className="text-5xl font-bold mb-2">
-          {isRoundEnded
-            ? `ROUND ${currentRound} COMPLETE`
-            : 'GAME COMPLETE'}
+        <h1 className="text-7xl font-black mb-2">
+          {isRoundEnded ? `ROUND ${currentRound} COMPLETE` : 'GAME OVER'}
         </h1>
         {!isFinished && (
-          <p className="text-2xl text-gray-400">
-            {totalRounds != null ? `${totalRounds - currentRound} rounds remaining` : 'Playing to target score'}
+          <p className="text-3xl text-gray-400">
+            {totalRounds != null
+              ? `${totalRounds - currentRound} round${totalRounds - currentRound !== 1 ? 's' : ''} remaining`
+              : 'Playing to target score'}
           </p>
         )}
       </div>
 
-      {/* Team Leaderboard (if team mode) */}
-      {hasTeamScores && (
+      {/* Team Leaderboard */}
+      {hasTeamScores ? (
         <TeamLeaderboard
           teamScores={teamScores!}
           isRoundEnded={isRoundEnded}
+          isDeathCountMode={isDeathCountMode}
+          deathCountMap={deathCountMap}
         />
-      )}
-
-      {/* Individual Leaderboard (non-team mode, or below team leaderboard) */}
-      {!hasTeamScores && (
+      ) : (
         <IndividualLeaderboard
           scores={sortedScores}
           isRoundEnded={isRoundEnded}
+          isDeathCountMode={isDeathCountMode}
+          deathCountMap={deathCountMap}
         />
       )}
 
       {/* Ready count indicator for game end */}
       {isFinished && readyCount.total > 0 && (
-        <div className="text-center mb-4">
-          <p className="text-xl text-gray-300" data-testid="ready-count">
+        <div className="text-center mb-6">
+          <p className="text-2xl text-gray-300" data-testid="ready-count">
             {readyCount.ready}/{readyCount.total} players ready
             {readyCount.ready >= readyCount.total && readyCount.total >= 2
               ? ' — starting new game...'
@@ -122,10 +130,8 @@ function Scoreboard() {
             <button
               onClick={handleNextRound}
               disabled={isStartingRound}
-              className={`px-12 py-4 rounded-lg text-2xl font-bold transition-colors ${
-                isStartingRound
-                  ? 'bg-gray-600 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700'
+              className={`px-14 py-5 rounded-xl text-3xl font-black transition-colors ${
+                isStartingRound ? 'bg-gray-600 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500'
               }`}
             >
               {isStartingRound ? 'STARTING...' : 'NEXT ROUND →'}
@@ -133,10 +139,8 @@ function Scoreboard() {
             <button
               onClick={handleNewGame}
               disabled={isResetting}
-              className={`px-8 py-4 rounded-lg text-2xl font-bold transition-colors ${
-                isResetting
-                  ? 'bg-gray-600 cursor-not-allowed'
-                  : 'bg-red-600 hover:bg-red-700'
+              className={`px-10 py-5 rounded-xl text-3xl font-black transition-colors ${
+                isResetting ? 'bg-gray-600 cursor-not-allowed' : 'bg-red-700 hover:bg-red-600'
               }`}
             >
               {isResetting ? 'STOPPING...' : 'STOP GAME'}
@@ -146,10 +150,8 @@ function Scoreboard() {
           <button
             onClick={handleNewGame}
             disabled={isResetting}
-            className={`px-12 py-4 rounded-lg text-2xl font-bold transition-colors ${
-              isResetting
-                ? 'bg-gray-600 cursor-not-allowed'
-                : 'bg-green-600 hover:bg-green-700'
+            className={`px-14 py-5 rounded-xl text-3xl font-black transition-colors ${
+              isResetting ? 'bg-gray-600 cursor-not-allowed' : 'bg-green-600 hover:bg-green-500'
             }`}
           >
             {isResetting ? 'RESETTING...' : 'NEW GAME'}
@@ -160,155 +162,205 @@ function Scoreboard() {
   )
 }
 
+function rankMedal(rank: number): string {
+  if (rank === 1) return '🥇'
+  if (rank === 2) return '🥈'
+  if (rank === 3) return '🥉'
+  return ''
+}
+
 /**
- * Team leaderboard: shows team rankings with expandable individual scores.
+ * Individual leaderboard (non-team mode).
+ * In death count mode, shows deaths instead of points.
  */
-function TeamLeaderboard({
-  teamScores,
+function IndividualLeaderboard({
+  scores,
   isRoundEnded,
+  isDeathCountMode,
+  deathCountMap,
 }: {
-  teamScores: TeamScore[]
+  scores: ScoreEntry[]
   isRoundEnded: boolean
+  isDeathCountMode: boolean
+  deathCountMap: Map<string, number>
 }) {
-  const sortedTeams = [...teamScores].sort((a, b) => a.rank - b.rank)
-
   return (
-    <div className="bg-gray-800 rounded-lg p-8 mb-8">
-      <h2 className="text-3xl font-bold mb-6 flex items-center gap-3">
-        TEAM LEADERBOARD
-      </h2>
+    <div className="mb-8 space-y-3">
+      {scores.map((entry) => {
+        const isWinner = entry.rank === 1
+        const deaths = deathCountMap.get(entry.playerId) ?? 0
 
-      <div className="space-y-4">
-        {sortedTeams.map((team, index) => {
-          const teamColor = TEAM_COLORS[team.teamId] || TEAM_COLORS[0]
-          const isWinner = index === 0
-
-          return (
-            <div key={team.teamId}>
-              {/* Team row */}
-              <div
-                className={`
-                  flex items-center justify-between p-4 rounded-lg
-                  ${isWinner ? 'border-2' : 'border'}
-                `}
-                style={{
-                  borderColor: isWinner ? teamColor.primary : teamColor.border,
-                  backgroundColor: teamColor.tint,
-                }}
-              >
-                {/* Rank + Medal */}
-                <div className="flex items-center gap-4">
-                  <div className="text-4xl w-16 text-center">
-                    {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : ''}
-                  </div>
-                  <div className="text-2xl font-bold" style={{ color: teamColor.primary }}>
-                    {team.teamName}
-                  </div>
-                </div>
-
-                {/* Team Points */}
-                <div className="text-right">
-                  <div className="text-3xl font-bold" style={{ color: teamColor.primary }}>
-                    {team.score} pts
-                  </div>
-                  {isRoundEnded && (
-                    <div className="text-sm text-gray-400">
-                      (+{team.roundPoints} this round)
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Individual scores within team */}
-              <div className="ml-8 mt-2 space-y-1">
-                {(team.players || [])
-                  .sort((a, b) => b.score - a.score)
-                  .map((player) => (
-                    <div
-                      key={player.playerId}
-                      className="flex items-center justify-between px-3 py-1 rounded text-sm bg-gray-700/50"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-white">#{player.playerNumber}</span>
-                        <span className="text-gray-300">{player.playerName}</span>
-                      </div>
-                      <span className="text-gray-400">
-                        {player.score} pts
-                        {isRoundEnded && (
-                          <span className="ml-1 text-xs">
-                            (+{player.roundPoints})
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  ))}
-              </div>
+        return (
+          <div
+            key={entry.playerId}
+            className={`flex items-center gap-6 px-8 py-5 rounded-2xl ${
+              isWinner
+                ? 'bg-yellow-500/20 border-2 border-yellow-400 shadow-lg shadow-yellow-500/20'
+                : 'bg-gray-800'
+            }`}
+          >
+            {/* Medal */}
+            <div className="text-6xl w-20 text-center leading-none flex-shrink-0">
+              {rankMedal(entry.rank)}
             </div>
-          )
-        })}
-      </div>
+
+            {/* Player number + name */}
+            <div className="flex-1 flex items-center gap-5 min-w-0">
+              <span
+                className={`font-black flex-shrink-0 ${isWinner ? 'text-6xl text-yellow-300' : 'text-5xl text-white'}`}
+              >
+                #{entry.playerNumber}
+              </span>
+              <span
+                className={`font-semibold truncate ${isWinner ? 'text-4xl text-yellow-100' : 'text-3xl text-gray-200'}`}
+              >
+                {entry.playerName}
+              </span>
+            </div>
+
+            {/* Metric */}
+            {isDeathCountMode ? (
+              <div className="flex-shrink-0 text-right">
+                <div
+                  className={`font-black ${isWinner ? 'text-5xl' : 'text-4xl'} ${
+                    deaths === 0 ? 'text-gray-400' : 'text-red-400'
+                  }`}
+                >
+                  💀 {deaths}
+                </div>
+                {isRoundEnded && (
+                  <div className="text-xl text-gray-500">this round</div>
+                )}
+              </div>
+            ) : (
+              <div className="flex-shrink-0 text-right">
+                <div
+                  className={`font-black text-green-400 ${isWinner ? 'text-5xl' : 'text-4xl'}`}
+                >
+                  {entry.score} pts
+                </div>
+                {isRoundEnded && entry.roundPoints > 0 && (
+                  <div className="text-xl text-gray-400">+{entry.roundPoints} this round</div>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
 
 /**
- * Individual leaderboard (non-team mode).
+ * Team leaderboard: large colored team banners with individual breakdowns inside.
  */
-function IndividualLeaderboard({
-  scores,
+function TeamLeaderboard({
+  teamScores,
   isRoundEnded,
+  isDeathCountMode,
+  deathCountMap,
 }: {
-  scores: ScoreEntry[]
+  teamScores: TeamScore[]
   isRoundEnded: boolean
+  isDeathCountMode: boolean
+  deathCountMap: Map<string, number>
 }) {
+  const sortedTeams = [...teamScores].sort((a, b) => a.rank - b.rank)
+
   return (
-    <div className="bg-gray-800 rounded-lg p-8 mb-8">
-      <h2 className="text-3xl font-bold mb-6 flex items-center gap-3">
-        LEADERBOARD
-      </h2>
+    <div className="mb-8 space-y-4">
+      {sortedTeams.map((team) => {
+        const teamColor = TEAM_COLORS[team.teamId] || TEAM_COLORS[0]
+        const isWinner = team.rank === 1
 
-      <div className="space-y-3">
-        {scores.map((entry, index) => (
+        // Team deaths = sum of individual deaths in death count mode
+        const teamDeaths = (team.players || []).reduce(
+          (sum, p) => sum + (deathCountMap.get(p.playerId) ?? 0),
+          0
+        )
+
+        return (
           <div
-            key={entry.playerId}
-            className={`
-              flex items-center justify-between p-4 rounded-lg
-              ${index === 0 ? 'bg-yellow-600/20 border-2 border-yellow-500' : 'bg-gray-700'}
-            `}
+            key={team.teamId}
+            className={`rounded-2xl overflow-hidden ${isWinner ? 'shadow-lg' : ''}`}
+            style={{ boxShadow: isWinner ? `0 0 30px ${teamColor.primary}40` : undefined }}
           >
-            {/* Rank + Medal */}
-            <div className="flex items-center gap-4">
-              <div className="text-4xl w-16 text-center">
-                {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : ''}
+            {/* Team header banner */}
+            <div
+              className="flex items-center justify-between px-8 py-6"
+              style={{ backgroundColor: teamColor.primary + 'cc' }}
+            >
+              <div className="flex items-center gap-5">
+                <span className="text-7xl leading-none">{rankMedal(team.rank)}</span>
+                <span className="text-5xl font-black text-white drop-shadow">
+                  {team.teamName}
+                </span>
               </div>
-              <div className="text-2xl font-bold w-12">
-                {entry.rank}
-                {entry.rank === 1 ? 'st' : entry.rank === 2 ? 'nd' : entry.rank === 3 ? 'rd' : 'th'}
-              </div>
-            </div>
-
-            {/* Player Info */}
-            <div className="flex-1 flex items-center gap-4">
-              <span className="text-3xl font-bold">
-                #{entry.playerNumber}
-              </span>
-              <span className="text-2xl">{entry.playerName}</span>
-            </div>
-
-            {/* Points */}
-            <div className="text-right">
-              <div className="text-3xl font-bold text-green-400">
-                {entry.score} pts
-              </div>
-              {isRoundEnded && (
-                <div className="text-sm text-gray-400">
-                  (+{entry.roundPoints} this round)
+              {isDeathCountMode ? (
+                <div className="text-right">
+                  <div className={`font-black text-white text-5xl`}>
+                    💀 {teamDeaths}
+                  </div>
+                  {isRoundEnded && (
+                    <div className="text-xl text-white/60">total deaths</div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-right">
+                  <div className="text-5xl font-black text-white">
+                    {team.score} pts
+                  </div>
+                  {isRoundEnded && (
+                    <div className="text-xl text-white/60">+{team.roundPoints} this round</div>
+                  )}
                 </div>
               )}
             </div>
+
+            {/* Individual player rows */}
+            <div
+              className="divide-y divide-white/10"
+              style={{ backgroundColor: teamColor.tint }}
+            >
+              {(team.players || [])
+                .sort((a, b) => {
+                  if (isDeathCountMode) {
+                    return (deathCountMap.get(a.playerId) ?? 0) - (deathCountMap.get(b.playerId) ?? 0)
+                  }
+                  return b.score - a.score
+                })
+                .map((player) => {
+                  const deaths = deathCountMap.get(player.playerId) ?? 0
+                  return (
+                    <div
+                      key={player.playerId}
+                      className="flex items-center justify-between px-10 py-4"
+                    >
+                      <div className="flex items-center gap-4">
+                        <span className="text-3xl font-black text-white">
+                          #{player.playerNumber}
+                        </span>
+                        <span className="text-2xl text-white/80">{player.playerName}</span>
+                      </div>
+                      {isDeathCountMode ? (
+                        <span className={`text-2xl font-bold ${deaths === 0 ? 'text-white/40' : 'text-red-300'}`}>
+                          💀 {deaths}
+                        </span>
+                      ) : (
+                        <span className="text-2xl font-bold text-white/80">
+                          {player.score} pts
+                          {isRoundEnded && player.roundPoints > 0 && (
+                            <span className="ml-2 text-lg text-white/40">+{player.roundPoints}</span>
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  )
+                })}
+            </div>
           </div>
-        ))}
-      </div>
+        )
+      })}
     </div>
   )
 }

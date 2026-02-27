@@ -5,14 +5,12 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 - PRIORITIES:
 
 - SHORT TERM PRIORITIES:
-    - rework round end/game end UI for death count and team matches in general
+    - i like the new death count UI but if two players are tied, at the end of the game one gets gold and one silver. This shouldn't happen: both should have gold medal. funny thing is that the dashboard shows a silver medal while mobile shows gold for the same player
     - audio cues:
         - 5, 3 players remaining announcement
         - audio that comes before role description (could be a jingle)
     - rework domination active game UI
     - domination: allow changing base team by clicking the right color. We should have it be divided into n parts, where n is the number of teams. each of them is colored. When the red one gets pressed, red players take the base. The issue here is understanding how to still make it clear which team is currently controlling the base
-    - write roles combinations for every number of players from 3 up to 16 for easy level of difficulty
-    - write roles combinations for every number of players from 3 up to 16 for medium level of difficulty
     - record sounds and replace every TTS entry
     - maybe allow multiple audio tracks for background music
     - maybe implement timeshift role and the bomb/bomb faker

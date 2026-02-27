@@ -279,32 +279,30 @@ function DashboardView() {
           </>
         )}
 
-        {/* Active gameplay phases */}
-        {(isCountdown || isActive || isRoundEnded) && (
+        {/* Active gameplay phases — player grid only shown while game is running */}
+        {(isCountdown || isActive) && (
           <>
             {mode === "domination" && <BaseStatusPanel />}
             <PlayerGrid />
 
             {/* Stop Game button during active gameplay */}
-            {(isCountdown || isActive) && (
-              <div className="mt-6 text-center">
-                <button
-                  onClick={handleStopGame}
-                  disabled={isStopping}
-                  className={`px-8 py-3 rounded-lg text-lg font-bold transition-colors ${
-                    isStopping
-                      ? "bg-gray-600 cursor-not-allowed"
-                      : "bg-red-600 hover:bg-red-700"
-                  }`}
-                >
-                  {isStopping ? "STOPPING..." : "STOP GAME"}
-                </button>
-              </div>
-            )}
+            <div className="mt-6 text-center">
+              <button
+                onClick={handleStopGame}
+                disabled={isStopping}
+                className={`px-8 py-3 rounded-lg text-lg font-bold transition-colors ${
+                  isStopping
+                    ? "bg-gray-600 cursor-not-allowed"
+                    : "bg-red-600 hover:bg-red-700"
+                }`}
+              >
+                {isStopping ? "STOPPING..." : "STOP GAME"}
+              </button>
+            </div>
           </>
         )}
 
-        {/* Scoreboard (round end or game end) */}
+        {/* Scoreboard (round end or game end) — full stage, no player grid */}
         {(isRoundEnded || isFinished) && <Scoreboard />}
       </div>
 
