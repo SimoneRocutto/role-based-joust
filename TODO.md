@@ -5,7 +5,6 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 - PRIORITIES:
 
 - SHORT TERM PRIORITIES:
-    - i like the new death count UI but if two players are tied, at the end of the game one gets gold and one silver. This shouldn't happen: both should have gold medal. funny thing is that the dashboard shows a silver medal while mobile shows gold for the same player
     - audio cues:
         - 5, 3 players remaining announcement
         - audio that comes before role description (could be a jingle)

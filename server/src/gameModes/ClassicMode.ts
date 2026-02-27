@@ -182,12 +182,13 @@ export class ClassicMode extends GameMode {
       (a, b) => b.totalPoints - a.totalPoints
     );
 
+    const ranks = GameMode.tiedRanks(sorted.map((p) => p.totalPoints));
     return sorted.map((player, index) => ({
       player,
       score: player.totalPoints,
       roundPoints: player.points,
-      rank: index + 1,
-      status: index === 0 ? "Winner" : `Rank ${index + 1}`,
+      rank: ranks[index],
+      status: ranks[index] === 1 ? "Winner" : `Rank ${ranks[index]}`,
     }));
   }
 

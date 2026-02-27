@@ -86,6 +86,25 @@ export abstract class GameMode {
    */
   abstract calculateFinalScores(engine: GameEngine): ScoreEntry[];
 
+  /**
+   * Standard-competition ranking for a pre-sorted array of numeric scores.
+   * Tied entries share the same rank; the next rank skips by group size.
+   * e.g. [10, 10, 5, 3] → [1, 1, 3, 4]
+   */
+  protected static tiedRanks(scores: number[]): number[] {
+    const ranks: number[] = new Array(scores.length);
+    let rank = 1;
+    let i = 0;
+    while (i < scores.length) {
+      let j = i;
+      while (j < scores.length && scores[j] === scores[i]) j++;
+      for (let k = i; k < j; k++) ranks[k] = rank;
+      rank += j - i;
+      i = j;
+    }
+    return ranks;
+  }
+
   // ========================================================================
   // OPTIONAL HOOK METHODS - Override as needed
   // ========================================================================

@@ -47,11 +47,17 @@ export function buildTeamScores(scores: ClientScoreEntry[]): TeamScore[] {
     });
   }
 
-  // Sort by score descending and assign ranks
+  // Sort by score descending and assign tied ranks
   teamScores.sort((a, b) => b.score - a.score);
-  teamScores.forEach((ts, idx) => {
-    ts.rank = idx + 1;
-  });
+  let rank = 1;
+  let i = 0;
+  while (i < teamScores.length) {
+    let j = i;
+    while (j < teamScores.length && teamScores[j].score === teamScores[i].score) j++;
+    for (let k = i; k < j; k++) teamScores[k].rank = rank;
+    rank += j - i;
+    i = j;
+  }
 
   return teamScores;
 }

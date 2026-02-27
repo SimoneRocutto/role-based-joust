@@ -212,6 +212,10 @@ export class DominationMode extends GameMode {
       return deathA - deathB; // Fewer deaths first
     });
 
+    const teamScoreList = sorted.map(
+      (p) => this.teamScores.get(teamManager.getPlayerTeam(p.id) ?? 0) ?? 0
+    );
+    const ranks = GameMode.tiedRanks(teamScoreList);
     return sorted.map((player, index) => {
       const teamId = teamManager.getPlayerTeam(player.id) ?? 0;
       const teamScore = this.teamScores.get(teamId) ?? 0;
@@ -219,8 +223,8 @@ export class DominationMode extends GameMode {
         player,
         score: teamScore,
         roundPoints: 0,
-        rank: index + 1,
-        status: index === 0 ? "Winner" : `Rank ${index + 1}`,
+        rank: ranks[index],
+        status: ranks[index] === 1 ? "Winner" : `Rank ${ranks[index]}`,
       };
     });
   }
