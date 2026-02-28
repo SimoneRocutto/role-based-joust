@@ -122,7 +122,10 @@ function DashboardView() {
             setGameState(state.state);
             // Restore round counter
             if (state.currentRound) {
-              setRound(state.currentRound, state.roundCount || state.currentRound);
+              setRound(
+                state.currentRound,
+                state.roundCount || state.currentRound
+              );
             }
             // Restore mode name
             if (state.mode) {
@@ -228,87 +231,88 @@ function DashboardView() {
     }
 
     const thresholds = [
-      { ms: 30000, speech: "30 seconds left" },
-      { ms: 5000, speech: "5" },
-      { ms: 4000, speech: "4" },
-      { ms: 3000, speech: "3" },
-      { ms: 2000, speech: "2" },
-      { ms: 1000, speech: "1" },
-      { ms: 0, speech: "Time up!" },
+      // { ms: 30000, sfx: "30 seconds left" },
+      { ms: 5000, sfx: "numbers/5" },
+      { ms: 4000, sfx: "numbers/4" },
+      { ms: 3000, sfx: "numbers/3" },
+      { ms: 2000, sfx: "numbers/2" },
+      { ms: 1000, sfx: "numbers/1" },
+      // TODO time up sound
+      // { ms: 0, sfx: "Time up!" },
     ];
 
-    for (const { ms, speech } of thresholds) {
+    for (const { ms, sfx } of thresholds) {
       if (roundTimeRemaining <= ms && !firedThresholds.current.has(ms)) {
         firedThresholds.current.add(ms);
-        audioManager.speak(speech);
+        audioManager.playSfx(sfx);
       }
     }
   }, [roundTimeRemaining, isActive]);
 
   return (
     <DebugProvider>
-    <div
-      className="min-h-screen max-h-screen flex flex-col text-white overflow-hidden"
-      style={{ background, transition: "background 0.5s ease-in-out" }}
-    >
-      {/* Header */}
-      <GameState />
+      <div
+        className="min-h-screen max-h-screen flex flex-col text-white overflow-hidden"
+        style={{ background, transition: "background 0.5s ease-in-out" }}
+      >
+        {/* Header */}
+        <GameState />
 
-      {/* Countdown Overlay */}
-      {isCountdown && <CountdownDisplay />}
+        {/* Countdown Overlay */}
+        {isCountdown && <CountdownDisplay />}
 
-      {/* Main Content */}
-      <div className="flex-1 p-6 overflow-scroll">
-        {/* Admin Controls (only show in waiting/lobby) */}
-        {isWaiting && (
-          <div className="mb-6">
-            <AdminControls />
-          </div>
-        )}
-
-        {/* Pre-game ready phase */}
-        {isPreGame && (
-          <>
+        {/* Main Content */}
+        <div className="flex-1 p-6 overflow-scroll">
+          {/* Admin Controls (only show in waiting/lobby) */}
+          {isWaiting && (
             <div className="mb-6">
-              <PreGameControls />
+              <AdminControls />
             </div>
-            <PlayerGrid />
-            <div className="mt-6">
+          )}
+
+          {/* Pre-game ready phase */}
+          {isPreGame && (
+            <>
+              <div className="mb-6">
+                <PreGameControls />
+              </div>
+              <PlayerGrid />
+              <div className="mt-6">
+                {mode === "domination" && <BaseStatusPanel />}
+              </div>
+            </>
+          )}
+
+          {/* Active gameplay phases — player grid only shown while game is running */}
+          {(isCountdown || isActive) && (
+            <>
               {mode === "domination" && <BaseStatusPanel />}
-            </div>
-          </>
-        )}
+              <PlayerGrid />
 
-        {/* Active gameplay phases — player grid only shown while game is running */}
-        {(isCountdown || isActive) && (
-          <>
-            {mode === "domination" && <BaseStatusPanel />}
-            <PlayerGrid />
+              {/* Stop Game button during active gameplay */}
+              <div className="mt-6 text-center">
+                <button
+                  onClick={handleStopGame}
+                  disabled={isStopping}
+                  className={`px-8 py-3 rounded-lg text-lg font-bold transition-colors ${
+                    isStopping
+                      ? "bg-gray-600 cursor-not-allowed"
+                      : "bg-red-600 hover:bg-red-700"
+                  }`}
+                >
+                  {isStopping ? "STOPPING..." : "STOP GAME"}
+                </button>
+              </div>
+            </>
+          )}
 
-            {/* Stop Game button during active gameplay */}
-            <div className="mt-6 text-center">
-              <button
-                onClick={handleStopGame}
-                disabled={isStopping}
-                className={`px-8 py-3 rounded-lg text-lg font-bold transition-colors ${
-                  isStopping
-                    ? "bg-gray-600 cursor-not-allowed"
-                    : "bg-red-600 hover:bg-red-700"
-                }`}
-              >
-                {isStopping ? "STOPPING..." : "STOP GAME"}
-              </button>
-            </div>
-          </>
-        )}
+          {/* Scoreboard (round end or game end) — full stage, no player grid */}
+          {(isRoundEnded || isFinished) && <Scoreboard />}
+        </div>
 
-        {/* Scoreboard (round end or game end) — full stage, no player grid */}
-        {(isRoundEnded || isFinished) && <Scoreboard />}
+        {/* Event Feed */}
+        <EventFeed />
       </div>
-
-      {/* Event Feed */}
-      <EventFeed />
-    </div>
     </DebugProvider>
   );
 }

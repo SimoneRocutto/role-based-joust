@@ -43,6 +43,8 @@ export interface PersistedSettings {
   withEarbud: boolean;
   /** Target score for classic/role-based modes (5-50) */
   targetScore: number;
+  /** Sound locale (e.g. "it", "en") */
+  locale: string;
 }
 
 class SettingsStore {

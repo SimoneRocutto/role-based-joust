@@ -97,6 +97,7 @@ export interface UserPreferences {
   deathCountRespawnTime: number; // Seconds before respawn in death count mode (3-30)
   withEarbud: boolean; // Whether players use earbuds (enables kill sound on other phones)
   targetScore: number; // Points needed to win classic/role-based mode (5-50)
+  locale: string; // Sound locale (e.g. "it", "en")
 }
 
 export interface SensitivityPreset {
@@ -164,6 +165,7 @@ const defaultPreferences: UserPreferences = {
   deathCountRespawnTime: 5,
   withEarbud: false,
   targetScore: 20,
+  locale: "it",
 };
 
 export const gameConfig: GameConfig = {
@@ -252,6 +254,7 @@ function persistSettings(): void {
     deathCountRespawnTime: userPreferences.deathCountRespawnTime,
     withEarbud: userPreferences.withEarbud,
     targetScore: userPreferences.targetScore,
+    locale: userPreferences.locale,
   };
   settingsStore.save(settings);
 }
@@ -425,6 +428,11 @@ export function setTargetScorePreference(score: number): void {
   persistSettings();
 }
 
+export function setLocalePreference(locale: string): void {
+  userPreferences.locale = locale;
+  persistSettings();
+}
+
 export function resetMovementConfig(): void {
   Object.assign(gameConfig.movement, defaultMovement);
   Object.assign(userPreferences, defaultPreferences);
@@ -482,6 +490,9 @@ export function initSettings(): void {
     }
     if (saved.targetScore !== undefined) {
       userPreferences.targetScore = saved.targetScore;
+    }
+    if (saved.locale !== undefined) {
+      userPreferences.locale = saved.locale;
     }
   }
 }

@@ -145,26 +145,30 @@ export function useSocket() {
       }
     });
 
-    socketService.onGameStart(({ mode, totalRounds, targetScore, sensitivity, withEarbud }) => {
-      setMode(mode);
-      // Store earbud setting for kill sound logic
-      useGameStore.getState().setWithEarbud(withEarbud ?? false);
-      // Store target score
-      useGameStore.getState().setTargetScore(targetScore ?? null);
-      // Determine if teams are enabled from store
-      const teamsEnabled = useGameStore.getState().teamsEnabled;
-      useGameStore.getState().setModeRecap({
-        modeName: getModeDisplayName(mode, teamsEnabled),
-        roundCount: totalRounds ?? null,
-        sensitivity: sensitivity || "medium",
-        targetScore: targetScore ?? null,
-      });
-      // Ensure ready is enabled — no delay for pre-game, players can ready immediately
-      useGameStore.getState().setReadyEnabled(true);
-      // Reset domination state from any previous game
-      resetDominationState();
-      setGameState("pre-game");
-    });
+    socketService.onGameStart(
+      ({ mode, totalRounds, targetScore, sensitivity, withEarbud, locale }) => {
+        setMode(mode);
+        // Store earbud setting for kill sound logic
+        useGameStore.getState().setWithEarbud(withEarbud ?? false);
+        // Store target score
+        useGameStore.getState().setTargetScore(targetScore ?? null);
+        // Store locale for localized sounds
+        if (locale) useGameStore.getState().setLocale(locale);
+        // Determine if teams are enabled from store
+        const teamsEnabled = useGameStore.getState().teamsEnabled;
+        useGameStore.getState().setModeRecap({
+          modeName: getModeDisplayName(mode, teamsEnabled),
+          roundCount: totalRounds ?? null,
+          sensitivity: sensitivity || "medium",
+          targetScore: targetScore ?? null,
+        });
+        // Ensure ready is enabled — no delay for pre-game, players can ready immediately
+        useGameStore.getState().setReadyEnabled(true);
+        // Reset domination state from any previous game
+        resetDominationState();
+        setGameState("pre-game");
+      }
+    );
 
     // Round start
     socketService.onRoundStart(({ roundNumber, totalRounds, gameEvents }) => {
@@ -272,15 +276,14 @@ export function useSocket() {
     socketService.onRoleAssigned((roleData) => {
       updateRoleState(roleData);
 
-      // Wait for intro to finish, then speak
-      setTimeout(() => {
-        let speech = `You are the ${roleData.displayName}. ${roleData.description}.`;
-
+      // Wait for intro to finish, then play description
+      setTimeout(async () => {
+        let soundFileName = `roles/${roleData.name}/description`;
+        await audioManager.playSfx(soundFileName);
+        // todo add number sfx if there is
         if (roleData.targetNumber) {
-          speech += ` Your target is Player number ${roleData.targetNumber}.`;
+          audioManager.playSfx("numbers/" + roleData.targetNumber);
         }
-
-        audioManager.speak(speech);
       }, 500);
     });
 
@@ -289,6 +292,7 @@ export function useSocket() {
       const { targetChanged } = updateRoleState(roleData);
 
       if (targetChanged && roleData.targetNumber) {
+        audioManager.playSfx(`roles/${roleData.name}/new-target`);
         audioManager.speak(`New target: number ${roleData.targetNumber}`);
       }
     });
@@ -399,15 +403,19 @@ export function useSocket() {
       respawnTtsTimeouts.forEach(clearTimeout);
       respawnTtsTimeouts.length = 0;
 
-      // Play TTS countdown at 3 seconds
-      // TODO: replace with real voice
       respawnTtsTimeouts.push(
         setTimeout(() => {
           audioManager.playSfx("respawning-in", { volume: 1 });
         }, Math.max(0, respawnIn - 4000)),
         setTimeout(() => {
-          audioManager.playSfx("countdown", { volume: 0.5 });
-        }, Math.max(0, respawnIn - 3000))
+          audioManager.playSfx("numbers/3", { volume: 0.5 });
+        }, Math.max(0, respawnIn - 3000)),
+        setTimeout(() => {
+          audioManager.playSfx("numbers/2", { volume: 0.5 });
+        }, Math.max(0, respawnIn - 2000)),
+        setTimeout(() => {
+          audioManager.playSfx("numbers/1", { volume: 0.5 });
+        }, Math.max(0, respawnIn - 1000))
       );
     });
 

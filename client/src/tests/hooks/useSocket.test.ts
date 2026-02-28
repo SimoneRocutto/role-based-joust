@@ -752,7 +752,7 @@ describe("useSocket", () => {
       expect(useGameStore.getState().myTarget).toBeNull();
     });
 
-    it("speaks role description after delay", () => {
+    it("plays role description sound after delay", () => {
       renderHook(() => useSocket());
 
       act(() => {
@@ -764,17 +764,17 @@ describe("useSocket", () => {
         });
       });
 
-      // Speech happens after 500ms delay
+      // Sound plays after 500ms delay
       act(() => {
         vi.advanceTimersByTime(500);
       });
 
       expect(
-        audioSpeakCalls.some((s) => s.includes("You are the Civilian"))
+        audioPlaySfxCalls.some((c) => c.sound === "Civilian/description")
       ).toBe(true);
     });
 
-    it("includes target info in speech when available", () => {
+    it("plays role description sound for role with target", () => {
       renderHook(() => useSocket());
 
       act(() => {
@@ -793,9 +793,7 @@ describe("useSocket", () => {
       });
 
       expect(
-        audioSpeakCalls.some((s) =>
-          s.includes("Your target is Player number 5")
-        )
+        audioPlaySfxCalls.some((c) => c.sound === "Hunter/description")
       ).toBe(true);
     });
   });

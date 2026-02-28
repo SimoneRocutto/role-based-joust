@@ -24,6 +24,7 @@ import {
   setDeathCountRespawnTimePreference,
   setWithEarbudPreference,
   setTargetScorePreference,
+  setLocalePreference,
   userPreferences,
 } from "@/config/gameConfig";
 import { getAvailableThemes, themeExists } from "@/config/roleThemes";
@@ -444,6 +445,8 @@ router.get(
       withEarbud: userPreferences.withEarbud,
       // Target score (classic/role-based)
       targetScore: userPreferences.targetScore,
+      // Sound locale
+      locale: userPreferences.locale,
       // Movement details
       movement: {
         dangerThreshold: gameConfig.movement.dangerThreshold,
@@ -491,6 +494,7 @@ router.post(
       deathCountRespawnTime,
       withEarbud,
       targetScore,
+      locale,
     } = req.body;
     const updates: string[] = [];
 
@@ -738,6 +742,15 @@ router.post(
       }
       setTargetScorePreference(targetScore);
       updates.push(`targetScore=${targetScore}`);
+    }
+
+    if (locale !== undefined) {
+      if (typeof locale !== "string" || !locale.trim()) {
+        res.status(400).json({ success: false, error: "locale must be a non-empty string" });
+        return;
+      }
+      setLocalePreference(locale.trim());
+      updates.push(`locale=${locale}`);
     }
 
     // Custom sensitivity values (overrides preset)

@@ -114,6 +114,7 @@ export function registerGameEventBroadcasters(
       targetScore: payload.targetScore ?? null,
       sensitivity: userPreferences.sensitivity,
       withEarbud: userPreferences.withEarbud,
+      locale: userPreferences.locale,
     };
     io.emit("game:start", clientPayload);
   });

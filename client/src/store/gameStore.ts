@@ -56,6 +56,9 @@ interface GameStore {
   // Earbud setting (propagated from server on game:start)
   withEarbud: boolean;
 
+  // Sound locale (propagated from server on game:start)
+  locale: string;
+
   // Mode recap (shown during pre-game)
   modeRecap: {
     modeName: string;
@@ -101,6 +104,7 @@ interface GameStore {
   setTeamSelectionActive: (active: boolean) => void;
   setTeamScores: (scores: TeamScore[] | null) => void;
   setWithEarbud: (enabled: boolean) => void;
+  setLocale: (locale: string) => void;
   setModeRecap: (
     recap: { modeName: string; roundCount: number | null; sensitivity: string; targetScore?: number | null } | null
   ) => void;
@@ -154,6 +158,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   dominationTeamScores: {},
 
   withEarbud: false,
+  locale: "it",
 
   modeRecap: null,
 
@@ -274,6 +279,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setTeamScores: (scores) => set({ teamScores: scores }),
 
   setWithEarbud: (enabled) => set({ withEarbud: enabled }),
+
+  setLocale: (locale) => set({ locale }),
 
   setModeRecap: (recap) => set({ modeRecap: recap }),
 

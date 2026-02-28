@@ -131,11 +131,22 @@ class AudioManager {
   }
 
   private getSoundPath(trackPath: string) {
-    const mode = useGameStore.getState().mode;
+    const { mode, locale } = useGameStore.getState();
     const musicDir = mode ?? "general";
-    const mainPath = `${PATHS.AUDIO}/${musicDir}/${trackPath}.mp3`;
-    const fallbackPath = `${PATHS.AUDIO}/general/${trackPath}.mp3`;
-    return this.sounds.has(mainPath) ? mainPath : fallbackPath;
+
+    // 4-level fallback:
+    // 1. locales/{locale}/{mode}/{trackPath}
+    // 2. locales/{locale}/general/{trackPath}
+    // 3. {mode}/{trackPath}
+    // 4. general/{trackPath}
+    const candidates = [
+      `${PATHS.AUDIO}/locales/${locale}/${musicDir}/${trackPath}.mp3`,
+      `${PATHS.AUDIO}/locales/${locale}/general/${trackPath}.mp3`,
+      `${PATHS.AUDIO}/${musicDir}/${trackPath}.mp3`,
+      `${PATHS.AUDIO}/general/${trackPath}.mp3`,
+    ];
+
+    return candidates.find((p) => this.sounds.has(p)) ?? candidates[candidates.length - 1];
   }
 
   stopMusic() {
@@ -167,10 +178,12 @@ class AudioManager {
   }
 
   // Sound effects
+  // Returns a Promise that resolves when the sound finishes playing,
+  // so callers can await it to chain sounds sequentially.
   playSfx(
     soundName: string,
     options: { volume?: number; noRepeatFor?: number } = {}
-  ) {
+  ): Promise<void> {
     const volume = options.volume ?? AUDIO_VOLUMES.SFX;
     const fullPath = this.getSoundPath(`effects/${soundName}`);
 
@@ -180,14 +193,14 @@ class AudioManager {
     const sound = this.sounds.get(fullPath);
     if (!sound) {
       console.warn(`Sound '${soundName}' not preloaded`);
-      return;
+      return Promise.resolve();
     }
 
-    if (this.bannedSoundList.has(soundName)) return;
+    if (this.bannedSoundList.has(soundName)) return Promise.resolve();
 
     const isMuted = useAudioStore.getState().isMuted;
     sound.volume(isMuted ? 0 : volume);
-    sound.play();
+    const id = sound.play();
 
     if (options.noRepeatFor) {
       this.bannedSoundList.add(soundName);
@@ -195,6 +208,10 @@ class AudioManager {
         this.bannedSoundList.delete(soundName);
       }, options.noRepeatFor);
     }
+
+    return new Promise<void>((resolve) => {
+      sound.once("end", () => resolve(), id);
+    });
   }
 
   loop(soundName: string, options: { volume?: number } = {}) {

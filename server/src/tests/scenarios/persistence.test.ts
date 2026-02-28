@@ -66,6 +66,7 @@ function createTestSettings(
     deathCountRespawnTime: 5,
     withEarbud: false,
     targetScore: 20,
+    locale: "it",
     ...overrides,
   };
 }
