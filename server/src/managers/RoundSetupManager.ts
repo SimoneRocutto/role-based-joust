@@ -181,7 +181,7 @@ export class RoundSetupManager {
     for (const player of players) {
       const roleInfo: Record<string, any> = {
         playerId: player.id,
-        name: player.constructor.name.toLowerCase(),
+        name: player.constructor.name.replace(/([A-Z])/g, (m, _l, offset) => (offset > 0 ? '-' : '') + m.toLowerCase()),
         displayName:
           (player.constructor as any).displayName || player.constructor.name,
         description: (player.constructor as any).description || "",

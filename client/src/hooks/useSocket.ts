@@ -288,12 +288,12 @@ export function useSocket() {
     });
 
     // Role updated (mid-game changes, e.g. Executioner gets a new target)
-    socketService.onRoleUpdated((roleData) => {
+    socketService.onRoleUpdated(async (roleData) => {
       const { targetChanged } = updateRoleState(roleData);
 
       if (targetChanged && roleData.targetNumber) {
-        audioManager.playSfx(`roles/${roleData.name}/new-target`);
-        audioManager.speak(`New target: number ${roleData.targetNumber}`);
+        await audioManager.playSfx(`roles/${roleData.name}/new-target`);
+        audioManager.playSfx(`numbers/${roleData.targetNumber}`);
       }
     });
 

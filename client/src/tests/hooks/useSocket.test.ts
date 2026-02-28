@@ -757,7 +757,7 @@ describe("useSocket", () => {
 
       act(() => {
         triggerSocketEvent("role:assigned", {
-          name: "Civilian",
+          name: "civilian",
           displayName: "Civilian",
           description: "Survive to win",
           difficulty: "Easy",
@@ -770,7 +770,7 @@ describe("useSocket", () => {
       });
 
       expect(
-        audioPlaySfxCalls.some((c) => c.sound === "Civilian/description")
+        audioPlaySfxCalls.some((c) => c.sound === "roles/civilian/description")
       ).toBe(true);
     });
 
@@ -779,8 +779,8 @@ describe("useSocket", () => {
 
       act(() => {
         triggerSocketEvent("role:assigned", {
-          name: "Hunter",
-          displayName: "Hunter",
+          name: "beast-hunter",
+          displayName: "Beast Hunter",
           description: "Hunt your target",
           difficulty: "Medium",
           targetNumber: 5,
@@ -793,7 +793,7 @@ describe("useSocket", () => {
       });
 
       expect(
-        audioPlaySfxCalls.some((c) => c.sound === "Hunter/description")
+        audioPlaySfxCalls.some((c) => c.sound === "roles/beast-hunter/description")
       ).toBe(true);
     });
   });
