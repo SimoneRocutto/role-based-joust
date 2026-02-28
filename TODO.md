@@ -9,6 +9,7 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
         - 5, 3 players remaining announcement
         - audio that comes before role description (could be a jingle)
     - rework domination active game UI
+    - death count team mode active game UI should be make it easy to know which team is winning. Right now there's no info aside from team composition
     - domination: allow changing base team by clicking the right color. We should have it be divided into n parts, where n is the number of teams. each of them is colored. When the red one gets pressed, red players take the base. The issue here is understanding how to still make it clear which team is currently controlling the base
     - record sounds and replace every TTS entry
     - maybe allow multiple audio tracks for background music
