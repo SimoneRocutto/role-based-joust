@@ -1,7 +1,8 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
 // The join experience now lives inside /player.
-// Any link/QR code pointing to /join is silently redirected.
+// Any link/QR code pointing to /join is silently redirected, preserving query params.
 export default function JoinView() {
-  return <Navigate to="/player" replace />;
+  const { search } = useLocation();
+  return <Navigate to={`/player${search}`} replace />;
 }
