@@ -189,7 +189,7 @@ export const gameConfig: GameConfig = {
   },
 
   countdown: {
-    defaultDurationSeconds: 10, // Default countdown when resetting after stop
+    defaultDurationSeconds: 16, // Default countdown when resetting after stop
     goDelayMs: 1000, // 1 second "GO!" delay
   },
 

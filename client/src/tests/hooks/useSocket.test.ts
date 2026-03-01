@@ -837,10 +837,10 @@ describe("useSocket", () => {
       expect(target).toEqual({ number: 4, name: "Alice" });
     });
 
-    it("speaks new target via TTS when target changes", () => {
+    it("plays new-target sound and number sfx when target changes", async () => {
       renderHook(() => useSocket());
 
-      act(() => {
+      await act(async () => {
         triggerSocketEvent("role:updated", {
           name: "executioner",
           displayName: "Executioner",
@@ -852,7 +852,10 @@ describe("useSocket", () => {
       });
 
       expect(
-        audioSpeakCalls.some((s) => s.includes("New target: number 6"))
+        audioPlaySfxCalls.some((c) => c.sound === "roles/executioner/new-target")
+      ).toBe(true);
+      expect(
+        audioPlaySfxCalls.some((c) => c.sound === "numbers/6")
       ).toBe(true);
     });
 

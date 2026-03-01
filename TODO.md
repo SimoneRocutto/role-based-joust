@@ -5,6 +5,9 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 - PRIORITIES:
 
 - SHORT TERM PRIORITIES:
+    - fix ios wakelock
+    - sometimes phones go in dev mode, avoid this. This happens when reconnecting
+    - preloading every sfx became slow: load them on the fly
     - audio cues:
         - 5, 3 players remaining announcement
         - audio that comes before role description (could be a jingle)
