@@ -105,6 +105,29 @@ Server tests use a custom test runner (no Jest/Mocha) with `assert()`, `assertEq
 
 E2e tests auto-start both the server (port 4000) and client (port 5173) before running. They cover: game start, game mechanics, reconnection, socket events, player join, dashboard/lobby, API endpoints, and edge cases.
 
+**WIP tests:** Some server tests are intentionally commented out with `// WIP` markers. Do not remove these comments or try to fix them — they represent known incomplete features.
+
+### Visual Debugging
+
+To inspect the UI without a phone, use the `/screenshot` skill or do it manually:
+
+1. Start the dev servers (`cd server && npm run dev`, `cd client && npm run dev`)
+2. Hit `POST /api/debug/test/create` to launch a bot game instantly
+3. Write a short Playwright script in `client/e2e/` that navigates to `/dashboard` or `/player` and calls `page.screenshot()`
+4. Read the resulting PNG with the Read tool to view it
+
+Use `POST /api/debug/fastforward` to skip the countdown, and `POST /api/debug/bot/:id/command` with `{ "command": "die" }` to reach specific game states (round-ended, finished, etc.).
+
+**Shortcut:** run `/screenshot` to do all of the above automatically.
+
+### Worktree Port Isolation
+
+This repo supports parallel git worktrees. Each worktree can override ports via gitignored `.env.local` files:
+- `server/.env.local` — set `PORT` and `ALLOWED_ORIGINS`
+- `client/.env.local` — set `VITE_PORT` and `VITE_BACKEND_PORT`
+
+The sibling worktree at `../role-based-joust-king/` uses ports 4001 (server) and 5174 (client).
+
 ## Architecture Patterns
 
 ### Server Authority
