@@ -1,7 +1,11 @@
 import { useEffect, useRef, useCallback, useMemo } from "react";
 import { useGameState } from "@/hooks/useGameState";
 import { useGameStore } from "@/store/gameStore";
-import { computeDeathCountRanks, computeTeamDeathCountRanks, rankToMedal } from "@/utils/ranking";
+import {
+  computeDeathCountRanks,
+  computeTeamDeathCountRanks,
+  rankToMedal,
+} from "@/utils/ranking";
 import { useShakeDetection } from "@/hooks/useShakeDetection";
 import { usePlayerDevice, isDevMode } from "@/hooks/usePlayerDevice";
 import { usePlayerAbility } from "@/hooks/usePlayerAbility";
@@ -195,7 +199,7 @@ function PlayerView() {
     myPlayer?.statusEffects.some((e) => e.type === "Toughened") ?? false;
   useEffect(() => {
     if (isToughened) {
-      audioManager.playSfx("berserk-war-drums", { volume: 0.7 });
+      audioManager.playSfx("berserk-war-drums", { volume: 1 });
     } else {
       audioManager.stop("berserk-war-drums");
     }

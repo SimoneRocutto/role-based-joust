@@ -139,7 +139,7 @@ export const roleConfigs: RoleConfigs = {
   },
 
   ninja: {
-    dangerThresholdMultiplier: 2.0, // 2x harder to trigger damage
+    dangerThresholdMultiplier: 3, // 3x harder to trigger damage
   },
 
   masochist: {
