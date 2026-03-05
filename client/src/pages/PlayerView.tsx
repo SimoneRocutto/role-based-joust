@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useMemo } from "react";
+import { useEffect, useRef, useCallback, useMemo, useState } from "react";
 import { useGameState } from "@/hooks/useGameState";
 import { useGameStore } from "@/store/gameStore";
 import {
@@ -54,8 +54,10 @@ function PlayerView() {
     clearIdentity,
   } = useGameStore();
 
-  const { isReconnecting, isGivenUp, retryOnce, resetReconnect } =
+  const { isReconnecting, isGivenUp, isRejected, retryOnce, resetReconnect } =
     useReconnect();
+
+  const [needsAudioUnlock, setNeedsAudioUnlock] = useState(false);
 
   const isDeathCountMode =
     modeRecap?.modeName?.includes("Death Count") ?? false;
@@ -100,6 +102,9 @@ function PlayerView() {
         return;
       }
       setMyPlayer(playerId, parseInt(playerNumber));
+      // Page refresh: no user gesture has happened yet, so audio context is
+      // suspended. Show a tap overlay to unlock it before gameplay starts.
+      setNeedsAudioUnlock(true);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -238,7 +243,21 @@ function PlayerView() {
           isReconnecting={isReconnecting}
           onRetry={retryOnce}
           onRejoin={handleRejoin}
+          rejoinOnly={isRejected}
         />
+      )}
+
+      {/* Audio unlock overlay — page refresh skips user gesture, so audio
+          context is suspended until the player taps. Document-level listeners
+          in audio.ts handle the actual unlock on any touchstart/click. */}
+      {needsAudioUnlock && (
+        <div
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-gray-950 cursor-pointer select-none"
+          onClick={() => setNeedsAudioUnlock(false)}
+        >
+          <p className="text-white text-3xl font-bold">TAP TO CONTINUE</p>
+          <p className="text-gray-400 text-sm mt-3">Required to enable audio</p>
+        </div>
       )}
 
       {isWaiting && !isCountdown && (

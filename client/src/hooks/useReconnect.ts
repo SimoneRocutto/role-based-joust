@@ -6,6 +6,7 @@ import { RECONNECTION_CONFIG } from "@/utils/constants";
 export function useReconnect() {
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [isGivenUp, setIsGivenUp] = useState(false);
+  const [isRejected, setIsRejected] = useState(false);
   const [attempts, setAttempts] = useState(0);
 
   const intervalRef = useRef<number | null>(null);
@@ -101,6 +102,7 @@ export function useReconnect() {
       } else {
         // Server rejected token (e.g. server restarted) — give up immediately
         stopReconnecting();
+        setIsRejected(true);
         setIsGivenUp(true);
       }
     };
@@ -136,6 +138,7 @@ export function useReconnect() {
   const resetReconnect = useCallback(() => {
     stopRef.current();
     setIsGivenUp(false);
+    setIsRejected(false);
   }, []);
 
   // Single-shot retry: send one player:reconnect attempt immediately,
@@ -173,5 +176,5 @@ export function useReconnect() {
     }, 5000);
   }, [setReconnecting]);
 
-  return { isReconnecting, isGivenUp, attempts, retryOnce, resetReconnect };
+  return { isReconnecting, isGivenUp, isRejected, attempts, retryOnce, resetReconnect };
 }
