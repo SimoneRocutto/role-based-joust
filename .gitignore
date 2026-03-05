@@ -3,3 +3,5 @@ certs/
 
 # Persisted settings (auto-generated)
 server/data/settings.json
+
+.DS_store
