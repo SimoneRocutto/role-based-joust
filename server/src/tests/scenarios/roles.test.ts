@@ -211,6 +211,47 @@ runner.test("Beast takes less damage than normal player", (engine) => {
 // BEAST HUNTER TESTS
 // ============================================================================
 
+runner.test("BeastHunter has Beast assigned as target", (engine) => {
+  const mode = GameModeFactory.getInstance().createMode("role-based");
+  engine.setGameMode(mode);
+
+  engine.createTestGame(["beasthunter", "beast", "vampire"]);
+
+  const hunter = engine.players.find((p) => p instanceof BeastHunter);
+  const beast = engine.players.find((p) => p instanceof Beast);
+
+  assert(hunter !== undefined, "Should have beast hunter");
+  assert(beast !== undefined, "Should have beast");
+  assertEqual(
+    hunter!.targetPlayerId,
+    beast!.id,
+    "BeastHunter target should be the Beast"
+  );
+  assertEqual(
+    hunter!.targetPlayerName,
+    beast!.name,
+    "BeastHunter target name should match Beast's name"
+  );
+});
+
+runner.test(
+  "BeastHunter has no target when no Beast in game",
+  (engine) => {
+    const mode = GameModeFactory.getInstance().createMode("role-based");
+    engine.setGameMode(mode);
+
+    engine.createTestGame(["beasthunter", "vampire", "angel"]);
+
+    const hunter = engine.players.find((p) => p instanceof BeastHunter);
+    assert(hunter !== undefined, "Should have beast hunter");
+    assertEqual(
+      hunter!.targetPlayerId,
+      null,
+      "BeastHunter should have no target when no Beast is present"
+    );
+  }
+);
+
 runner.test("BeastHunter gains points when Beast dies", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);

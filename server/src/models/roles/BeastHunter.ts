@@ -22,6 +22,17 @@ export class BeastHunter extends BasePlayer {
     this.beastKillPoints = roleConfigs.beastHunter.beastKillPoints;
   }
 
+  override onPreRoundSetup(allPlayers: BasePlayer[]): void {
+    const beast = allPlayers.find((p) => p instanceof Beast);
+    if (beast) {
+      this.targetPlayerId = beast.id;
+      this.targetPlayerName = beast.name;
+    } else {
+      this.targetPlayerId = null;
+      this.targetPlayerName = null;
+    }
+  }
+
   override onInit(gameTime: number): void {
     super.onInit(gameTime);
 
