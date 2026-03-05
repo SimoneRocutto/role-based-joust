@@ -5,3 +5,6 @@ certs/
 server/data/settings.json
 
 .DS_store
+
+# Per-worktree port overrides (not committed — each worktree sets its own)
+**/.env.local

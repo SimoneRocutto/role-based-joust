@@ -1,4 +1,6 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+dotenv.config(); // loads .env
+dotenv.config({ path: ".env.local", override: true }); // per-worktree overrides (not committed)
 import { createServer as createHttpServer } from "http";
 import { createServer as createHttpsServer } from "https";
 import { readFileSync, existsSync } from "fs";

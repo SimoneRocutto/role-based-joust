@@ -107,8 +107,8 @@ runner.test("stopGame restores movement config and resets countdown", (engine) =
   );
   assertEqual(
     engine.getCountdownDuration(),
-    10,
-    "Countdown should be reset to 10 after stopGame"
+    16,
+    "Countdown should be reset to defaultDurationSeconds (16) after stopGame"
   );
 
   resetMovementConfig();
