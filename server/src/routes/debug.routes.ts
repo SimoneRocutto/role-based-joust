@@ -3,7 +3,7 @@ import { asyncHandler } from "@/middleware/errorHandler";
 import { GameEngine } from "@/managers/GameEngine";
 import { Logger } from "@/utils/Logger";
 import { ConnectionManager } from "@/managers/ConnectionManager";
-import { resetMovementConfig } from "@/config/gameConfig";
+import { resetMovementConfig, gameConfig } from "@/config/gameConfig";
 import { GameModeFactory } from "@/factories/GameModeFactory";
 import { TeamManager } from "@/managers/TeamManager";
 import { BaseManager } from "@/managers/BaseManager";
@@ -346,15 +346,14 @@ router.post(
     const gameEngine: GameEngine = req.app.locals.gameEngine;
     const connectionManager = ConnectionManager.getInstance();
 
-    // Stop any in-progress game regardless of phase (active, round-ended, pre-game, countdown, finished)
-    const stoppableStates = ["active", "round-ended", "pre-game", "countdown", "finished"];
-    if (stoppableStates.includes(gameEngine.gameState)) {
+    // Stop any in-progress game (everything except "waiting" means there's a game to stop)
+    if (gameEngine.gameState !== "waiting") {
       gameEngine.stopGame();
       logger.info("DEBUG", "Stopped game for reset");
     }
 
-    // Reset countdown duration to default (10 seconds)
-    gameEngine.setCountdownDuration(10);
+    // Reset countdown duration to default
+    gameEngine.setCountdownDuration(gameConfig.countdown.defaultDurationSeconds);
 
     // Reset movement settings to defaults (and flush persisted overrides)
     resetMovementConfig();
@@ -415,7 +414,8 @@ router.post(
 router.post(
   "/spawn-lobby-players",
   asyncHandler(async (req: Request, res: Response) => {
-    const { count = 1, names } = req.body;
+    const { count: rawCount = 1, names } = req.body;
+    const count = Math.min(Math.max(1, rawCount), 20);
     const connectionManager = ConnectionManager.getInstance();
     const io: SocketIOServer = req.app.locals.io;
 

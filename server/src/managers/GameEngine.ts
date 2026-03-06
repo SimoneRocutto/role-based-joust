@@ -808,7 +808,7 @@ export class GameEngine {
         points: p.points,
         totalPoints: p.totalPoints,
         teamId: TeamManager.getInstance().getPlayerTeam(p.id),
-        isKing: (p as any).isKing ?? undefined,
+        isKing: this.currentMode?.getIsKing(p.id) ?? false,
       })),
     };
   }
