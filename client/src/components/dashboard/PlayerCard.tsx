@@ -8,7 +8,6 @@ import {
   useGameState,
 } from "@/hooks/useGameState";
 import { STATUS_ICONS } from "@/utils/constants";
-import { getTeamColor } from "@/utils/teamColors";
 import { useGameStore } from "@/store/gameStore";
 import { useDebug } from "@/contexts/DebugContext";
 
@@ -20,9 +19,7 @@ interface PlayerCardProps {
 
 function PlayerCard({ player, rank }: PlayerCardProps) {
   const { isRoundEnded } = useGameState();
-  const teamsEnabled = useGameStore((state) => state.teamsEnabled);
   const [justBecameReady, setJustBecameReady] = useState(false);
-  const teamColor = teamsEnabled ? getTeamColor(player.teamId ?? null) : null;
 
   // Track when player becomes ready for animation
   useEffect(() => {
@@ -77,22 +74,15 @@ function PlayerCard({ player, rank }: PlayerCardProps) {
   const isDeathCountMode = modeRecap?.modeName?.includes("Death Count") ?? false;
   const showReadyBadge = player.isReady && (gameState === 'waiting' || gameState === 'pre-game' || gameState === 'round-ended');
 
-  // Build border/tint styles: round winner > team color > health-based
+  // Build border/tint styles: round winner > health-based (always)
+  // In team modes, cards are already inside a team-colored panel,
+  // so the border always reflects HP (green/yellow/red) for spectator clarity.
   const getCardStyles = () => {
     if (isRoundWinner) {
       return {
         className:
           "border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.5)] bg-yellow-500/20",
         style: {} as React.CSSProperties,
-      };
-    }
-    if (teamColor && player.isAlive) {
-      return {
-        className: "",
-        style: {
-          borderColor: teamColor.border,
-          backgroundColor: teamColor.tint,
-        } as React.CSSProperties,
       };
     }
     return {
