@@ -32,5 +32,6 @@ export function buildTickPlayerState(
       priority: effect.priority,
       timeLeft: effect.getRemainingTime(gameTime),
     })),
+    isKing: mode?.getIsKing(player.id) ?? false,
   };
 }

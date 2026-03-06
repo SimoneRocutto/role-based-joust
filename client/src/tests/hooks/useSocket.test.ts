@@ -60,6 +60,8 @@ vi.mock("@/services/socket", () => ({
       socketEventHandlers.set("base:status", cb),
     onDominationWin: (cb: Function) =>
       socketEventHandlers.set("domination:win", cb),
+    onKingCrowned: (cb: Function) =>
+      socketEventHandlers.set("king:crowned", cb),
     onError: (cb: Function) => socketEventHandlers.set("error", cb),
     sendMovement: vi.fn(),
     joinGame: vi.fn(),
@@ -411,6 +413,29 @@ describe("useSocket", () => {
       expect(state.currentRound).toBe(2);
       expect(state.totalRounds).toBe(5);
       expect(state.gameState).toBe("active");
+    });
+
+    it("resets isKing to false at round start", () => {
+      renderHook(() => useSocket());
+      useGameStore.getState().setIsKing(true);
+
+      act(() => {
+        triggerSocketEvent("round:start", { roundNumber: 2, totalRounds: 3 });
+      });
+
+      expect(useGameStore.getState().isKing).toBe(false);
+    });
+  });
+
+  describe("king:crowned event", () => {
+    it("sets isKing to true in the store", () => {
+      renderHook(() => useSocket());
+
+      act(() => {
+        triggerSocketEvent("king:crowned", {});
+      });
+
+      expect(useGameStore.getState().isKing).toBe(true);
     });
   });
 

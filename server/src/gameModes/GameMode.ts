@@ -297,6 +297,14 @@ export abstract class GameMode {
   }
 
   /**
+   * Whether a player is the king this round.
+   * Override in KingMode.
+   */
+  getIsKing(playerId: string): boolean {
+    return false;
+  }
+
+  /**
    * Validate player count for this mode
    */
   validate(

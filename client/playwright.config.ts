@@ -2,9 +2,16 @@ import { defineConfig, devices } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Load per-worktree port overrides (.env.local is gitignored)
+dotenv.config({ path: path.resolve(__dirname, '.env.local') });
+
+const clientPort = parseInt(process.env.VITE_PORT || '5173');
+const backendPort = parseInt(process.env.VITE_BACKEND_PORT || '4000');
 
 // Check if SSL certificates exist (same logic as vite.config.js and server.ts)
 const certsDir = path.resolve(__dirname, '../certs');
@@ -58,7 +65,7 @@ export default defineConfig({
   // Shared settings for all projects
   use: {
     // Base URL for the client (HTTP or HTTPS based on cert presence)
-    baseURL: `${protocol}://localhost:5173`,
+    baseURL: `${protocol}://localhost:${clientPort}`,
 
     // Ignore HTTPS errors (self-signed certs)
     ignoreHTTPSErrors: true,
@@ -105,13 +112,13 @@ export default defineConfig({
   webServer: [
     {
       command: 'cd ../server && npm run dev',
-      port: 4000,
+      port: backendPort,
       reuseExistingServer: !process.env.CI,
       timeout: 30000,
     },
     {
       command: 'npm run dev',
-      port: 5173,
+      port: clientPort,
       reuseExistingServer: !process.env.CI,
       timeout: 30000,
     },

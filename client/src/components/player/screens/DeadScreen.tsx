@@ -7,6 +7,7 @@ interface DeadScreenProps {
   deathCount: number;
   points: number;
   medal: string | null;
+  isKing: boolean;
 }
 
 export default function DeadScreen({
@@ -15,6 +16,7 @@ export default function DeadScreen({
   deathCount,
   points,
   medal,
+  isKing,
 }: DeadScreenProps) {
   const [displayRespawnSeconds, setDisplayRespawnSeconds] = useState<
     number | null
@@ -76,6 +78,7 @@ export default function DeadScreen({
       style={{ backgroundColor: bgColor }}
     >
       <div className="text-9xl">&#128128;</div>
+      {isKing && <div className="text-8xl leading-none">&#128081;</div>}
       <div className="text-5xl font-bold text-gray-500">ELIMINATED</div>
       <div className="text-xl text-gray-600">
         Final Score: {points} pts

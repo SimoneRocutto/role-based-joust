@@ -53,6 +53,7 @@ export interface PlayerState {
   isReady?: boolean;
   isConnected?: boolean;
   teamId?: number | null;
+  isKing?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -73,6 +74,7 @@ export interface GameTickPlayerState {
   disconnectedAt: number | null;
   graceTimeRemaining: number;
   statusEffects: StatusEffectInfo[];
+  isKing?: boolean;
 }
 
 // ---------------------------------------------------------------------------

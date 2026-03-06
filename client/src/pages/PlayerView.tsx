@@ -54,6 +54,11 @@ function PlayerView() {
     clearIdentity,
   } = useGameStore();
 
+  // Derive isKing from tick data so it self-heals after a reconnect.
+  // The king:crowned socket event still provides the initial immediate notification,
+  // but tick data (refreshed every 100ms) is the authoritative source of truth.
+  const isKing = myPlayer?.isKing ?? false;
+
   const { isReconnecting, isGivenUp, isRejected, retryOnce, resetReconnect } =
     useReconnect();
 
@@ -313,6 +318,7 @@ function PlayerView() {
             isDevMode={isDevMode}
             isDeathCountMode={isDeathCountMode}
             medal={medal}
+            isKing={isKing}
           />
         )}
 
@@ -327,6 +333,7 @@ function PlayerView() {
             deathCount={myPlayer?.deathCount ?? 0}
             points={myPlayer?.points || 0}
             medal={medal}
+            isKing={isKing}
           />
         )}
 

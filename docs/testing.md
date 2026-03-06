@@ -153,6 +153,59 @@ E2e tests use `POST /api/debug/reset` to clear all server state between tests. T
 
 ---
 
+## Visual Debugging (Screenshots)
+
+Use Playwright to take screenshots of the game UI in specific states. The server must be running with `NODE_ENV=development` to enable debug endpoints.
+
+### Starting servers for manual Playwright scripts
+
+```bash
+# Server (port 4001 in the king worktree, 4000 in main)
+NODE_ENV=development npm run dev
+
+# Client — must pass env vars explicitly so Vite config picks them up
+VITE_BACKEND_PORT=4001 VITE_PORT=5174 npm run dev
+```
+
+> **Note:** Vite's `vite.config.js` reads `process.env.VITE_BACKEND_PORT` at config-evaluation time, not from `.env.local`. Always pass it explicitly on the command line when starting the dev server from a script or shell.
+
+### Creating a bot game that stays alive long enough to screenshot
+
+Bots die within ~500ms from random movement. To keep them alive, fire all `still` commands in parallel **without awaiting** the create response — this beats the first 100ms tick:
+
+```typescript
+const createPromise = post("/debug/test/create", { mode: "long-live-the-king", roles: [...], teams: true });
+// Fire stills without awaiting create — races the first tick
+const stillPromises = [0,1,2,3].map(i => post(`/debug/bot/bot-${i}/command`, { command: "still" }));
+await Promise.all([createPromise, ...stillPromises]);
+```
+
+### Injecting state via `window.__gameStore`
+
+The Zustand store is exposed on `window.__gameStore` in dev mode (`import.meta.env.DEV`). Use it in `page.evaluate` to force specific UI states for visual verification:
+
+```typescript
+// Force a player to show as king (to verify crown rendering)
+await page.evaluate(() => {
+  (window as any).__gameStore?.getState?.()?.setIsKing(true);
+});
+await page.waitForTimeout(200); // let React re-render
+await page.screenshot({ path: "/tmp/with-crown.png" });
+```
+
+This is intentional — see `client/src/store/gameStore.ts` bottom of file.
+
+### Launch route and team settings
+
+`POST /api/game/launch` reads team config from **persisted settings**, not from the request body. To launch with teams, set them first:
+
+```typescript
+await post("/game/settings", { gameMode: "long-live-the-king", teamsEnabled: true, teamCount: 2 });
+await post("/game/launch", {});
+```
+
+---
+
 ## Debugging Failed Tests
 
 If a test fails:

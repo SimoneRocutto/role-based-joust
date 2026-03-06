@@ -45,7 +45,7 @@ export default defineConfig({
         }
     },
     server: {
-        port: 5173,
+        port: parseInt(process.env.VITE_PORT || '5173'),
         host: true, // Listen on all addresses for mobile access
         // Enable HTTPS if certificates exist (required for iOS accelerometer)
         https: certsExist ? {

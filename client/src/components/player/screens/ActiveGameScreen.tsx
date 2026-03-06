@@ -17,6 +17,7 @@ interface ActiveGameScreenProps {
   isDevMode: boolean;
   isDeathCountMode: boolean;
   medal: string | null;
+  isKing: boolean;
 }
 
 export default function ActiveGameScreen({
@@ -29,6 +30,7 @@ export default function ActiveGameScreen({
   isDevMode,
   isDeathCountMode,
   medal,
+  isKing,
 }: ActiveGameScreenProps) {
   return (
     <div className="fullscreen flex flex-col" onClick={onTap}>
@@ -52,6 +54,11 @@ export default function ActiveGameScreen({
       <div className="h-[70%] relative">
         <HealthBackground player={player} teamId={teamId} />
         <PlayerNumber number={playerNumber} />
+        {isKing && (
+          <div className="absolute left-0 right-0 flex justify-center" style={{ top: "60%" }}>
+            <span className="text-7xl leading-none drop-shadow-lg">&#128081;</span>
+          </div>
+        )}
 
         {/* Death count mode: skull+deaths on left, medal on right */}
         {isDeathCountMode && (
