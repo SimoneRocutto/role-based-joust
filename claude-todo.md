@@ -29,9 +29,9 @@ Lightweight task management for Claude instances. Each task has a unique ID, pri
 
 | ID | Title | Priority | Status | Tags | Detail |
 |----|-------|----------|--------|------|--------|
-| UX-001 | Phone active: label the big number + show objective text | P0 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-001.md) |
-| UX-002 | Phone active: add HP bar | P0 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-002.md) |
-| UX-003 | Dashboard active: add HP bars to player cards | P0 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-003.md) |
+| UX-001 | Phone active: consider reducing number size in non-role modes | P2 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-001.md) |
+| UX-002 | Phone active: HP display | N/A | DONE | | [detail](claude-tasks/UX-002.md) |
+| UX-003 | Dashboard team-mode: add HP info to player chips | P1 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-003.md) |
 | UX-004 | Dashboard: differentiate active-round from pre-game | P1 | TODO | | [detail](claude-tasks/UX-004.md) |
 | UX-005 | Dashboard: round-end summary overlay | P1 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-005.md) |
 | UX-006 | Phone dead/round-end: fix "Final Score" label + add context | P1 | TODO | | [detail](claude-tasks/UX-006.md) |
@@ -71,9 +71,8 @@ Tasks requiring user decisions before work can begin. Claude: report these to th
 
 | ID | Open Question |
 |----|---------------|
-| UX-001 | What should the big number represent? Remove it, relabel as "Player #N", or replace with something else? |
-| UX-002 | HP bar visual style: bar along edge, background color gradient, or numeric display? |
-| UX-003 | Dashboard HP bars: inline within existing player cards, or redesigned card layout? |
+| UX-001 | In non-role modes (domination, death-count), should the big player number be smaller to free space for mode-specific info? Or keep consistent across all modes? |
+| UX-003 | Team-mode dashboard: how to show HP on player chips? Color chip background, add thin HP bar, use mini-cards, or color the left-border? How to show dead state? |
 | UX-005 | Round-end overlay content: minimal banner ("ROUND OVER") or full summary (winner + scores + standings)? Use classic-teams round-end as template? |
 | UX-010 | Cascade death: what should the phone show? Skull + "YOUR KING DIED"? What should dashboard show? Team panel grays out? Overlay banner? |
 | UX-012 | Roles are SECRET — phone faces opponents, so role name CANNOT go on phone. Should roles appear on the dashboard instead? When? (always / on death / never / configurable) |

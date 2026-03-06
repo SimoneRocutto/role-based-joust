@@ -281,6 +281,50 @@ router.post(
 );
 
 /**
+ * POST /api/debug/player/:playerId/damage
+ * Apply partial damage to a player (works on any player, not just bots).
+ * Body: { amount: number } — damage amount (default 50, i.e. ~half HP).
+ * Used by screenshot scripts to capture mid-HP states (background color gradient).
+ */
+router.post(
+  "/player/:playerId/damage",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { playerId } = req.params;
+    const { amount = 50 } = req.body;
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
+
+    if (!gameEngine.isActive()) {
+      res.status(400).json({ success: false, error: "Game is not active" });
+      return;
+    }
+
+    const player = gameEngine.getPlayerById(playerId);
+    if (!player) {
+      res.status(404).json({ success: false, error: "Player not found" });
+      return;
+    }
+    if (!player.isAlive) {
+      res.status(400).json({ success: false, error: "Player is already dead" });
+      return;
+    }
+
+    const hpBefore = player.hp;
+    player.takeDamage(amount, gameEngine.gameTime);
+
+    logger.info("DEBUG", `Damaged player ${playerId} by ${amount} (${hpBefore} -> ${player.hp})`);
+
+    res.json({
+      success: true,
+      playerId,
+      playerName: player.name,
+      hpBefore,
+      hpAfter: player.hp,
+      isAlive: player.isAlive,
+    });
+  })
+);
+
+/**
  * POST /api/debug/player/:playerId/kill
  * Kill a player for E2E testing (works on any player, not just bots)
  */

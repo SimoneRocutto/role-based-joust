@@ -9,9 +9,35 @@ actually happening? would a first-time player understand what to do next?).
 
 - **Dashboard**: projected on a large screen (TV/projector), viewed from 3–5 meters by
   spectators and the admin. Text must be large and high-contrast. Dense small text fails.
-- **Phone**: held in one hand, glanced at quickly (< 1 second) during active gameplay.
-  Critical state must be scannable instantly. Fine print fails.
+- **Phone**: strapped to a player's CHEST, screen facing OUTWARD toward other players.
+  The player wearing the phone CANNOT easily see their own screen. Opponents and spectators
+  CAN see it. The phone UI is designed for people LOOKING AT the player, like a jersey badge.
+  Critical state must be scannable instantly by opponents from across the room.
 - **Both**: some rules apply to both contexts.
+
+## Game context for auditors
+
+These are existing visual systems. Do NOT flag them as missing.
+
+- **Phone HP indicator (battery-style)**: the phone active screen uses a full-screen
+  background color fill that acts like a battery gauge. At 100% HP, the screen is fully
+  green. As HP drops, the colored fill shrinks from top to bottom and shifts from green
+  to yellow to red. At 25% HP, only the bottom quarter is filled in red/salmon. The "N%"
+  text in the top-right corner shows the numeric HP value. Screenshots captured at 100% HP
+  will show a solid green screen — this is expected behavior, NOT a missing HP indicator.
+- **Dashboard HP indicator (card border color)**: in solo modes, each player card has a
+  colored border that shifts green → yellow → red as HP decreases. At full HP the border
+  is bright green; at low HP it turns red/pink. Dead players show a skull overlay.
+  Screenshots at 100% HP will show all-green borders — this is expected, NOT missing HP.
+- **Player number (big number on phone)**: the large centered number is the player's slot
+  number (join order). It is intentionally large because phones are chest-mounted and
+  opponents need to identify players from across the room. In role-based mode, players
+  receive instructions like "your sibling is player #3" — the big number is how they
+  find that player. Do NOT flag this as "unlabeled" or "opaque."
+- **Phones face opponents**: because phones face outward, NEVER recommend showing secret
+  information (role names, ability indicators, private strategy) on the phone screen.
+  Roles are SECRET in role-based mode. The king crown IS shown because king identity is
+  public. Team color on phone is fine (public info).
 
 Rules are grouped into three sections. The audit script passes only the relevant section(s)
 to the model based on the viewport type of each screenshot.

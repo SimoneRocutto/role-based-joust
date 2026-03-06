@@ -159,10 +159,20 @@ async function checkServer() {
 
     console.log(`\n  Player labels: PlayerA=${labelA}, PlayerB=${labelB}\n`);
 
-    // ── ACTIVE GAME ───────────────────────────────────────────────────────────
-    await shot(dash, "05_dash_active.png", "Active game — dashboard", "dashboard 1280x800");
-    await shot(phones[0].page, "06_phoneA_active.png", "Active — PlayerA", "phone 390x844", labelA);
-    await shot(phones[1].page, "07_phoneB_active.png", "Active — PlayerB", "phone 390x844", labelB);
+    // ── ACTIVE GAME (full HP) ──────────────────────────────────────────────────
+    await shot(dash, "05_dash_active.png", "Active game — dashboard (full HP)", "dashboard 1280x800");
+    await shot(phones[0].page, "06_phoneA_active.png", "Active — PlayerA (full HP)", "phone 390x844", labelA);
+    await shot(phones[1].page, "07_phoneB_active.png", "Active — PlayerB (full HP)", "phone 390x844", labelB);
+
+    // ── ACTIVE GAME (damaged) — shows HP gradient on phone + dashboard cards ─
+    // Damage PlayerA to ~50%, PlayerB to ~25%, and a bot to ~75% to show HP color range
+    if (idA) await api(`/debug/player/${idA}/damage`, "POST", { amount: 50 });
+    if (idB) await api(`/debug/player/${idB}/damage`, "POST", { amount: 75 });
+    if (botIds[0]) await api(`/debug/bot/${botIds[0]}/command`, "POST", { action: "damage", args: [25] });
+    await sleep(600);
+    await shot(dash, "05b_dash_active_damaged.png", "Active game — dashboard (damaged)", "dashboard 1280x800");
+    await shot(phones[0].page, "06b_phoneA_active_damaged.png", "Active — PlayerA (~50% HP)", "phone 390x844", labelA);
+    await shot(phones[1].page, "07b_phoneB_active_damaged.png", "Active — PlayerB (~25% HP)", "phone 390x844", labelB);
 
     // ── DEAD SCREENS ─────────────────────────────────────────────────────────
     if (idA) { await api(`/debug/player/${idA}/kill`, "POST"); await sleep(500); }

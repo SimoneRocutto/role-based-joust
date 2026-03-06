@@ -115,14 +115,26 @@ async function checkServer() {
     // Wait for socket events to propagate to the browser.
     await sleep(1000);
 
-    // ── ACTIVE GAME ───────────────────────────────────────────────────────────
-    await shot(dash, "04_dash_active.png", "Active game — dashboard", "dashboard 1280x800");
-    await shot(phone, "05_phone_active.png", "Active game — real socket state", "phone 390x844");
+    // ── ACTIVE GAME (full HP) ──────────────────────────────────────────────────
+    await shot(dash, "04_dash_active.png", "Active game — dashboard (full HP)", "dashboard 1280x800");
+    await shot(phone, "05_phone_active.png", "Active game — phone (full HP)", "phone 390x844");
 
-    // ── DEAD SCREEN ───────────────────────────────────────────────────────────
+    // ── ACTIVE GAME (damaged) — shows HP gradient on phone + dashboard cards ─
     const myId: string | null = await phone.evaluate(
       () => (window as any).__gameStore?.getState().myPlayerId
     );
+    // Damage the real player to ~50% and a bot to ~25% to show HP color range
+    if (myId) {
+      await api(`/debug/player/${myId}/damage`, "POST", { amount: 50 });
+    }
+    if (botIds[0]) {
+      await api(`/debug/bot/${botIds[0]}/command`, "POST", { action: "damage", args: [75] });
+    }
+    await sleep(600);
+    await shot(dash, "04b_dash_active_damaged.png", "Active game — dashboard (damaged)", "dashboard 1280x800");
+    await shot(phone, "05b_phone_active_damaged.png", "Active game — phone (~50% HP)", "phone 390x844");
+
+    // ── DEAD SCREEN ───────────────────────────────────────────────────────────
     if (myId) {
       await api(`/debug/player/${myId}/kill`, "POST");
       await sleep(600);
