@@ -206,13 +206,18 @@ router.get(
 router.post(
   "/test/create",
   asyncHandler(async (req: Request, res: Response) => {
-    const { roles, mode, teams, teamCount, bases, includeConnected } = req.body;
+    const { roles, mode, teams, teamCount, bases, botCount, botBehavior, includeConnected } =
+      req.body;
     const gameEngine: GameEngine = req.app.locals.gameEngine;
 
-    if (!roles || !Array.isArray(roles)) {
+    // roles is optional when botCount is provided (classic mode ignores roles anyway)
+    const effectiveRoles: string[] =
+      Array.isArray(roles) ? roles : Array(Math.max(1, botCount ?? 3)).fill("");
+
+    if (!Array.isArray(effectiveRoles)) {
       res.status(400).json({
         success: false,
-        error: "Roles array required",
+        error: "Provide roles array or botCount",
       });
       return;
     }
@@ -233,16 +238,19 @@ router.post(
       teamManager.configure(false, 2);
     }
 
-    // Collect real connected player IDs to include alongside bots
+    // Collect real connected player IDs if requested
     const realPlayerIds: string[] = includeConnected
       ? ConnectionManager.getInstance().getConnectedPlayers()
       : [];
 
-    gameEngine.createTestGame(roles, realPlayerIds);
+    gameEngine.createTestGame(effectiveRoles, {
+      behavior: botBehavior ?? "random",
+      realPlayerIds,
+    });
 
     // Assign bots to teams after game creation (bot IDs are bot-0, bot-1, ...)
     if (teams) {
-      const botIds = roles.map((_: string, i: number) => `bot-${i}`);
+      const botIds = effectiveRoles.map((_: string, i: number) => `bot-${i}`);
       teamManager.assignSequential(botIds);
     }
 
@@ -261,9 +269,9 @@ router.post(
     }
 
     logger.info("DEBUG", "Test game created", {
-      roles,
-      botCount: roles.length,
+      botCount: effectiveRoles.length,
       realPlayers: realPlayerIds.length,
+      behavior: botBehavior ?? "random",
       bases: baseCount,
     });
 

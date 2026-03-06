@@ -17,9 +17,11 @@ const logger = Logger.getInstance();
  */
 export class TestRunner {
   private tests: TestCase[] = [];
+  private skips: { name: string; reason: string }[] = [];
   private results: TestResult = {
     passed: 0,
     failed: 0,
+    skipped: 0,
     total: 0,
   };
 
@@ -31,6 +33,16 @@ export class TestRunner {
   }
 
   /**
+   * Register a skipped test (WIP / known incomplete).
+   * The fn is accepted so TypeScript still type-checks the test body,
+   * but it is never executed.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  skip(name: string, reason: string, _fn: TestCase["fn"]): void {
+    this.skips.push({ name, reason });
+  }
+
+  /**
    * Run all registered tests
    */
   async run(): Promise<TestResult> {
@@ -38,7 +50,13 @@ export class TestRunner {
     console.log("🧪 Running Tests");
     console.log("========================================\n");
 
-    this.results = { passed: 0, failed: 0, total: this.tests.length };
+    this.results = { passed: 0, failed: 0, skipped: this.skips.length, total: this.tests.length };
+
+    // Print skipped tests upfront so they are visible
+    for (const s of this.skips) {
+      console.log(`⏭️  SKIP: ${s.name}`);
+      console.log(`   Reason: ${s.reason}\n`);
+    }
 
     // Disable disk persistence so tests don't write to data/settings.json
     settingsStore.disable();
@@ -92,13 +110,15 @@ export class TestRunner {
     console.log("========================================");
     console.log("📊 Test Results");
     console.log("========================================");
-    console.log(`Total:  ${this.results.total}`);
-    console.log(`✅ Passed: ${this.results.passed}`);
-    console.log(`❌ Failed: ${this.results.failed}`);
+    console.log(`Total:    ${this.results.total}`);
+    console.log(`✅ Passed:  ${this.results.passed}`);
+    console.log(`❌ Failed:  ${this.results.failed}`);
+    console.log(`⏭️  Skipped: ${this.results.skipped}`);
     console.log("========================================\n");
 
     if (this.results.failed === 0) {
-      console.log("🎉 All tests passed!\n");
+      const skipNote = this.results.skipped > 0 ? ` (${this.results.skipped} skipped — WIP)` : "";
+      console.log(`🎉 All tests passed!${skipNote}\n`);
     } else {
       console.log("⚠️  Some tests failed.\n");
     }

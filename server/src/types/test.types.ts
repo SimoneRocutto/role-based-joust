@@ -11,5 +11,6 @@ export interface TestCase {
 export interface TestResult {
   passed: number;
   failed: number;
+  skipped: number;
   total: number;
 }

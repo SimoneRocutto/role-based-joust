@@ -76,13 +76,15 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // ROUTES
 // ============================================================================
 
-// Health check endpoint
+// Health check endpoint — quick way to verify server is up and in the right mode
 app.get("/health", (req: Request, res: Response) => {
+  const gameEngine = req.app.locals.gameEngine;
   res.json({
     status: "ok",
-    timestamp: new Date().toISOString(),
+    debug: process.env.NODE_ENV === "development",
+    phase: gameEngine?.gameState ?? "unknown",
     uptime: process.uptime(),
-    environment: process.env.NODE_ENV || "development",
+    environment: process.env.NODE_ENV || "production",
   });
 });
 

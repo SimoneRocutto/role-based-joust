@@ -716,14 +716,22 @@ export class GameEngine {
   /**
    * Create a test game with bots
    * @param roleNames - Specific roles to assign to each bot
-   * @param realPlayerIds - Optional real connected player IDs to include alongside bots
+   * @param options.behavior - Bot movement behavior ("random" | "still"). Default: "random".
+   *   Use "still" to prevent bots from accumulating damage in the first tick — avoids
+   *   the parallel-still trick in screenshot/test scripts.
+   * @param options.realPlayerIds - Real connected player IDs to include alongside bots.
+   *   Players must already be registered in ConnectionManager (i.e. have joined the lobby).
    */
-  createTestGame(roleNames: string[], realPlayerIds: string[] = []): void {
+  createTestGame(
+    roleNames: string[],
+    options: { behavior?: string; realPlayerIds?: string[] } = {}
+  ): void {
     this.testMode = true;
 
+    const { behavior = "random", realPlayerIds = [] } = options;
     const connectionManager = ConnectionManager.getInstance();
 
-    // Build real player data from ConnectionManager
+    // Include real connected players first (they're already in ConnectionManager)
     const realPlayerData: PlayerData[] = realPlayerIds.map((id) => ({
       id,
       name: connectionManager.getPlayerName(id) ?? id,
@@ -731,17 +739,18 @@ export class GameEngine {
       isBot: false,
     }));
 
-    const botData: PlayerData[] = roleNames.map((role, i) => ({
+    const botData: PlayerData[] = roleNames.map((_role, i) => ({
       id: `bot-${i}`,
       name: `Bot ${i + 1}`,
       socketId: `socket-bot-${i}`,
       isBot: true,
-      behavior: "random",
+      behavior,
     }));
 
     logger.info("ENGINE", "Creating test game with bots", {
       botCount: botData.length,
-      realPlayers: realPlayerIds.length,
+      realPlayers: realPlayerData.length,
+      behavior,
       roles: roleNames,
     });
 

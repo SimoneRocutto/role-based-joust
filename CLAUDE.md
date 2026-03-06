@@ -2,6 +2,23 @@
 
 This file is the primary entry point for Claude Code working on this repository. Read this first, then consult specific docs as needed using the index below.
 
+## Quick Start
+
+New to this codebase? Run these first:
+
+```bash
+./scripts/status.sh   # branch, recent commits, open changes, top TODOs
+./scripts/dev.sh      # start server + client dev servers
+./scripts/verify.sh   # run all tests (server + client unit + TypeScript)
+```
+
+For UI work, capture screenshots of the real running game:
+```bash
+cd client && npm run screenshot     # 1 phone + dashboard, all game states
+cd client && npm run screenshot:2p  # 2 phones + dashboard (for per-player differences, e.g. king vs non-king)
+```
+Servers must be running first. See "Visual Debugging" below for when to use each.
+
 ## Workflow Rules
 
 **These rules apply to every task. Follow them without being asked.**
@@ -106,28 +123,44 @@ Server tests use a custom test runner (no Jest/Mocha) with `assert()`, `assertEq
 
 E2e tests auto-start both the server (port 4000) and client (port 5173) before running. They cover: game start, game mechanics, reconnection, socket events, player join, dashboard/lobby, API endpoints, and edge cases.
 
-**WIP tests:** Some server tests are intentionally commented out with `// WIP` markers. Do not remove these comments or try to fix them — they represent known incomplete features.
+**WIP tests:** Some server tests are marked with `runner.skip(name, reason, fn)` instead of a full implementation. Do not convert them to active tests or remove them — they represent known incomplete features. They are type-checked but not executed, and shown as "skipped" in the test output.
+
+### Convenience Scripts
+
+```bash
+./scripts/dev.sh      # Start server + client with correct env vars (reads .env.local)
+./scripts/verify.sh   # Run server tests + client tests + TypeScript check in one shot
+```
 
 ### Visual Debugging
 
-Run `/screenshot` to capture screenshots across all game states (lobby, active, dead, round-end, game-over) for both the dashboard (1280×800) and phone (390×844) viewports. The skill handles server health checks, bot game setup, and cleanup automatically.
+```bash
+cd client && npm run screenshot      # 1 phone + dashboard, all game states
+cd client && npm run screenshot:2p   # 2 phones + dashboard (for per-player state differences)
+```
+
+Servers must be running first (`./scripts/dev.sh`). Screenshots are saved to `client/e2e/screenshots/` with a `manifest.json` describing each file. Quick health check:
+
+```bash
+curl http://localhost:4000/health    # must return { "debug": true }
+```
 
 **How to decide how many phone tabs to open:**
 
 | Scenario | What to do |
 |---|---|
-| Feature looks the same for every player (layout change, new screen, damage bar) | 1 phone + dashboard |
-| Feature creates 2 distinct player experiences (king vs non-king, role reveal A vs B) | 2 phones + dashboard — use `/screenshot players=2` |
-| Feature creates N distinct experiences (e.g. 6 different roles all showing different cards) | 1 phone + store injection to cycle through variants; use `GET /api/debug/state` to verify distribution |
+| Feature looks the same for every player (layout change, new screen, damage bar) | `npm run screenshot` — 1 phone + dashboard |
+| Feature creates 2 distinct player experiences (king vs non-king, role reveal A vs B) | `npm run screenshot:2p` — 2 phones + dashboard |
+| Feature creates N distinct experiences (e.g. 6 different roles showing different cards) | 1 phone + store injection to cycle through variants |
 | "Is the server assigning state correctly?" (not visual) | `GET /api/debug/state` programmatically — don't use screenshots for this |
 
-**The dashboard is the all-players view.** It shows every player card simultaneously — HP, alive/dead, team color, role, crown. For "which player is king?", one dashboard screenshot already answers that for all N players. Phone screenshots are only needed for state that is only visible on the player's own screen.
+**The dashboard is the all-players view.** It shows every player card simultaneously — HP, alive/dead, team color, role, crown. For "which player is king?", one dashboard screenshot already answers that for all N players. Phone screenshots are only needed for state visible only on the player's own screen.
 
 **Two capture strategies:**
-- **Real socket (preferred):** The phone player joins the lobby before the bot game. `POST /api/debug/test/create` with `includeConnected: true` includes them in the game. All state — game phase, HP, alive/dead, round-end scores — arrives via real socket events, identical to a physical device.
-- **Store injection (supplement):** `window.__gameStore.getState().setIsKing(true)` etc. for states that are hard to reach naturally (e.g. the crown badge when king assignment is random). Only inject the specific field you need; let the rest of the state be socket-driven.
+- **Real socket (preferred):** The phone player joins the lobby before the bot game. `POST /api/debug/test/create` with `includeConnected: true` includes them in the game. All state arrives via real socket events, identical to a physical device.
+- **Store injection (supplement):** `window.__gameStore.getState().setIsKing(true)` etc. for states hard to reach naturally. Only inject the specific field you need; let the rest of the state be socket-driven.
 
-**Store injection caveat:** It tests "given store state X, does the UI render correctly?" but does NOT verify that the real game flow produces state X. For correctness of the data pipeline, rely on unit/e2e tests, not screenshots.
+**Store injection caveat:** It tests "given store state X, does the UI render correctly?" but does NOT verify that the real game flow produces state X. For data pipeline correctness, rely on unit/e2e tests.
 
 ### Worktree Port Isolation
 
