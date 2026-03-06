@@ -71,6 +71,7 @@ function PlayerCard({ player, rank }: PlayerCardProps) {
   const gameState = useGameStore((state) => state.gameState);
   const mode = useGameStore((state) => state.mode);
   const modeRecap = useGameStore((state) => state.modeRecap);
+  const teamsEnabled = useGameStore((state) => state.teamsEnabled);
   const isDeathCountMode = modeRecap?.modeName?.includes("Death Count") ?? false;
   const showReadyBadge = player.isReady && (gameState === 'waiting' || gameState === 'pre-game' || gameState === 'round-ended');
 
@@ -212,8 +213,8 @@ function PlayerCard({ player, rank }: PlayerCardProps) {
         <div className="h-12" />
       )}
 
-      {/* Points (bottom right, small) - show totalPoints for cumulative score */}
-      {(!isDead || isRoundEnded) && (
+      {/* Points (bottom right, small) - only in solo modes; team modes use team-level scoring */}
+      {!teamsEnabled && (!isDead || isRoundEnded) && (
         <div className="absolute bottom-2 right-2 text-sm text-gray-400">
           {player.totalPoints ?? player.points ?? 0} pts
         </div>

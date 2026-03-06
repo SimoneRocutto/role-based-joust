@@ -243,7 +243,10 @@ async function waitForPhase(target: string | string[], timeoutMs = 15000): Promi
       await api("/game/settings", "POST", { dominationPointTarget: 5, dominationControlInterval: 3 });
     } else {
       // 2 rounds so we see both "round-ended" (after round 1) and "finished" (after round 2).
-      await api("/game/settings", "POST", { roundCount: 2, targetScore: 10 });
+      // Classic/role-based use targetScore: in round 1, last-to-die bot gets 3pts (2nd place);
+      // in round 2, same bot gets 3pts again = 6 total → game over. targetScore=6 ensures this.
+      // Team modes use roundCount instead.
+      await api("/game/settings", "POST", { roundCount: 2, targetScore: 6 });
     }
     // Short round duration for timed modes (death-count)
     if (isTimedMode(MODE)) {
@@ -315,6 +318,7 @@ async function waitForPhase(target: string | string[], timeoutMs = 15000): Promi
 
     // ── DEAD SCREENS ─────────────────────────────────────────────────────────
     if (idA) { await api(`/debug/player/${idA}/kill`, "POST"); await sleep(500); }
+    await shot(dash, "05c_dash_active_dead.png", "Active game — dashboard (player dead)", "dashboard 1280x800");
     await shot(phones[0].page, "08_phoneA_dead.png", "Dead — PlayerA", "phone 390x844", labelA);
     if (idB) { await api(`/debug/player/${idB}/kill`, "POST"); await sleep(500); }
     await shot(phones[1].page, "09_phoneB_dead.png", "Dead — PlayerB", "phone 390x844", labelB);
@@ -342,6 +346,8 @@ async function waitForPhase(target: string | string[], timeoutMs = 15000): Promi
       await api("/game/next-round", "POST");
       await waitForPhase("active");
       await sleep(300);
+      // Kill one real player so only 1 survivor remains (triggerRoundEnd only kills bots)
+      if (idA) { await api(`/debug/player/${idA}/kill`, "POST"); await sleep(200); }
       await triggerRoundEnd(MODE, 2);
       await waitForPhase("finished", 15000);
       await sleep(500);

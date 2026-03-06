@@ -209,10 +209,10 @@ function rotateOutputDir() {
     // ── CONFIGURE for fast screenshots ──────────────────────────────────────
     await api("/debug/set-countdown", "POST", { seconds: 1 });
     // 2 rounds so we see both "round-ended" (after round 1) and "finished" (after round 2).
-    // Classic/role-based use targetScore (not roundCount) — set targetScore=10 so
-    // round 1 winner gets 5 pts (round-ended, not finished), round 2 winner gets 5 more → finished.
-    // Other modes use roundCount directly.
-    await api("/game/settings", "POST", { roundCount: 2, targetScore: 10 });
+    // Classic/role-based use targetScore: in round 1, last-to-die bot gets 3pts (2nd place);
+    // in round 2, same bot gets 3pts again = 6 total → game over. targetScore=6 ensures this.
+    // Other modes (death-count, king) use roundCount directly.
+    await api("/game/settings", "POST", { roundCount: 2, targetScore: 6 });
     // Short round duration for timed modes (death-count)
     if (isTimedMode(MODE)) {
       await api("/game/settings", "POST", { roundDuration: 30 });
@@ -270,6 +270,7 @@ function rotateOutputDir() {
       await api(`/debug/player/${myId}/kill`, "POST");
       await sleep(600);
     }
+    await shot(dash, "04c_dash_active_dead.png", "Active game — dashboard (player dead)", "dashboard 1280x800");
     await shot(phone, "06_phone_dead.png", "Dead screen", "phone 390x844");
 
     // ── ROUND 1 END ──────────────────────────────────────────────────────────

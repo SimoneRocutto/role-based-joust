@@ -40,7 +40,7 @@ describe('PlayerCard', () => {
       expect(screen.getByText('Alice')).toBeInTheDocument()
     })
 
-    it('renders player points', () => {
+    it('renders player points in solo mode', () => {
       const player = createMockPlayer({ totalPoints: 25 })
       render(<PlayerCard player={player} />)
 
