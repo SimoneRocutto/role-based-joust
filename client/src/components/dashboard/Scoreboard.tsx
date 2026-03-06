@@ -18,7 +18,6 @@ function Scoreboard() {
   const { setGameState, setScores, updatePlayers, teamScores, players } = useGameStore()
   const mode = useGameStore((state) => state.mode)
   const isDeathCountMode = mode === 'death-count'
-  const isDominationMode = mode === 'domination'
 
   const [isResetting, setIsResetting] = useState(false)
   const [isStartingRound, setIsStartingRound] = useState(false)
@@ -79,6 +78,15 @@ function Scoreboard() {
   const sortedScores = [...scores].sort((a, b) => a.rank - b.rank)
   const hasTeamScores = teamScores && teamScores.length > 0
 
+  // Build playerId → { isAlive, isKing } map for round-end player status display
+  const playerStateMap = useMemo(() => {
+    const map = new Map<string, { isAlive: boolean; isKing?: boolean }>()
+    for (const p of players) {
+      map.set(p.id, { isAlive: p.isAlive, isKing: p.isKing })
+    }
+    return map
+  }, [players])
+
   return (
     <div className="max-w-5xl mx-auto">
       {/* Title */}
@@ -100,9 +108,10 @@ function Scoreboard() {
         <TeamLeaderboard
           teamScores={teamScores!}
           isRoundEnded={isRoundEnded}
+          isFinished={isFinished}
           isDeathCountMode={isDeathCountMode}
-          isDominationMode={isDominationMode}
           deathCountMap={deathCountMap}
+          playerStates={playerStateMap}
         />
       ) : (
         <IndividualLeaderboard
@@ -259,15 +268,17 @@ function IndividualLeaderboard({
 function TeamLeaderboard({
   teamScores,
   isRoundEnded,
+  isFinished,
   isDeathCountMode,
-  isDominationMode,
   deathCountMap,
+  playerStates,
 }: {
   teamScores: TeamScore[]
   isRoundEnded: boolean
+  isFinished: boolean
   isDeathCountMode: boolean
-  isDominationMode: boolean
   deathCountMap: Map<string, number>
+  playerStates: Map<string, { isAlive: boolean; isKing?: boolean }>
 }) {
   const sortedTeams = [...teamScores].sort((a, b) => a.rank - b.rank)
 
@@ -326,8 +337,9 @@ function TeamLeaderboard({
               )}
             </div>
 
-            {/* Individual player rows — hidden in domination (team scores are all that matter) */}
-            {!isDominationMode && (
+            {/* Individual player rows — only shown on round-end (useful detail like deaths, alive/dead).
+                Hidden on game-over: team score is all that matters at game end. */}
+            {!isFinished && (
               <div
                 className="divide-y divide-white/10"
                 style={{ backgroundColor: teamColor.tint }}
@@ -338,31 +350,38 @@ function TeamLeaderboard({
                       return (a.deathCount ?? deathCountMap.get(a.playerId) ?? 0) -
                              (b.deathCount ?? deathCountMap.get(b.playerId) ?? 0)
                     }
+                    // Sort alive players first, then by score
+                    const stateA = playerStates.get(a.playerId)
+                    const stateB = playerStates.get(b.playerId)
+                    const aliveA = stateA?.isAlive ? 1 : 0
+                    const aliveB = stateB?.isAlive ? 1 : 0
+                    if (aliveB !== aliveA) return aliveB - aliveA
                     return b.score - a.score
                   })
                   .map((player) => {
                     const deaths = player.deathCount ?? deathCountMap.get(player.playerId) ?? 0
+                    const pState = playerStates.get(player.playerId)
                     return (
                       <div
                         key={player.playerId}
-                        className="flex items-center justify-between px-10 py-4"
+                        className={`flex items-center justify-between px-10 py-4 ${
+                          pState && !pState.isAlive && !isDeathCountMode ? 'opacity-50' : ''
+                        }`}
                       >
                         <div className="flex items-center gap-4">
                           <span className="text-3xl font-black text-white">
                             #{player.playerNumber}
                           </span>
                           <span className="text-2xl text-white/80">{player.playerName}</span>
+                          {pState?.isKing && <span className="text-2xl">&#128081;</span>}
                         </div>
                         {isDeathCountMode ? (
                           <span className={`text-2xl font-bold ${deaths === 0 ? 'text-white/40' : 'text-red-300'}`}>
                             💀 {deaths}
                           </span>
                         ) : (
-                          <span className="text-2xl font-bold text-white/80">
-                            {player.score} pts
-                            {isRoundEnded && player.roundPoints > 0 && (
-                              <span className="ml-2 text-lg text-white/40">+{player.roundPoints}</span>
-                            )}
+                          <span className="text-3xl">
+                            {pState && !pState.isAlive ? '💀' : ''}
                           </span>
                         )}
                       </div>

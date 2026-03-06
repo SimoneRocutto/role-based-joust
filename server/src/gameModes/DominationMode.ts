@@ -246,6 +246,20 @@ export class DominationMode extends GameMode {
     });
   }
 
+  override getTeamScoreData(): Map<number, { score: number; roundPoints: number }> | null {
+    const teamManager = TeamManager.getInstance();
+    if (!teamManager.isEnabled()) return null;
+
+    const data = new Map<number, { score: number; roundPoints: number }>();
+    for (let i = 0; i < teamManager.getTeamCount(); i++) {
+      data.set(i, {
+        score: this.teamScores.get(i) ?? 0,
+        roundPoints: 0, // Domination is single-round, no per-round breakdown
+      });
+    }
+    return data;
+  }
+
   override onGameEnd(engine: GameEngine): void {
     super.onGameEnd(engine);
     restoreMovementConfig();
