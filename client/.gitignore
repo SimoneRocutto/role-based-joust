@@ -33,5 +33,6 @@ dist-ssr
 # e2e tests
 playwright-report
 test-results
+e2e/screenshots
 
 coverage
