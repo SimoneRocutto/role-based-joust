@@ -1,17 +1,17 @@
 /**
- * King Mode audit script — "Long live the king"
+ * Domination mode audit script — team-based base capture
  *
  * Flow (click-through, matching real admin workflow):
- *   1. Reset + settings (gameMode=long-live-the-king, teamsEnabled=true, countdown=2s)
+ *   1. Reset + settings (gameMode=domination, teamsEnabled=true, countdown=2s)
  *   2. Real phones join + spawn fake players → lobby screenshots
  *   3. Click "Start Game" → enters pre-game (team assignment visible)
  *   4. Screenshot pre-game (team setup)
  *   5. POST /game/proceed → 2s countdown
- *   6. Active game screenshots — label king vs non-king per player
- *   7. Kill king on one team → cascade death screenshots
- *   8. Kill remaining team → round end screenshots
+ *   6. Spawn simulated bases (owned by alternating teams)
+ *   7. Active game screenshots — show team scores + base ownership
+ *   8. Kill players, capture mid-game state
  *
- * Usage: npx tsx e2e/_audit_king_mode.ts
+ * Usage: npx tsx e2e/_audit_domination.ts
  */
 import { chromium, type Page } from "@playwright/test";
 import fs from "fs";
@@ -24,7 +24,7 @@ dotenv.config({ path: path.resolve(__dirname, "../.env.local") });
 
 const BACKEND = `http://localhost:${process.env.VITE_BACKEND_PORT || 4000}`;
 const CLIENT = `http://localhost:${process.env.VITE_PORT || 5173}`;
-const OUT = path.resolve(__dirname, "../e2e/screenshots/long-live-the-king");
+const OUT = path.resolve(__dirname, "../e2e/screenshots/domination");
 
 async function api(p: string, method = "GET", body?: object) {
   const res = await fetch(`${BACKEND}/api${p}`, {
@@ -61,7 +61,7 @@ async function getPlayerId(page: Page): Promise<string | null> {
     await sleep(400);
 
     await api("/game/settings", "POST", {
-      gameMode: "long-live-the-king",
+      gameMode: "domination",
       teamsEnabled: true,
       teamCount: 2,
     });
@@ -91,7 +91,7 @@ async function getPlayerId(page: Page): Promise<string | null> {
       await sleep(600);
     }
 
-    // ── SPAWN 2 FAKE LOBBY PLAYERS (4 total = 2 per team) ───────────────────
+    // ── SPAWN 2 FAKE LOBBY PLAYERS ──────────────────────────────────────────
     await api("/debug/spawn-lobby-players", "POST", {
       count: 2,
       names: ["FakeBot1", "FakeBot2"],
@@ -114,22 +114,26 @@ async function getPlayerId(page: Page): Promise<string | null> {
     await shot(phones[0].page, "06_phoneA_pregame.png", "Pre-game — PlayerA", "phone 390x844");
     await shot(phones[1].page, "07_phoneB_pregame.png", "Pre-game — PlayerB", "phone 390x844");
 
-    // ── FORCE PROCEED → 2s COUNTDOWN ────────────────────────────────────────
+    // ── OPEN BASE PHONE (registers via socket as a real base) ─────────────
+    const basePage = await browser.newPage();
+    basePage.setViewportSize({ width: 390, height: 844 });
+    await basePage.goto(`${CLIENT}/base`);
+    await sleep(1000);
+
+    // ── FORCE PROCEED → COUNTDOWN ──────────────────────────────────────────
     // Set short countdown AFTER game launch (onModeSelected overrides earlier calls)
     await api("/debug/set-countdown", "POST", { seconds: 2 });
     await api("/game/proceed", "POST");
     // Wait for 2s real-time countdown + GO! animation to clear
     await sleep(4000);
 
-    // ── READ SERVER STATE to identify kings ──────────────────────────────────
+    // ── BASE NEUTRAL STATE ──────────────────────────────────────────────────
+    await shot(basePage, "08_base_neutral.png", "Base — neutral (waiting for capture)", "phone 390x844");
+
+    // ── READ SERVER STATE to label players ───────────────────────────────────
     const debugState = await api("/debug/state");
-    const serverPlayers: {
-      id: string;
-      teamId?: number | null;
-      name?: string;
-      isKing?: boolean;
-      isAlive?: boolean;
-    }[] = debugState.snapshot?.players ?? [];
+    const serverPlayers: { id: string; teamId?: number | null; name?: string }[] =
+      debugState.snapshot?.players ?? [];
 
     const idA = await getPlayerId(phones[0].page);
     const idB = await getPlayerId(phones[1].page);
@@ -139,9 +143,8 @@ async function getPlayerId(page: Page): Promise<string | null> {
     const labelFor = (s: typeof stateA) => {
       if (!s) return "unknown";
       const parts: string[] = [];
-      if (s.isKing) parts.push("KING");
       if (s.teamId != null) parts.push(`team:${s.teamId}`);
-      return parts.length ? parts.join(", ") : "regular";
+      return parts.length ? parts.join(", ") : "no-team";
     };
     const labelA = labelFor(stateA);
     const labelB = labelFor(stateB);
@@ -149,58 +152,51 @@ async function getPlayerId(page: Page): Promise<string | null> {
     console.log(`  Game phase: ${debugState.snapshot?.state}`);
 
     // ── ACTIVE GAME ─────────────────────────────────────────────────────────
-    await shot(dash, "08_dash_active.png", "Active game — dashboard", "dashboard 1280x800");
-    await shot(phones[0].page, "09_phoneA_active.png", "Active — PlayerA", "phone 390x844", labelA);
-    await shot(phones[1].page, "10_phoneB_active.png", "Active — PlayerB", "phone 390x844", labelB);
+    await shot(dash, "09_dash_active.png", "Active game — dashboard", "dashboard 1280x800");
+    await shot(phones[0].page, "10_phoneA_active.png", "Active — PlayerA", "phone 390x844", labelA);
+    await shot(phones[1].page, "11_phoneB_active.png", "Active — PlayerB", "phone 390x844", labelB);
 
-    // ── KILL A KING to trigger cascade ──────────────────────────────────────
-    // Find a king (preferring a non-real-player king if possible, but any king works)
-    const kings = serverPlayers.filter((p) => p.isKing);
-    const kingToKill = kings.find((k) => k.id !== idA && k.id !== idB) ?? kings[0];
+    // ── CAPTURE BASE for Red team (tap the left/first section) ──────────────
+    // The base page shows N colored sections side by side. Tap the left half for team 0 (Red).
+    const baseBox = await basePage.locator("div.flex.flex-1 > div").first().boundingBox();
+    if (baseBox) {
+      await basePage.click(`div.flex.flex-1 > div >> nth=0`);
+      await sleep(500);
+    }
+    await shot(basePage, "12_base_captured_red.png", "Base — captured by Red team", "phone 390x844");
+    await shot(dash, "13_dash_base_captured.png", "Dashboard — base captured by Red", "dashboard 1280x800");
 
-    if (kingToKill) {
-      console.log(`\n  Killing king: ${kingToKill.name} (team ${kingToKill.teamId})`);
-      await api(`/debug/player/${kingToKill.id}/kill`, "POST");
-      await sleep(800);
+    // ── CAPTURE BASE for Blue team (tap the right section) ──────────────────
+    await basePage.click(`div.flex.flex-1 > div >> nth=1`);
+    await sleep(500);
+    await shot(basePage, "14_base_captured_blue.png", "Base — captured by Blue team", "phone 390x844");
 
-      await shot(dash, "11_dash_king_died.png", "King died — cascade death", "dashboard 1280x800");
+    // ── KILL PlayerA → should respawn (domination has respawns) ─────────────
+    if (idA) { await api(`/debug/player/${idA}/kill`, "POST"); await sleep(500); }
+    await shot(phones[0].page, "15_phoneA_dead.png", "Dead/respawning — PlayerA", "phone 390x844", labelA);
 
-      // If one of our real players was on the same team, they're dead now
-      if (stateA?.teamId === kingToKill.teamId) {
-        await shot(phones[0].page, "12_phoneA_cascade_dead.png", "Cascade dead — PlayerA", "phone 390x844", labelA);
-      }
-      if (stateB?.teamId === kingToKill.teamId) {
-        await shot(phones[1].page, "12_phoneB_cascade_dead.png", "Cascade dead — PlayerB", "phone 390x844", labelB);
-      }
+    // Wait for respawn
+    await sleep(3000);
+    await shot(phones[0].page, "16_phoneA_respawned.png", "Respawned — PlayerA", "phone 390x844", labelA);
+    await shot(dash, "17_dash_after_respawn.png", "Active after respawn — dashboard", "dashboard 1280x800");
+
+    // ── KILL PlayerB too ────────────────────────────────────────────────────
+    if (idB) { await api(`/debug/player/${idB}/kill`, "POST"); await sleep(500); }
+    await shot(phones[1].page, "18_phoneB_dead.png", "Dead/respawning — PlayerB", "phone 390x844", labelB);
+
+    // ── MID-GAME STATE ──────────────────────────────────────────────────────
+    await sleep(2000);
+    const currentState = await api("/debug/state");
+    console.log(`  Game phase after kills: ${currentState.snapshot?.state}`);
+
+    if (currentState.snapshot?.state === "active") {
+      await shot(dash, "19_dash_mid_game.png", "Mid-game scores — dashboard", "dashboard 1280x800");
     }
 
-    // ── KILL REMAINING PLAYERS to end round ─────────────────────────────────
-    // Re-fetch state since cascade may have killed more players
-    const freshState = await api("/debug/state");
-    const freshPlayers: { id: string; isAlive?: boolean }[] = freshState.snapshot?.players ?? [];
-    for (const p of freshPlayers) {
-      if (p.isAlive) {
-        await api(`/debug/player/${p.id}/kill`, "POST");
-        await sleep(150);
-      }
-    }
-    await sleep(1000);
-
-    // ── DEAD SCREENS (both players should be dead now) ──────────────────────
-    await shot(phones[0].page, "13_phoneA_dead.png", "Dead — PlayerA", "phone 390x844", labelA);
-    await shot(phones[1].page, "14_phoneB_dead.png", "Dead — PlayerB", "phone 390x844", labelB);
-
-    // ── ROUND END ───────────────────────────────────────────────────────────
-    await shot(dash, "15_dash_round_end.png", "Round ended — dashboard", "dashboard 1280x800");
-    await shot(phones[0].page, "16_phoneA_round_end.png", "Round ended — PlayerA", "phone 390x844");
-    await shot(phones[1].page, "17_phoneB_round_end.png", "Round ended — PlayerB", "phone 390x844");
-
-    // ── GAME OVER (check if game finished) ──────────────────────────────────
-    const gameState = await api("/game/state");
-    if (gameState.phase === "finished") {
-      await shot(dash, "18_dash_game_over.png", "Game over — dashboard", "dashboard 1280x800");
-      await shot(phones[0].page, "19_phoneA_game_over.png", "Game over — PlayerA", "phone 390x844");
-      await shot(phones[1].page, "20_phoneB_game_over.png", "Game over — PlayerB", "phone 390x844");
+    if (currentState.snapshot?.state === "round-ended" || currentState.snapshot?.state === "finished") {
+      await shot(dash, "19_dash_game_end.png", "Game ended — dashboard", "dashboard 1280x800");
+      await shot(phones[0].page, "20_phoneA_game_end.png", "Game ended — PlayerA", "phone 390x844", labelA);
+      await shot(phones[1].page, "21_phoneB_game_end.png", "Game ended — PlayerB", "phone 390x844", labelB);
     }
 
     fs.writeFileSync(
@@ -209,7 +205,7 @@ async function getPlayerId(page: Page): Promise<string | null> {
         {
           timestamp: new Date().toISOString(),
           template: "click-through-2p",
-          mode: "long-live-the-king",
+          mode: "domination",
           backend: BACKEND,
           client: CLIENT,
           playerLabels: { PlayerA: labelA, PlayerB: labelB },

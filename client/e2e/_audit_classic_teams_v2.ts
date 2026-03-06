@@ -64,9 +64,6 @@ async function getPlayerId(page: Page): Promise<string | null> {
       teamCount: 2,
     });
 
-    // Short countdown (2s) so we don't wait long, but long enough to screenshot pre-game
-    await api("/debug/set-countdown", "POST", { seconds: 2 });
-
     const dash = await browser.newPage();
     dash.setViewportSize({ width: 1280, height: 800 });
 
@@ -117,6 +114,8 @@ async function getPlayerId(page: Page): Promise<string | null> {
     await shot(phones[1].page, "07_phoneB_pregame.png", "Pre-game — PlayerB", "phone 390x844");
 
     // ── FORCE PROCEED → 2s COUNTDOWN ─────────────────────────────────────────
+    // Set short countdown AFTER game launch (onModeSelected overrides earlier calls)
+    await api("/debug/set-countdown", "POST", { seconds: 2 });
     await api("/game/proceed", "POST");
     // Wait for 2s real-time countdown + GO! animation to clear
     await sleep(4000);

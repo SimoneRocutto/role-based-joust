@@ -12,7 +12,7 @@ Use this file to know how to screenshot and what to look for in each game mode.
 | `long-live-the-king` | Long live the king | click-through 2p | KING vs non-king, team-based, cascade death | Stable |
 | `death-count` | Death Count | 2p | No teams, individual respawn scoring | Stable |
 | `death-count-teams` | Death Count (Teams) | click-through 2p | team:0 vs team:1 + respawns | Stable |
-| `domination` | Domination | 2p | team:0 vs team:1, base capture UI | Active dev |
+| `domination` | Domination | click-through 2p | team:0 vs team:1, base capture UI, respawns | Stable |
 
 ## Mode-Specific Screenshot Commands
 
@@ -25,7 +25,7 @@ cd client && MODE=classic npm run screenshot
 cd client && MODE=role-based npm run screenshot:2p
 cd client && npx tsx e2e/_audit_king_mode.ts
 cd client && MODE=death-count npm run screenshot:2p
-cd client && MODE=domination npm run screenshot:2p
+cd client && npx tsx e2e/_audit_domination.ts
 ```
 
 Screenshots are saved to `client/e2e/screenshots/<mode>/`.

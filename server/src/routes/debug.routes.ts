@@ -433,4 +433,44 @@ router.post(
   })
 );
 
+/**
+ * POST /api/debug/spawn-bases
+ * Register simulated bases for domination mode testing.
+ * Each base is assigned to a team in round-robin order.
+ *
+ * Body: { count?: number, teamCount?: number }
+ */
+router.post(
+  "/spawn-bases",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { count: rawCount = 2, teamCount = 2 } = req.body;
+    const count = Math.min(Math.max(1, rawCount), 10);
+    const baseManager = BaseManager.getInstance();
+
+    const io: SocketIOServer = req.app.locals.io;
+    const spawned: { baseId: string; baseNumber: number; teamId: number }[] = [];
+    for (let i = 0; i < count; i++) {
+      const { baseId, baseNumber } = baseManager.registerBase(`debug-base-socket-${Date.now()}-${i}`);
+      const teamId = i % teamCount;
+      baseManager.setOwner(baseId, teamId, 0);
+      spawned.push({ baseId, baseNumber, teamId });
+    }
+
+    // Broadcast base:status so the dashboard picks up the new bases
+    const bases = baseManager.getAllBases().map((base) => ({
+      baseId: base.baseId,
+      baseNumber: base.baseNumber,
+      ownerTeamId: base.ownerTeamId,
+      controlProgress: 0,
+      isConnected: base.isConnected,
+    }));
+    const resolvedTeamCount = TeamManager.getInstance().getTeamCount();
+    io.emit("base:status", { bases, teamCount: resolvedTeamCount });
+
+    logger.info("DEBUG", `Spawned ${count} simulated base(s)`, { spawned });
+
+    res.json({ success: true, spawned });
+  })
+);
+
 export default router;
