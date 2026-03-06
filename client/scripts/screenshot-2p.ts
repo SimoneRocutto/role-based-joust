@@ -106,6 +106,27 @@ async function checkServer() {
   }
 }
 
+/** Check if the mode uses time-based round end (needs fast-forward). */
+function isTimedMode(mode: string): boolean {
+  return ["death-count", "death-count-team"].includes(mode);
+}
+
+/** Trigger round end based on mode type. */
+async function triggerRoundEnd(mode: string, botCount: number) {
+  if (isTimedMode(mode) || mode === "domination") {
+    console.log("  [flow] Fast-forwarding to end round...");
+    await api("/debug/fastforward", "POST", { milliseconds: 120_000 });
+    await sleep(500);
+  } else {
+    // Kill-based: kill all bots to end the round
+    for (let i = 0; i < botCount; i++) {
+      await api(`/debug/bot/bot-${i}/command`, "POST", { action: "die" });
+      await sleep(150);
+    }
+    await sleep(500);
+  }
+}
+
 /** Check if the current mode uses teams. */
 function isTeamMode(mode: string): boolean {
   return [
@@ -209,8 +230,14 @@ async function waitForPhase(target: string | string[], timeoutMs = 15000): Promi
 
     await shot(dash, "04_dash_lobby.png", "Lobby — 2 real players + 2 bots", "dashboard 1280x800");
 
-    // ── SET COUNTDOWN to 1s (avoid long wait in screenshot scripts) ─────────
+    // ── CONFIGURE for fast screenshots ──────────────────────────────────────
     await api("/debug/set-countdown", "POST", { seconds: 1 });
+    // 2 rounds so we see both "round-ended" (after round 1) and "finished" (after round 2).
+    await api("/game/settings", "POST", { roundCount: 2, targetScore: 10 });
+    // Short round duration for timed modes (death-count)
+    if (isTimedMode(MODE)) {
+      await api("/game/settings", "POST", { roundDuration: 30 });
+    }
 
     // ── START GAME via dashboard button (real UI click) ──────────────────────
     await dash.getByRole("button", { name: /Start Game \(/ }).click();
@@ -274,22 +301,32 @@ async function waitForPhase(target: string | string[], timeoutMs = 15000): Promi
     if (idB) { await api(`/debug/player/${idB}/kill`, "POST"); await sleep(500); }
     await shot(phones[1].page, "09_phoneB_dead.png", "Dead — PlayerB", "phone 390x844", labelB);
 
-    // ── ROUND END ────────────────────────────────────────────────────────────
-    for (let i = 0; i < 2; i++) {
-      await api(`/debug/bot/bot-${i}/command`, "POST", { command: "die" });
-      await sleep(150);
-    }
-    await sleep(1000);
+    // ── ROUND 1 END ──────────────────────────────────────────────────────────
+    await triggerRoundEnd(MODE, 2);
+    await waitForPhase(["round-ended", "finished"]);
+    await sleep(500);
+    const r1Phase = await getPhase();
+    console.log(`  [flow] Phase after round 1 end: ${r1Phase}`);
     await shot(dash, "10_dash_round_end.png", "Round ended — dashboard", "dashboard 1280x800");
     await shot(phones[0].page, "11_phoneA_round_end.png", "Round ended — PlayerA", "phone 390x844");
     await shot(phones[1].page, "12_phoneB_round_end.png", "Round ended — PlayerB", "phone 390x844");
 
-    // ── GAME OVER ────────────────────────────────────────────────────────────
-    const finalPhase = await getPhase();
-    if (finalPhase === "finished") {
+    // ── GAME OVER (round 2) ────────────────────────────────────────────────
+    if (r1Phase !== "finished") {
+      await api("/game/next-round", "POST");
+      await waitForPhase("active");
+      await sleep(300);
+      await triggerRoundEnd(MODE, 2);
+      await waitForPhase("finished", 15000);
+      await sleep(500);
+    }
+    const gamePhase = await getPhase();
+    if (gamePhase === "finished") {
       await shot(dash, "13_dash_game_over.png", "Game over — dashboard", "dashboard 1280x800");
       await shot(phones[0].page, "14_phoneA_game_over.png", "Game over — PlayerA", "phone 390x844");
       await shot(phones[1].page, "15_phoneB_game_over.png", "Game over — PlayerB", "phone 390x844");
+    } else {
+      console.log(`  [warn] Expected 'finished' but got '${gamePhase}'. Skipping game-over screenshots.`);
     }
 
     fs.writeFileSync(

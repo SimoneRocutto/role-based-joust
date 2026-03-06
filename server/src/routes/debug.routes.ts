@@ -79,21 +79,15 @@ router.post(
 
 /**
  * POST /api/debug/fastforward
- * Fast-forward game time (test mode only)
+ * Fast-forward game time.
+ * Works in both test mode and normal debug mode (UI-launched games).
+ * Already gated behind /api/debug/ which requires NODE_ENV=development.
  */
 router.post(
   "/fastforward",
   asyncHandler(async (req: Request, res: Response) => {
     const { milliseconds } = req.body;
     const gameEngine: GameEngine = req.app.locals.gameEngine;
-
-    if (!gameEngine.testMode) {
-      res.status(400).json({
-        success: false,
-        error: "Fast-forward only available in test mode",
-      });
-      return;
-    }
 
     if (!milliseconds || typeof milliseconds !== "number") {
       res.status(400).json({

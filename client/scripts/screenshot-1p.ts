@@ -102,6 +102,12 @@ async function checkServer() {
   }
 }
 
+/** Check if the mode uses time-based round end (needs fast-forward). */
+function isTimedMode(mode: string | undefined): boolean {
+  if (!mode) return false;
+  return ["death-count", "death-count-team"].includes(mode);
+}
+
 /** Check if the current mode uses teams. */
 function isTeamMode(mode: string | undefined): boolean {
   if (!mode) return false;
@@ -112,6 +118,22 @@ function isTeamMode(mode: string | undefined): boolean {
     "domination",
     "long-live-the-king",
   ].includes(mode);
+}
+
+/** Trigger round end based on mode type. */
+async function triggerRoundEnd(mode: string | undefined) {
+  if (isTimedMode(mode) || mode === "domination") {
+    console.log("  [flow] Fast-forwarding to end round...");
+    await api("/debug/fastforward", "POST", { milliseconds: 120_000 });
+    await sleep(500);
+  } else {
+    // Kill-based: kill all bots to end the round
+    for (let i = 0; i < 3; i++) {
+      await api(`/debug/bot/bot-${i}/command`, "POST", { action: "die" });
+      await sleep(150);
+    }
+    await sleep(500);
+  }
 }
 
 /** Rotate output dir: current → {dir}-prev (delete any older prev). */
@@ -184,8 +206,17 @@ function rotateOutputDir() {
 
     await shot(dash, "03_dash_lobby.png", "Lobby — dashboard", "dashboard 1280x800");
 
-    // ── SET COUNTDOWN to 1s (avoid long wait in screenshot scripts) ─────────
+    // ── CONFIGURE for fast screenshots ──────────────────────────────────────
     await api("/debug/set-countdown", "POST", { seconds: 1 });
+    // 2 rounds so we see both "round-ended" (after round 1) and "finished" (after round 2).
+    // Classic/role-based use targetScore (not roundCount) — set targetScore=10 so
+    // round 1 winner gets 5 pts (round-ended, not finished), round 2 winner gets 5 more → finished.
+    // Other modes use roundCount directly.
+    await api("/game/settings", "POST", { roundCount: 2, targetScore: 10 });
+    // Short round duration for timed modes (death-count)
+    if (isTimedMode(MODE)) {
+      await api("/game/settings", "POST", { roundDuration: 30 });
+    }
 
     // ── START GAME via dashboard button (real UI click) ──────────────────────
     // The lobby button contains the player count, e.g. "Start Game (4 players)"
@@ -241,21 +272,38 @@ function rotateOutputDir() {
     }
     await shot(phone, "06_phone_dead.png", "Dead screen", "phone 390x844");
 
-    // ── ROUND END ────────────────────────────────────────────────────────────
-    // Kill all bots to end the round
-    for (let i = 0; i < 3; i++) {
-      await api(`/debug/bot/bot-${i}/command`, "POST", { command: "die" });
-      await sleep(150);
-    }
-    await sleep(1000);
+    // ── ROUND 1 END ──────────────────────────────────────────────────────────
+    // Trigger round end based on mode type:
+    // - Kill-based (classic, role-based, king): kill all remaining players/bots
+    // - Timed (death-count): fast-forward past round duration
+    // - Point-based (domination): fast-forward (base control ticks accumulate points)
+    await triggerRoundEnd(MODE);
+    await waitForPhase(["round-ended", "finished"]);
+    await sleep(500);
+    const r1Phase = await getPhase();
+    console.log(`  [flow] Phase after round 1 end: ${r1Phase}`);
     await shot(dash, "07_dash_round_end.png", "Round ended — dashboard", "dashboard 1280x800");
     await shot(phone, "08_phone_round_end.png", "Round ended — phone", "phone 390x844");
 
-    // ── GAME OVER (if single-round mode) ─────────────────────────────────────
-    const finalPhase = await getPhase();
-    if (finalPhase === "finished") {
+    // ── GAME OVER (round 2) ────────────────────────────────────────────────
+    // Domination is single-round (gameEnded=true on point target), so it may
+    // already be finished. For other modes, advance to round 2 and end it.
+    if (r1Phase !== "finished") {
+      // Start round 2 via admin action (skips ready-up requirement)
+      await api("/game/next-round", "POST");
+      await waitForPhase("active");
+      await sleep(300);
+      // End round 2 immediately
+      await triggerRoundEnd(MODE);
+      await waitForPhase("finished", 15000);
+      await sleep(500);
+    }
+    const gamePhase = await getPhase();
+    if (gamePhase === "finished") {
       await shot(dash, "09_dash_game_over.png", "Game over — dashboard", "dashboard 1280x800");
       await shot(phone, "10_phone_game_over.png", "Game over — phone", "phone 390x844");
+    } else {
+      console.log(`  [warn] Expected 'finished' but got '${gamePhase}'. Skipping game-over screenshots.`);
     }
 
     fs.writeFileSync(

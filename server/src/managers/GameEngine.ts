@@ -767,14 +767,10 @@ export class GameEngine {
   }
 
   /**
-   * Fast-forward time (test mode only)
+   * Fast-forward time by running N ticks synchronously.
+   * Works in test mode and debug mode (for screenshot scripts).
    */
   fastForward(milliseconds: number): void {
-    if (!this.testMode) {
-      logger.warn("ENGINE", "Fast-forward only available in test mode");
-      return;
-    }
-
     logger.info("ENGINE", `Fast-forwarding ${milliseconds}ms`);
 
     const ticks = Math.floor(milliseconds / this.tickRate);
