@@ -189,8 +189,8 @@ cd client && MODE=death-count npm run screenshot:2p
 cd client && MODE=domination npm run screenshot:2p
 
 # Click-through modes (require custom audit script)
-# classic-teams: uses _audit_classic_teams_v2.ts
 cd client && npx tsx e2e/_audit_classic_teams_v2.ts
+cd client && npx tsx e2e/_audit_death_count_teams.ts
 ```
 
 Each run saves to its own directory: `client/e2e/screenshots/<mode>/`.
@@ -199,11 +199,26 @@ Wait for each command to complete before starting the next (they reset server st
 
 **Note:** `classic` and `classic-teams` (classic with teams enabled) are treated as separate modes because teams fundamentally change the leaderboard, pre-game flow, and scoring UI.
 
-### 3. Audit each mode
+### 3. Audit each mode (parallelized with subagents)
 
-For each mode directory that now contains a `manifest.json`, run the Single Mode Audit (steps 1–4 above), reading from `client/e2e/screenshots/<mode>/` and writing the report to `client/e2e/screenshots/<mode>/ux-report.md`.
+**Cost note:** The per-mode evaluation is the most token-intensive part of the audit (7 parallel agents, each reading ~12 images). These are structured rubric-following tasks that Sonnet could handle well if Claude Code ever supports per-subagent model selection. For now, all subagents run on the session model.
 
-Also consult `references/modes.md` for mode-specific concerns to watch for while evaluating.
+Spawn one subagent per mode using the Agent tool, all in parallel (`run_in_background: true`). Each subagent should:
+
+1. Read `docs/ux-rules.md`
+2. Read `manifest.json` in its mode directory
+3. Read every PNG listed in the manifest
+4. Consult `references/modes.md` for mode-specific concerns
+5. Evaluate each screenshot against the applicable rules
+6. Write the report to `client/e2e/screenshots/<mode>/ux-report.md`
+
+Include in each subagent prompt:
+- The mode context (what the mode does, what to watch for) from `references/modes.md`
+- Instruction to include an **Aesthetic observations** section at the end (visual polish, emotional impact, typography, color palette — separate from CONCERN/MINOR/PASS verdicts)
+- Instruction to NOT flag dev-mode-only UI elements (CLICK TO TAKE DAMAGE, CLICK TO READY, [DEV MODE] badge)
+- Instruction to return a brief summary of findings (concern count, top issues)
+
+Wait for all subagents to complete before proceeding to step 4.
 
 ### 4. Write a summary report
 
@@ -221,6 +236,7 @@ Generated: <timestamp>
 | role-based | N | N | N | [ux-report.md](role-based/ux-report.md) |
 | long-live-the-king | N | N | N | [ux-report.md](long-live-the-king/ux-report.md) |
 | death-count | N | N | N | [ux-report.md](death-count/ux-report.md) |
+| death-count-teams | N | N | N | [ux-report.md](death-count-teams/ux-report.md) |
 | domination | N | N | N | [ux-report.md](domination/ux-report.md) |
 
 ## Cross-mode concerns
