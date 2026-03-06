@@ -12,10 +12,11 @@ New to this codebase? Run these first:
 ./scripts/verify.sh   # run all tests (server + client unit + TypeScript)
 ```
 
-For UI work, capture screenshots of the real running game:
+For UI work, capture and audit screenshots of the real running game:
 ```bash
 cd client && npm run screenshot     # 1 phone + dashboard, all game states
 cd client && npm run screenshot:2p  # 2 phones + dashboard (for per-player differences, e.g. king vs non-king)
+# then run /ux-audit skill to evaluate the screenshots
 ```
 Servers must be running first. See "Visual Debugging" below for when to use each.
 
@@ -31,7 +32,8 @@ Servers must be running first. See "Visual Debugging" below for when to use each
 6. **Prioritize code quality** Avoid repetitions and duplicated code. When you feel it is better to refactor an old part when introducing a new one, please consider doing so.
 7. **Track TODO.md.** After completing a task, check `TODO.md` to see if the work resolves any listed item. If it does, remove that line from the file. When a task is done and there are remaining items in `TODO.md`, suggest tackling the next one (top item = highest priority).
 8. **Verify UI changes visually.** Whenever you change anything UI-related that is not trivial (new screen, new component, changed layout, new game state rendering), run `/screenshot` to capture the result across dashboard and phone viewports. This is especially critical when designing UI from scratch — you must see what a real player or spectator would actually see during a game, not just trust that the code is correct. Do not consider a UI task done until you have looked at a screenshot.
-9. **Run a code review before closing any non-trivial task.** After implementing (tests passing, TypeScript clean), spawn a reviewer subagent using the Agent tool. Pass it the list of changed files and this prompt:
+9. **Run UX audit for new game modes, new screens, or significant UI changes.** After taking screenshots, run the `/ux-audit` skill. It reads the screenshots, evaluates each against the rules in `docs/ux-rules.md`, and writes `e2e/screenshots/ux-report.md`. Address all CONCERN-level findings before closing. Update `docs/ux-rules.md` when adding new modes or mechanics.
+10. **Run a code review before closing any non-trivial task.** After implementing (tests passing, TypeScript clean), spawn a reviewer subagent using the Agent tool. Pass it the list of changed files and this prompt:
 
    > You are a senior code reviewer. Review the following changed files for this codebase (Extended Joust — TypeScript, React, Express, Socket.IO).
    > Focus on:
@@ -154,6 +156,7 @@ E2e tests auto-start both the server (port 4000) and client (port 5173) before r
 ```bash
 cd client && npm run screenshot      # 1 phone + dashboard, all game states
 cd client && npm run screenshot:2p   # 2 phones + dashboard (for per-player state differences)
+# /ux-audit skill                    # evaluate screenshots against ux-rules.md → ux-report.md
 ```
 
 Servers must be running first (`./scripts/dev.sh`). Screenshots are saved to `client/e2e/screenshots/` with a `manifest.json` describing each file. Quick health check:
