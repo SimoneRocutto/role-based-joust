@@ -19,7 +19,11 @@ dotenv.config({ path: path.resolve(__dirname, "../.env.local") });
 
 const BACKEND = `http://localhost:${process.env.VITE_BACKEND_PORT || 4000}`;
 const CLIENT = `http://localhost:${process.env.VITE_PORT || 5173}`;
-const OUT = path.resolve(__dirname, "../e2e/screenshots");
+const MODE = process.env.MODE;
+// When MODE is set, save into a mode-specific subdirectory so multi-mode runs don't overwrite each other
+const OUT = MODE
+  ? path.resolve(__dirname, `../e2e/screenshots/${MODE}`)
+  : path.resolve(__dirname, "../e2e/screenshots");
 
 async function api(p: string, method = "GET", body?: object) {
   const res = await fetch(`${BACKEND}/api${p}`, {
@@ -140,6 +144,7 @@ async function checkServer() {
         {
           timestamp: new Date().toISOString(),
           template: "1p",
+          mode: MODE ?? "classic",
           backend: BACKEND,
           client: CLIENT,
           screenshots: log,

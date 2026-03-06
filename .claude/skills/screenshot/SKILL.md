@@ -355,8 +355,16 @@ rmdir client/e2e/screenshots 2>/dev/null || true
 ### Store injection — only for unreachable states
 Use `window.__gameStore.getState().setIsKing(true)` etc. only when a state is hard to reach naturally (e.g. the crown is randomly assigned). The preferred approach is to read `/api/debug/state` and identify which player is already in the target state, then screenshot that player's tab.
 
-### Parallel-still trick
-Fire all `still` commands in parallel immediately after `test/create` — before the first 100ms tick accumulates damage from random movement.
+### Preventing bots from dying in the first tick
+Pass `botBehavior: "still"` in the `test/create` body — bots start frozen and won't accumulate damage. Preferred over the old parallel-still trick. Update the template body:
+```
+botBehavior: "still",
+botCount: 3,
+```
+The parallel-still trick (`Promise.all(botIds.map(...))`) in the templates above is the fallback if you can't update the body — but `botBehavior: "still"` is cleaner.
+
+### Per-mode screenshot directories
+The `npm run screenshot` and `npm run screenshot:2p` scripts save to `client/e2e/screenshots/<mode>/` when `MODE` is set, or `client/e2e/screenshots/` otherwise. For all-modes audits, always use `MODE=<key>` so runs don't overwrite each other. Mode keys: `classic`, `role-based`, `long-live-the-king`, `death-count`, `domination`.
 
 ### Debug endpoints require NODE_ENV=development
 All `/api/debug/*` endpoints return 404 without this flag.

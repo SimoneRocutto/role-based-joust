@@ -1,15 +1,26 @@
 ---
 name: ux-audit
-description: This skill should be used when the user asks to "run a ux audit", "check the UI for issues", "review the screens", "audit the game UI", "check if the dashboard is readable", "test how the game looks to a player", or wants to find UX problems, visual clarity issues, or confusing game behavior visible in screenshots.
+description: This skill should be used when the user asks to "run a ux audit", "check the UI for issues", "review the screens", "audit the game UI", "check if the dashboard is readable", "test how the game looks to a player", "run ux-audit for every game mode", "audit all modes", or wants to find UX problems, visual clarity issues, or confusing game behavior visible in screenshots.
 allowed-tools: Read, Write, Bash
 ---
 
 Audit the game UI by reading existing screenshots and evaluating each one against the UX rules in `docs/ux-rules.md`. No external API calls — Claude reads and reasons directly.
 
-## Current worktree paths
-- Screenshots: `client/e2e/screenshots/`
+Read `references/modes.md` to understand per-mode screenshot strategies and known mode-specific concerns.
+
+## Current worktree ports
+- Backend port: !`grep VITE_BACKEND_PORT client/.env.local 2>/dev/null | cut -d= -f2 || echo "4000"`
+- Client port: !`grep VITE_PORT client/.env.local 2>/dev/null | cut -d= -f2 || echo "5173"`
+
+## Paths
+- Screenshots: `client/e2e/screenshots/<mode>/` (or `client/e2e/screenshots/` for legacy single-mode runs)
 - Rules: `docs/ux-rules.md`
-- Report output: `client/e2e/screenshots/ux-report.md`
+- Report per mode: `client/e2e/screenshots/<mode>/ux-report.md`
+- Summary report (all-modes): `client/e2e/screenshots/ux-report-summary.md`
+
+---
+
+## Single Mode Audit
 
 ## Steps
 
@@ -127,3 +138,81 @@ Think like someone who has never played the game before. Could they understand w
 - **CONCERN**: A real player or spectator would be confused, miss important information, or misunderstand the game state. Addresses readability at distance, dead-screen ambiguity, phantom metrics, mode-inappropriate info.
 - **MINOR**: A cosmetic improvement that would make the experience better but wouldn't cause confusion. Addresses polish, hierarchy refinements, nice-to-have labels.
 - **PASS**: Nothing worth flagging.
+
+---
+
+## All-Modes Audit
+
+When the user asks to "run ux-audit for every game mode" or "audit all modes":
+
+### 1. Check servers are running
+
+```bash
+curl -s http://localhost:BACKEND_PORT/health | grep -q '"debug":true' && echo "OK" || echo "SERVER DOWN — run ./scripts/dev.sh"
+```
+
+If down, start servers:
+```bash
+./scripts/dev.sh &
+sleep 5
+```
+
+### 2. Screenshot each mode
+
+Read `references/modes.md` for the full mode list and which template each requires.
+Run screenshots for each mode in sequence:
+
+```bash
+# 1-phone modes
+cd client && MODE=classic npm run screenshot
+
+# 2-phone modes
+cd client && MODE=role-based npm run screenshot:2p
+cd client && MODE=long-live-the-king npm run screenshot:2p
+cd client && MODE=death-count npm run screenshot:2p
+cd client && MODE=domination npm run screenshot:2p
+```
+
+Each run saves to its own directory: `client/e2e/screenshots/<mode>/`.
+
+Wait for each command to complete before starting the next (they reset server state).
+
+### 3. Audit each mode
+
+For each mode directory that now contains a `manifest.json`, run the Single Mode Audit (steps 1–4 above), reading from `client/e2e/screenshots/<mode>/` and writing the report to `client/e2e/screenshots/<mode>/ux-report.md`.
+
+Also consult `references/modes.md` for mode-specific concerns to watch for while evaluating.
+
+### 4. Write a summary report
+
+Write `client/e2e/screenshots/ux-report-summary.md`:
+
+```markdown
+# UX Audit — All Modes Summary
+
+Generated: <timestamp>
+
+| Mode | CONCERN | MINOR | PASS | Report |
+|------|---------|-------|------|--------|
+| classic | N | N | N | [ux-report.md](classic/ux-report.md) |
+| role-based | N | N | N | [ux-report.md](role-based/ux-report.md) |
+| long-live-the-king | N | N | N | [ux-report.md](long-live-the-king/ux-report.md) |
+| death-count | N | N | N | [ux-report.md](death-count/ux-report.md) |
+| domination | N | N | N | [ux-report.md](domination/ux-report.md) |
+
+## Cross-mode concerns
+
+<list any issues that appear in multiple modes — these are likely systemic>
+
+## Top priority fixes
+
+<ordered list of the most impactful CONCERN findings across all modes>
+```
+
+### 5. Report to user
+
+State the total concerns across all modes, name the top 3 most impactful, and suggest which to fix first.
+
+## Additional Resources
+
+- `references/modes.md` — mode keys, screenshot templates, mode-specific UX concerns
