@@ -201,22 +201,13 @@ Wait for each command to complete before starting the next (they reset server st
 
 ### 3. Audit each mode (parallelized with subagents)
 
-**Cost note:** The per-mode evaluation is the most token-intensive part of the audit (7 parallel agents, each reading ~12 images). These are structured rubric-following tasks that Sonnet could handle well if Claude Code ever supports per-subagent model selection. For now, all subagents run on the session model.
+Spawn one subagent per mode using the Agent tool with `subagent_type: "ux-auditor"`, all in parallel (`run_in_background: true`). The `ux-auditor` agent is defined in `.claude/agents/ux-auditor.md` — it runs on Sonnet for cost efficiency since per-mode evaluation is a structured rubric-following task.
 
-Spawn one subagent per mode using the Agent tool, all in parallel (`run_in_background: true`). Each subagent should:
+Each subagent prompt should include:
+- The screenshot directory path: `client/e2e/screenshots/<mode>/`
+- The mode context from `references/modes.md` (what the mode does, what to watch for)
 
-1. Read `docs/ux-rules.md`
-2. Read `manifest.json` in its mode directory
-3. Read every PNG listed in the manifest
-4. Consult `references/modes.md` for mode-specific concerns
-5. Evaluate each screenshot against the applicable rules
-6. Write the report to `client/e2e/screenshots/<mode>/ux-report.md`
-
-Include in each subagent prompt:
-- The mode context (what the mode does, what to watch for) from `references/modes.md`
-- Instruction to include an **Aesthetic observations** section at the end (visual polish, emotional impact, typography, color palette — separate from CONCERN/MINOR/PASS verdicts)
-- Instruction to NOT flag dev-mode-only UI elements (CLICK TO TAKE DAMAGE, CLICK TO READY, [DEV MODE] badge)
-- Instruction to return a brief summary of findings (concern count, top issues)
+The agent definition already includes: report format, severity guide, evaluation mindset, aesthetic observations section, and the instruction to not flag dev-mode UI elements.
 
 Wait for all subagents to complete before proceeding to step 4.
 
