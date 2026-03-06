@@ -396,6 +396,16 @@ describe("ActiveGameScreen", () => {
     const deathCountEl = screen.getByText(/3/);
     expect(deathCountEl).toBeInTheDocument();
   });
+
+  it("shows crown when player is king", () => {
+    render(<ActiveGameScreen {...baseProps} isKing={true} />);
+    expect(screen.getByText("👑")).toBeInTheDocument();
+  });
+
+  it("hides crown when player is not king", () => {
+    render(<ActiveGameScreen {...baseProps} isKing={false} />);
+    expect(screen.queryByText("👑")).not.toBeInTheDocument();
+  });
 });
 
 describe("DeadScreen", () => {
@@ -461,6 +471,34 @@ describe("DeadScreen", () => {
 
     expect(screen.getByText("🥈")).toBeInTheDocument();
     expect(screen.getByText("💀 2")).toBeInTheDocument();
+  });
+
+  it("shows crown on dead screen when player is king", () => {
+    render(
+      <DeadScreen
+        teamId={null}
+        respawnCountdown={null}
+        deathCount={0}
+        points={0}
+        medal={null}
+        isKing={true}
+      />
+    );
+    expect(screen.getByText("👑")).toBeInTheDocument();
+  });
+
+  it("hides crown on dead screen when player is not king", () => {
+    render(
+      <DeadScreen
+        teamId={null}
+        respawnCountdown={null}
+        deathCount={0}
+        points={0}
+        medal={null}
+        isKing={false}
+      />
+    );
+    expect(screen.queryByText("👑")).not.toBeInTheDocument();
   });
 });
 

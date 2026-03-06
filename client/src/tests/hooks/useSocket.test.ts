@@ -414,6 +414,29 @@ describe("useSocket", () => {
       expect(state.totalRounds).toBe(5);
       expect(state.gameState).toBe("active");
     });
+
+    it("resets isKing to false at round start", () => {
+      renderHook(() => useSocket());
+      useGameStore.getState().setIsKing(true);
+
+      act(() => {
+        triggerSocketEvent("round:start", { roundNumber: 2, totalRounds: 3 });
+      });
+
+      expect(useGameStore.getState().isKing).toBe(false);
+    });
+  });
+
+  describe("king:crowned event", () => {
+    it("sets isKing to true in the store", () => {
+      renderHook(() => useSocket());
+
+      act(() => {
+        triggerSocketEvent("king:crowned", {});
+      });
+
+      expect(useGameStore.getState().isKing).toBe(true);
+    });
   });
 
   describe("round:end event", () => {

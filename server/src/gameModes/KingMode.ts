@@ -170,14 +170,6 @@ export class KingMode extends GameMode {
     }
   }
 
-  override onRoundEnd(engine: GameEngine): void {
-    super.onRoundEnd(engine);
-    // Transfer round points to total points for all players
-    engine.players.forEach((player) => {
-      player.totalPoints += player.points;
-    });
-  }
-
   override calculateFinalScores(engine: GameEngine): ScoreEntry[] {
     const teamManager = TeamManager.getInstance();
 
