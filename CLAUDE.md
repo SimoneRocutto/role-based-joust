@@ -13,6 +13,7 @@ This file is the primary entry point for Claude Code working on this repository.
 5. **Update docs when changing features.** If you change a socket event, REST endpoint, game flow, role mechanic, or any documented behavior, update the relevant doc file(s) in the same task. Use the doc index below to find which file to update. This is part of the work, not a separate step.
 6. **Prioritize code quality** Avoid repetitions and duplicated code. When you feel it is better to refactor an old part when introducing a new one, please consider doing so.
 7. **Track TODO.md.** After completing a task, check `TODO.md` to see if the work resolves any listed item. If it does, remove that line from the file. When a task is done and there are remaining items in `TODO.md`, suggest tackling the next one (top item = highest priority).
+8. **Verify UI changes visually.** Whenever you change anything UI-related that is not trivial (new screen, new component, changed layout, new game state rendering), run `/screenshot` to capture the result across dashboard and phone viewports. This is especially critical when designing UI from scratch — you must see what a real player or spectator would actually see during a game, not just trust that the code is correct. Do not consider a UI task done until you have looked at a screenshot.
 
 ## Project Overview
 
@@ -109,16 +110,24 @@ E2e tests auto-start both the server (port 4000) and client (port 5173) before r
 
 ### Visual Debugging
 
-To inspect the UI without a phone, use the `/screenshot` skill or do it manually:
+Run `/screenshot` to capture screenshots across all game states (lobby, active, dead, round-end, game-over) for both the dashboard (1280×800) and phone (390×844) viewports. The skill handles server health checks, bot game setup, and cleanup automatically.
 
-1. Start the dev servers (`cd server && npm run dev`, `cd client && npm run dev`)
-2. Hit `POST /api/debug/test/create` to launch a bot game instantly
-3. Write a short Playwright script in `client/e2e/` that navigates to `/dashboard` or `/player` and calls `page.screenshot()`
-4. Read the resulting PNG with the Read tool to view it
+**How to decide how many phone tabs to open:**
 
-Use `POST /api/debug/fastforward` to skip the countdown, and `POST /api/debug/bot/:id/command` with `{ "command": "die" }` to reach specific game states (round-ended, finished, etc.).
+| Scenario | What to do |
+|---|---|
+| Feature looks the same for every player (layout change, new screen, damage bar) | 1 phone + dashboard |
+| Feature creates 2 distinct player experiences (king vs non-king, role reveal A vs B) | 2 phones + dashboard — use `/screenshot players=2` |
+| Feature creates N distinct experiences (e.g. 6 different roles all showing different cards) | 1 phone + store injection to cycle through variants; use `GET /api/debug/state` to verify distribution |
+| "Is the server assigning state correctly?" (not visual) | `GET /api/debug/state` programmatically — don't use screenshots for this |
 
-**Shortcut:** run `/screenshot` to do all of the above automatically.
+**The dashboard is the all-players view.** It shows every player card simultaneously — HP, alive/dead, team color, role, crown. For "which player is king?", one dashboard screenshot already answers that for all N players. Phone screenshots are only needed for state that is only visible on the player's own screen.
+
+**Two capture strategies:**
+- **Real socket (preferred):** The phone player joins the lobby before the bot game. `POST /api/debug/test/create` with `includeConnected: true` includes them in the game. All state — game phase, HP, alive/dead, round-end scores — arrives via real socket events, identical to a physical device.
+- **Store injection (supplement):** `window.__gameStore.getState().setIsKing(true)` etc. for states that are hard to reach naturally (e.g. the crown badge when king assignment is random). Only inject the specific field you need; let the rest of the state be socket-driven.
+
+**Store injection caveat:** It tests "given store state X, does the UI render correctly?" but does NOT verify that the real game flow produces state X. For correctness of the data pipeline, rely on unit/e2e tests, not screenshots.
 
 ### Worktree Port Isolation
 
