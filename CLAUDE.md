@@ -30,9 +30,9 @@ Servers must be running first. See "Visual Debugging" below for when to use each
 4. **Suggest e2e tests when appropriate.** If changes affect game flow, socket events, UI interactions, or the join/play/dashboard user journey, remind the user to run e2e tests (`cd client && npm run test:e2e`). E2e tests are slower so don't run them automatically, but do flag when they're relevant.
 5. **Update docs when changing features.** If you change a socket event, REST endpoint, game flow, role mechanic, or any documented behavior, update the relevant doc file(s) in the same task. Use the doc index below to find which file to update. This is part of the work, not a separate step.
 6. **Prioritize code quality** Avoid repetitions and duplicated code. When you feel it is better to refactor an old part when introducing a new one, please consider doing so.
-7. **Track TODO.md.** After completing a task, check `TODO.md` to see if the work resolves any listed item. If it does, remove that line from the file. When a task is done and there are remaining items in `TODO.md`, suggest tackling the next one (top item = highest priority).
+7. **Track TODO.md and claude-todo.md.** After completing a task, check both `TODO.md` and `claude-todo.md` to see if the work resolves any listed item. In `TODO.md`, remove completed lines. In `claude-todo.md`, set status to DONE and update the detail file in `claude-tasks/`. When a task is done, suggest tackling the next highest-priority TODO item.
 8. **Verify UI changes visually.** Whenever you change anything UI-related that is not trivial (new screen, new component, changed layout, new game state rendering), run `/screenshot` to capture the result across dashboard and phone viewports. This is especially critical when designing UI from scratch — you must see what a real player or spectator would actually see during a game, not just trust that the code is correct. Do not consider a UI task done until you have looked at a screenshot.
-9. **Run UX audit for new game modes, new screens, or significant UI changes.** After taking screenshots, run the `/ux-audit` skill. It reads the screenshots, evaluates each against the rules in `docs/ux-rules.md`, and writes `e2e/screenshots/ux-report.md`. Address all CONCERN-level findings before closing. Update `docs/ux-rules.md` when adding new modes or mechanics.
+9. **Run UX audit for new game modes, new screens, or significant UI changes.** After taking screenshots, run the `/ux-audit` skill. It reads the screenshots, evaluates each against the rules in `docs/ux-rules.md`, and writes `e2e/screenshots/ux-report.md`. Address all CONCERN-level findings before closing. Update `docs/ux-rules.md` when adding new modes or mechanics. **After every UX audit, update `claude-todo.md` and the relevant task files in `claude-tasks/`**: mark resolved issues as DONE, create new tasks for new findings, and update the NEEDS-INPUT summary if new decisions are required.
 10. **Run a code review before closing any non-trivial task.** After implementing (tests passing, TypeScript clean), spawn a reviewer subagent using the Agent tool. Pass it the list of changed files and this prompt:
 
    > You are a senior code reviewer. Review the following changed files for this codebase (Extended Joust — TypeScript, React, Express, Socket.IO).
@@ -56,6 +56,16 @@ Servers must be running first. See "Visual Debugging" below for when to use each
 Extended Joust is a motion-based multiplayer party game (2-20 players). Players use smartphones as accelerometer controllers, holding them chest-mounted. Excessive movement causes damage; staying still keeps you alive. A central dashboard (projected on a screen) shows game state to spectators and the admin.
 
 The game adds role-based mechanics on top of this core loop. Each player is secretly assigned a role (Vampire, Beast, Angel, etc.) that grants unique abilities. Roles are still being developed, but the framework for them is complete.
+
+### CRITICAL: Phone screens face OPPONENTS, not the player
+
+**This is the most important design constraint in the game.** Phones are strapped to players' chests with the screen facing outward. The player wearing the phone CANNOT easily see their own screen. Other players and spectators CAN.
+
+- **Phone UI is for opponents/spectators looking AT the player**, like a jersey or badge. Design accordingly.
+- **NEVER show secret info on the phone**: no hidden role names, no ability buttons, no private strategy. Opponents will read it.
+- **Public info is fine on the phone**: player number, team color, alive/dead status, HP, king crown (king is public knowledge).
+- **Role-based mode**: roles are SECRET. Do not display role names or ability indicators on the phone screen.
+- **King mode exception**: the king is public. The crown on the king's phone is correct.
 
 ### Game Flow
 
