@@ -138,7 +138,8 @@ async function checkServer() {
       createRes.snapshot?.players ?? [];
     const botIds = allPlayers.filter((p) => p.isBot).map((p) => p.id);
 
-    await api("/debug/fastforward", "POST");
+    // Test mode skips countdown — game is already active after test/create.
+    // Wait for socket events to propagate to the browser.
     await sleep(1000);
 
     // ── READ SERVER STATE to identify which player has which experience ────────

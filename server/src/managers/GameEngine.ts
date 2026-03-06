@@ -724,12 +724,12 @@ export class GameEngine {
    *   Players must already be registered in ConnectionManager (i.e. have joined the lobby).
    */
   createTestGame(
-    roleNames: string[],
-    options: { behavior?: string; realPlayerIds?: string[] } = {}
+    botCount: number,
+    options: { behavior?: string; realPlayerIds?: string[]; rolePool?: string[] } = {}
   ): void {
     this.testMode = true;
 
-    const { behavior = "random", realPlayerIds = [] } = options;
+    const { behavior = "random", realPlayerIds = [], rolePool } = options;
     const connectionManager = ConnectionManager.getInstance();
 
     // Include real connected players first (they're already in ConnectionManager)
@@ -740,7 +740,7 @@ export class GameEngine {
       isBot: false,
     }));
 
-    const botData: PlayerData[] = roleNames.map((_role, i) => ({
+    const botData: PlayerData[] = Array.from({ length: botCount }, (_, i) => ({
       id: `bot-${i}`,
       name: `Bot ${i + 1}`,
       socketId: `socket-bot-${i}`,
@@ -752,7 +752,7 @@ export class GameEngine {
       botCount: botData.length,
       realPlayers: realPlayerData.length,
       behavior,
-      roles: roleNames,
+      rolePool: rolePool ?? "mode-default",
     });
 
     // Register bots in ConnectionManager so they get sequential player numbers
@@ -761,8 +761,9 @@ export class GameEngine {
       connectionManager.registerConnection(bot.id, bot.socketId!, bot.name, false);
     });
 
-    // Pass roleNames as the role pool override to ensure exact role assignment
-    this.startGame([...realPlayerData, ...botData], roleNames);
+    // Pass rolePool as override only if explicitly provided.
+    // When undefined, startGame → assignRolesForRound uses the mode's getRolePool().
+    this.startGame([...realPlayerData, ...botData], rolePool);
   }
 
   /**

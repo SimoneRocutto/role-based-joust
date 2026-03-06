@@ -50,7 +50,7 @@ runner.test("Bot role can be commanded", (engine) => {
   engine.setGameMode(mode);
 
   // Create test game with specific roles
-  engine.createTestGame(["vampire", "beast", "beasthunter", "angel"]);
+  engine.createTestGame(4, { rolePool: ["vampire", "beast", "beasthunter", "angel"] });
 
   const bots = engine.players.filter((p) => p.isBot);
   assertEqual(bots.length, 4, "Should have 4 bots");
@@ -70,7 +70,7 @@ runner.test("All bot roles can be commanded", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["vampire", "beast", "beasthunter", "angel"]);
+  engine.createTestGame(4, { rolePool: ["vampire", "beast", "beasthunter", "angel"] });
 
   // Try commanding each bot
   engine.players.forEach((player) => {
@@ -96,7 +96,7 @@ runner.test("Vampire enters bloodlust after 30 seconds", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["vampire", "beast"]);
+  engine.createTestGame(2, { rolePool: ["vampire", "beast"] });
 
   // Disable auto-play to prevent random deaths during fast-forward
   engine.players.forEach((p) => p.disableAutoPlay());
@@ -120,7 +120,7 @@ runner.skip(
     const mode = GameModeFactory.getInstance().createMode("role-based");
     engine.setGameMode(mode);
 
-    engine.createTestGame(["vampire", "beast", "beast"]);
+    engine.createTestGame(3, { rolePool: ["vampire", "beast", "beast"] });
 
     engine.players.forEach((p) => p.disableAutoPlay());
 
@@ -147,7 +147,7 @@ runner.test("Beast has increased toughness", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["beast", "vampire"]);
+  engine.createTestGame(2, { rolePool: ["beast", "vampire"] });
 
   const beast = engine.players.find((p) => p instanceof Beast);
   assert(beast !== undefined, "Should have beast");
@@ -196,7 +196,7 @@ runner.test("BeastHunter has Beast assigned as target", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["beasthunter", "beast", "vampire"]);
+  engine.createTestGame(3, { rolePool: ["beasthunter", "beast", "vampire"] });
 
   const hunter = engine.players.find((p) => p instanceof BeastHunter);
   const beast = engine.players.find((p) => p instanceof Beast);
@@ -221,7 +221,7 @@ runner.test(
     const mode = GameModeFactory.getInstance().createMode("role-based");
     engine.setGameMode(mode);
 
-    engine.createTestGame(["beasthunter", "vampire", "angel"]);
+    engine.createTestGame(3, { rolePool: ["beasthunter", "vampire", "angel"] });
 
     const hunter = engine.players.find((p) => p instanceof BeastHunter);
     assert(hunter !== undefined, "Should have beast hunter");
@@ -237,7 +237,7 @@ runner.test("BeastHunter gains points when Beast dies", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["beasthunter", "beast", "vampire"]);
+  engine.createTestGame(3, { rolePool: ["beasthunter", "beast", "vampire"] });
 
   const hunter = engine.players.find((p) => p instanceof BeastHunter);
   const beast = engine.players.find((p) => p instanceof Beast);
@@ -263,7 +263,7 @@ runner.test("BeastHunter doesn't gain points for other deaths", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["beasthunter", "vampire", "angel"]);
+  engine.createTestGame(3, { rolePool: ["beasthunter", "vampire", "angel"] });
 
   const hunter = engine.players.find((p) => p instanceof BeastHunter);
   const vampire = engine.players.find((p) => p instanceof Vampire);
@@ -294,7 +294,7 @@ runner.test("Angel prevents first death", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["angel", "vampire"]);
+  engine.createTestGame(2, { rolePool: ["angel", "vampire"] });
 
   const angel = engine.players.find((p) => p instanceof Angel);
   assert(angel !== undefined, "Should have angel");
@@ -313,7 +313,7 @@ runner.skip(
     const mode = GameModeFactory.getInstance().createMode("role-based");
     engine.setGameMode(mode);
 
-    engine.createTestGame(["angel", "vampire"]);
+    engine.createTestGame(2, { rolePool: ["angel", "vampire"] });
 
     const angel = engine.players.find((p) => p instanceof Angel);
     assert(angel !== undefined, "Should have angel");
@@ -335,7 +335,7 @@ runner.test("Survivor gains 1 point after 30 seconds", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["survivor", "beast"]);
+  engine.createTestGame(2, { rolePool: ["survivor", "beast"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const survivor = engine.players.find((p) => p instanceof Survivor);
@@ -352,7 +352,7 @@ runner.test("Survivor gains multiple points over time", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["survivor", "beast"]);
+  engine.createTestGame(2, { rolePool: ["survivor", "beast"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const survivor = engine.players.find((p) => p instanceof Survivor);
@@ -369,7 +369,7 @@ runner.test("Survivor stops earning points when dead", (engine) => {
   engine.setGameMode(mode);
 
   // 3 players so round doesn't end when survivor dies
-  engine.createTestGame(["survivor", "beast", "ninja"]);
+  engine.createTestGame(3, { rolePool: ["survivor", "beast", "ninja"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const survivor = engine.players.find((p) => p instanceof Survivor);
@@ -397,7 +397,7 @@ runner.test("Executioner has a target assigned", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["executioner", "beast", "survivor"]);
+  engine.createTestGame(3, { rolePool: ["executioner", "beast", "survivor"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const executioner = engine.players.find((p) => p instanceof Executioner);
@@ -416,7 +416,7 @@ runner.test("Executioner gains points when target dies", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["executioner", "beast", "survivor"]);
+  engine.createTestGame(3, { rolePool: ["executioner", "beast", "survivor"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const executioner = engine.players.find((p) => p instanceof Executioner);
@@ -443,7 +443,7 @@ runner.test("Executioner gets new target after current dies", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["executioner", "beast", "survivor", "ninja"]);
+  engine.createTestGame(4, { rolePool: ["executioner", "beast", "survivor", "ninja"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const executioner = engine.players.find((p) => p instanceof Executioner);
@@ -474,7 +474,7 @@ runner.test(
     const mode = GameModeFactory.getInstance().createMode("role-based");
     engine.setGameMode(mode);
 
-    engine.createTestGame(["executioner", "beast", "survivor", "ninja"]);
+    engine.createTestGame(4, { rolePool: ["executioner", "beast", "survivor", "ninja"] });
     engine.players.forEach((p) => p.disableAutoPlay());
 
     const executioner = engine.players.find((p) => p instanceof Executioner);
@@ -508,7 +508,7 @@ runner.test("Bodyguard has a target assigned", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["bodyguard", "beast", "survivor"]);
+  engine.createTestGame(3, { rolePool: ["bodyguard", "beast", "survivor"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const bodyguard = engine.players.find((p) => p instanceof Bodyguard);
@@ -524,13 +524,13 @@ runner.test("Bodyguard earns bonus when target in top 3", (engine) => {
   engine.setGameMode(mode);
 
   // 5 players: bodyguard + 4 others. Kill 2 non-targets to reach 3 alive.
-  engine.createTestGame([
+  engine.createTestGame(5, { rolePool: [
     "bodyguard",
     "beast",
     "survivor",
     "ninja",
     "masochist",
-  ]);
+  ] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const bodyguard = engine.players.find((p) => p instanceof Bodyguard);
@@ -563,7 +563,7 @@ runner.test("Bodyguard has reduced placement bonus", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["bodyguard", "beast"]);
+  engine.createTestGame(2, { rolePool: ["bodyguard", "beast"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const bodyguard = engine.players.find((p) => p instanceof Bodyguard);
@@ -588,7 +588,7 @@ runner.test("Berserker gains Toughened on damage", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["berserker", "beast"]);
+  engine.createTestGame(2, { rolePool: ["berserker", "beast"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const berserker = engine.players.find((p) => p instanceof Berserker);
@@ -623,7 +623,7 @@ runner.test("Berserker Toughened expires after duration", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["berserker", "beast"]);
+  engine.createTestGame(2, { rolePool: ["berserker", "beast"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const berserker = engine.players.find((p) => p instanceof Berserker);
@@ -648,7 +648,7 @@ runner.test("Berserker takes less damage during tough skin", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["berserker", "beast"]);
+  engine.createTestGame(2, { rolePool: ["berserker", "beast"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const berserker = engine.players.find((p) => p instanceof Berserker);
@@ -684,7 +684,7 @@ runner.test("Ninja survives normal movement below threshold", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["ninja", "beast"]);
+  engine.createTestGame(2, { rolePool: ["ninja", "beast"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const ninja = engine.players.find((p) => p instanceof Ninja);
@@ -706,7 +706,7 @@ runner.test("Ninja dies instantly when exceeding threshold", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["ninja", "beast"]);
+  engine.createTestGame(2, { rolePool: ["ninja", "beast"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const ninja = engine.players.find((p) => p instanceof Ninja);
@@ -726,7 +726,7 @@ runner.test("Masochist earns points when below 50% HP", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["masochist", "beast"]);
+  engine.createTestGame(2, { rolePool: ["masochist", "beast"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const masochist = engine.players.find((p) => p instanceof Masochist);
@@ -756,7 +756,7 @@ runner.test("Masochist doesn't earn points above 50% HP", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["masochist", "beast"]);
+  engine.createTestGame(2, { rolePool: ["masochist", "beast"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const masochist = engine.players.find((p) => p instanceof Masochist);
@@ -783,7 +783,7 @@ runner.test("Masochist earns multiple points over time", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["masochist", "beast"]);
+  engine.createTestGame(2, { rolePool: ["masochist", "beast"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const masochist = engine.players.find((p) => p instanceof Masochist);
@@ -810,7 +810,7 @@ runner.test("Two siblings find each other and show target name", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["sibling", "sibling", "beast"]);
+  engine.createTestGame(3, { rolePool: ["sibling", "sibling", "beast"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const siblings = engine.players.filter((p) => p instanceof Sibling);
@@ -833,7 +833,7 @@ runner.test("Damage to one sibling is shared with the other", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["sibling", "sibling", "beast"]);
+  engine.createTestGame(3, { rolePool: ["sibling", "sibling", "beast"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const siblings = engine.players.filter((p) => p instanceof Sibling);
@@ -856,7 +856,7 @@ runner.test("Shared damage doesn't cause infinite loop", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["sibling", "sibling", "beast"]);
+  engine.createTestGame(3, { rolePool: ["sibling", "sibling", "beast"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const siblings = engine.players.filter((p) => p instanceof Sibling);
@@ -883,7 +883,7 @@ runner.test("Sibling has +50% effective toughness", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["sibling", "beast"]);
+  engine.createTestGame(2, { rolePool: ["sibling", "beast"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const sibling = engine.players.find((p) => p instanceof Sibling);
@@ -901,7 +901,7 @@ runner.test(
     const mode = GameModeFactory.getInstance().createMode("role-based");
     engine.setGameMode(mode);
 
-    engine.createTestGame(["sibling", "beast", "survivor"]);
+    engine.createTestGame(3, { rolePool: ["sibling", "beast", "survivor"] });
     engine.players.forEach((p) => p.disableAutoPlay());
 
     const sibling = engine.players.find((p) => p instanceof Sibling);
@@ -931,7 +931,7 @@ runner.test("Two siblings win together when all others die", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["sibling", "sibling", "beast", "survivor"]);
+  engine.createTestGame(4, { rolePool: ["sibling", "sibling", "beast", "survivor"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const siblings = engine.players.filter((p) => p instanceof Sibling);
@@ -954,7 +954,7 @@ runner.test("Sibling death triggers death event normally", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["sibling", "sibling", "beast"]);
+  engine.createTestGame(3, { rolePool: ["sibling", "sibling", "beast"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const siblings = engine.players.filter((p) => p instanceof Sibling);
@@ -974,7 +974,7 @@ runner.test(
     const mode = GameModeFactory.getInstance().createMode("role-based");
     engine.setGameMode(mode);
 
-    engine.createTestGame(["vulture", "beast", "survivor", "ninja"]);
+    engine.createTestGame(4, { rolePool: ["vulture", "beast", "survivor", "ninja"] });
     engine.players.forEach((p) => p.disableAutoPlay());
 
     const vulture = engine.players.find((p) => p instanceof Vulture);
@@ -1009,7 +1009,7 @@ runner.test(
     const mode = GameModeFactory.getInstance().createMode("role-based");
     engine.setGameMode(mode);
 
-    engine.createTestGame(["vulture", "beast", "survivor"]);
+    engine.createTestGame(3, { rolePool: ["vulture", "beast", "survivor"] });
     engine.players.forEach((p) => p.disableAutoPlay());
 
     const vulture = engine.players.find((p) => p instanceof Vulture);
@@ -1027,7 +1027,7 @@ runner.test("Vulture gains no points when deaths are >5s apart", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["vulture", "beast", "survivor", "ninja"]);
+  engine.createTestGame(4, { rolePool: ["vulture", "beast", "survivor", "ninja"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const vulture = engine.players.find((p) => p instanceof Vulture);
@@ -1058,7 +1058,7 @@ runner.test("Vulture's own death doesn't trigger points", (engine) => {
   engine.setGameMode(mode);
 
   // 4 players so round doesn't end when vulture dies
-  engine.createTestGame(["vulture", "beast", "survivor", "ninja"]);
+  engine.createTestGame(4, { rolePool: ["vulture", "beast", "survivor", "ninja"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const vulture = engine.players.find((p) => p instanceof Vulture);
@@ -1080,7 +1080,7 @@ runner.test("Dead vulture doesn't gain points", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["vulture", "beast", "survivor", "ninja"]);
+  engine.createTestGame(4, { rolePool: ["vulture", "beast", "survivor", "ninja"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const vulture = engine.players.find((p) => p instanceof Vulture);
@@ -1109,7 +1109,7 @@ runner.test("Troll heals damage after delay", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["troll", "beast"]);
+  engine.createTestGame(2, { rolePool: ["troll", "beast"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const troll = engine.players.find((p) => p instanceof Troll);
@@ -1141,7 +1141,7 @@ runner.test("Troll heal resets on repeated damage", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["troll", "beast"]);
+  engine.createTestGame(2, { rolePool: ["troll", "beast"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const troll = engine.players.find((p) => p instanceof Troll);
@@ -1177,7 +1177,7 @@ runner.test("Troll does not heal after death", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["troll", "beast"]);
+  engine.createTestGame(2, { rolePool: ["troll", "beast"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const troll = engine.players.find((p) => p instanceof Troll);
@@ -1200,7 +1200,7 @@ runner.test("1st place gets 5 points, 2nd gets 3, 3rd gets 1", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["beast", "survivor", "ninja", "berserker"]);
+  engine.createTestGame(4, { rolePool: ["beast", "survivor", "ninja", "berserker"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const [p1, p2, p3, p4] = engine.players;
@@ -1227,7 +1227,7 @@ runner.test("Placement bonus respects role overrides", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["bodyguard", "beast"]);
+  engine.createTestGame(2, { rolePool: ["bodyguard", "beast"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const bodyguard = engine.players.find((p) => p instanceof Bodyguard);
@@ -1250,7 +1250,7 @@ runner.test("2-player game awards correct placements", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["beast", "ninja"]);
+  engine.createTestGame(2, { rolePool: ["beast", "ninja"] });
   engine.players.forEach((p) => p.disableAutoPlay());
 
   const [p1, p2] = engine.players;
@@ -1327,7 +1327,7 @@ runner.test("All roles can be created via factory", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame([
+  engine.createTestGame(8, { rolePool: [
     "survivor",
     "executioner",
     "bodyguard",
@@ -1336,7 +1336,7 @@ runner.test("All roles can be created via factory", (engine) => {
     "masochist",
     "sibling",
     "vulture",
-  ]);
+  ] });
 
   assertEqual(engine.players.length, 8, "Should have 8 players");
 

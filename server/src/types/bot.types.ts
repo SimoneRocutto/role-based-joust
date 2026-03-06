@@ -3,7 +3,8 @@ export type BotBehavior =
   | "aggressive"
   | "defensive"
   | "idle"
-  | "chaotic";
+  | "chaotic"
+  | "still";
 
 export interface BotConfig {
   behavior: BotBehavior;

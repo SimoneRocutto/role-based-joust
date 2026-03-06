@@ -15,7 +15,7 @@ runner.test("Charges initialize correctly on game start", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["ironclad", "ironclad"]);
+  engine.createTestGame(2, { rolePool: ["ironclad", "ironclad"] });
 
   const ironclad = engine.players.find((p) => p instanceof Ironclad) as Ironclad;
   assert(ironclad !== undefined, "Should have an Ironclad");
@@ -30,7 +30,7 @@ runner.test("Using ability consumes a charge", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["ironclad", "ironclad"]);
+  engine.createTestGame(2, { rolePool: ["ironclad", "ironclad"] });
 
   const ironclad = engine.players.find((p) => p instanceof Ironclad) as Ironclad;
   const initialCharges = ironclad.currentCharges;
@@ -45,7 +45,7 @@ runner.test("Cannot use ability with no charges", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["ironclad", "ironclad"]);
+  engine.createTestGame(2, { rolePool: ["ironclad", "ironclad"] });
 
   const ironclad = engine.players.find((p) => p instanceof Ironclad) as Ironclad;
 
@@ -64,7 +64,7 @@ runner.test("getChargeInfo returns correct values", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["ironclad", "ironclad"]);
+  engine.createTestGame(2, { rolePool: ["ironclad", "ironclad"] });
 
   const ironclad = engine.players.find((p) => p instanceof Ironclad) as Ironclad;
 
@@ -88,7 +88,7 @@ runner.test("Ironclad is created correctly", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["ironclad", "ironclad"]);
+  engine.createTestGame(2, { rolePool: ["ironclad", "ironclad"] });
 
   const ironclad = engine.players.find((p) => p instanceof Ironclad);
   assert(ironclad !== undefined, "Should have an Ironclad");
@@ -99,7 +99,7 @@ runner.test("Ironclad ability applies Toughened effect", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["ironclad", "ironclad"]);
+  engine.createTestGame(2, { rolePool: ["ironclad", "ironclad"] });
 
   const ironclad = engine.players.find((p) => p instanceof Ironclad) as Ironclad;
 
@@ -114,7 +114,7 @@ runner.test("Ironclad Toughened effect sets correct toughness", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["ironclad", "ironclad"]);
+  engine.createTestGame(2, { rolePool: ["ironclad", "ironclad"] });
 
   // Disable autoplay to prevent death during test
   engine.players.forEach((p) => p.disableAutoPlay());
@@ -144,7 +144,7 @@ runner.test("Ironclad takes reduced damage while Toughened", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["ironclad", "ironclad"]);
+  engine.createTestGame(2, { rolePool: ["ironclad", "ironclad"] });
 
   const ironclad = engine.players.find((p) => p instanceof Ironclad) as Ironclad;
 
@@ -171,7 +171,7 @@ runner.test("Ironclad single-use - no charge regen", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based");
   engine.setGameMode(mode);
 
-  engine.createTestGame(["ironclad", "ironclad"]);
+  engine.createTestGame(2, { rolePool: ["ironclad", "ironclad"] });
 
   const ironclad = engine.players.find((p) => p instanceof Ironclad) as Ironclad;
 
@@ -291,7 +291,7 @@ runner.test("Charges reset on new round", (engine) => {
   const mode = GameModeFactory.getInstance().createMode("role-based", { roundCount: 3 });
   engine.setGameMode(mode);
 
-  engine.createTestGame(["ironclad", "ironclad"]);
+  engine.createTestGame(2, { rolePool: ["ironclad", "ironclad"] });
 
   const ironclad = engine.players.find((p) => p instanceof Ironclad) as Ironclad;
 

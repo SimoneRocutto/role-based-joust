@@ -753,6 +753,9 @@ export class BasePlayer {
       case "idle":
         intensity = this.idleBehavior();
         break;
+      case "still":
+        intensity = 0;
+        break;
       case "chaotic":
         intensity = this.chaoticBehavior();
         break;

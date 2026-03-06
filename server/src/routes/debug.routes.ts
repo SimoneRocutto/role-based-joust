@@ -212,17 +212,11 @@ router.post(
       req.body;
     const gameEngine: GameEngine = req.app.locals.gameEngine;
 
-    // roles is optional when botCount is provided (classic mode ignores roles anyway)
-    const effectiveRoles: string[] =
-      Array.isArray(roles) ? roles : Array(Math.max(1, botCount ?? 3)).fill("");
-
-    if (!Array.isArray(effectiveRoles)) {
-      res.status(400).json({
-        success: false,
-        error: "Provide roles array or botCount",
-      });
-      return;
-    }
+    // Determine bot count: either from explicit roles array or botCount
+    const effectiveBotCount = Array.isArray(roles) ? roles.length : Math.max(1, botCount ?? 3);
+    // Only use roles as override pool if explicitly provided with actual role names.
+    // When botCount is used without roles, pass undefined so the mode's getRolePool() decides.
+    const explicitRoles: string[] | undefined = Array.isArray(roles) ? roles : undefined;
 
     // Set game mode if not already set (or if explicitly provided)
     if (!gameEngine.currentMode || mode) {
@@ -245,14 +239,15 @@ router.post(
       ? ConnectionManager.getInstance().getConnectedPlayers()
       : [];
 
-    gameEngine.createTestGame(effectiveRoles, {
+    gameEngine.createTestGame(effectiveBotCount, {
       behavior: botBehavior ?? "random",
       realPlayerIds,
+      rolePool: explicitRoles,
     });
 
     // Assign bots to teams after game creation (bot IDs are bot-0, bot-1, ...)
     if (teams) {
-      const botIds = effectiveRoles.map((_: string, i: number) => `bot-${i}`);
+      const botIds = Array.from({ length: effectiveBotCount }, (_, i) => `bot-${i}`);
       teamManager.assignSequential(botIds);
     }
 
@@ -271,7 +266,7 @@ router.post(
     }
 
     logger.info("DEBUG", "Test game created", {
-      botCount: effectiveRoles.length,
+      botCount: effectiveBotCount,
       realPlayers: realPlayerIds.length,
       behavior: botBehavior ?? "random",
       bases: baseCount,
