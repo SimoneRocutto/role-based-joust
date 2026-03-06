@@ -36,10 +36,8 @@ if (certsExist) process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 const BACKEND = `${protocol}://localhost:${process.env.VITE_BACKEND_PORT || 4000}`;
 const CLIENT = `${protocol}://localhost:${process.env.VITE_PORT || 5173}`;
 const MODE = process.env.MODE;
-// When MODE is set, save into a mode-specific subdirectory so multi-mode runs don't overwrite each other
-const OUT = MODE
-  ? path.resolve(__dirname, `../e2e/screenshots/${MODE}`)
-  : path.resolve(__dirname, "../e2e/screenshots");
+// Always save into a mode-specific subdirectory (defaults to "classic")
+const OUT = path.resolve(__dirname, `../e2e/screenshots/${MODE || "classic"}`);
 
 // Map MODE env values to combined dropdown keys (for modes in the UI dropdown)
 const MODE_TO_COMBINED_KEY: Record<string, string> = {
@@ -116,9 +114,17 @@ function isTeamMode(mode: string | undefined): boolean {
   ].includes(mode);
 }
 
+/** Rotate output dir: current → {dir}-prev (delete any older prev). */
+function rotateOutputDir() {
+  const prev = `${OUT}-prev`;
+  if (fs.existsSync(prev)) fs.rmSync(prev, { recursive: true });
+  if (fs.existsSync(OUT)) fs.renameSync(OUT, prev);
+  fs.mkdirSync(OUT, { recursive: true });
+}
+
 (async () => {
   await checkServer();
-  fs.mkdirSync(OUT, { recursive: true });
+  rotateOutputDir();
 
   const log: { file: string; state: string; viewport: string }[] = [];
   const browser = await chromium.launch();

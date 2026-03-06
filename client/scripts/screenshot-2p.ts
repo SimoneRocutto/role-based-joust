@@ -131,6 +131,10 @@ async function waitForPhase(target: string | string[], timeoutMs = 15000): Promi
 
 (async () => {
   await checkServer();
+  // Rotate output dir: current → {dir}-prev (delete any older prev)
+  const prev = `${OUT}-prev`;
+  if (fs.existsSync(prev)) fs.rmSync(prev, { recursive: true });
+  if (fs.existsSync(OUT)) fs.renameSync(OUT, prev);
   fs.mkdirSync(OUT, { recursive: true });
 
   const log: { file: string; state: string; viewport: string; note?: string }[] = [];
