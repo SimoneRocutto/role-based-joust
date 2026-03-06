@@ -55,7 +55,7 @@ export default function ActiveGameScreen({
         <HealthBackground player={player} teamId={teamId} />
         <PlayerNumber number={playerNumber} />
         {isKing && (
-          <div className="absolute left-0 right-0 flex justify-center" style={{ top: "60%" }}>
+          <div className="absolute left-0 right-0 flex justify-center" style={{ top: "70%" }}>
             <span className="text-7xl leading-none drop-shadow-lg">&#128081;</span>
           </div>
         )}
