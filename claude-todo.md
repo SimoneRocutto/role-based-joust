@@ -31,7 +31,7 @@ Lightweight task management for Claude instances. Each task has a unique ID, pri
 |----|-------|----------|--------|------|--------|
 | UX-001 | Phone active: consider reducing number size in non-role modes | P3 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-001.md) |
 | ~~UX-002~~ | ~~Phone active: HP display~~ | N/A | DONE | | [detail](claude-tasks/UX-002.md) |
-| UX-003 | Dashboard team-mode: add HP info to player chips | P1 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-003.md) |
+| UX-003 | Dashboard team-mode: use full player cards during active gameplay | P1 | TODO | | [detail](claude-tasks/UX-003.md) |
 | UX-004 | Dashboard team-mode: differentiate active-round from pre-game | P1 | TODO | | [detail](claude-tasks/UX-004.md) |
 | UX-005 | Dashboard: round-end summary overlay | P1 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-005.md) |
 | ~~UX-006~~ | ~~Phone dead/round-end: fix "Final Score" label + add context~~ | P1 | DONE | | [detail](claude-tasks/UX-006.md) |
@@ -72,7 +72,6 @@ Tasks requiring user decisions before work can begin. Claude: report these to th
 | ID | Open Question |
 |----|---------------|
 | UX-001 | (P3) In non-role modes, should the big player number be smaller? Or keep consistent across all modes? |
-| UX-003 | Team-mode dashboard: how to show HP on player chips? Color chip background, add thin HP bar, use mini-cards, or color the left-border? How to show dead state? |
 | UX-005 | Round-end overlay content: minimal banner ("ROUND OVER") or full summary (winner + scores + standings)? Use classic-teams round-end as template? |
 | UX-010 | Cascade death: what should the phone show? Skull + "YOUR KING DIED"? What should dashboard show? Team panel grays out? Overlay banner? |
 | UX-012 | Roles are SECRET (phones face opponents). Should roles appear on the DASHBOARD? When? (always / on death / never / configurable). Includes old UX-014. |
