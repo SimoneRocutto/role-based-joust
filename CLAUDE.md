@@ -2,6 +2,23 @@
 
 This file is the primary entry point for Claude Code working on this repository. Read this first, then consult specific docs as needed using the index below.
 
+## Quick Start
+
+New to this codebase? Run these first:
+
+```bash
+./scripts/status.sh   # branch, recent commits, open changes, top TODOs
+./scripts/dev.sh      # start server + client dev servers
+./scripts/verify.sh   # run all tests (server + client unit + TypeScript)
+```
+
+For UI work, capture screenshots of the real running game:
+```bash
+cd client && npm run screenshot     # 1 phone + dashboard, all game states
+cd client && npm run screenshot:2p  # 2 phones + dashboard (for per-player differences, e.g. king vs non-king)
+```
+Servers must be running first. See "Visual Debugging" below for when to use each.
+
 ## Workflow Rules
 
 **These rules apply to every task. Follow them without being asked.**
@@ -105,7 +122,7 @@ Server tests use a custom test runner (no Jest/Mocha) with `assert()`, `assertEq
 
 E2e tests auto-start both the server (port 4000) and client (port 5173) before running. They cover: game start, game mechanics, reconnection, socket events, player join, dashboard/lobby, API endpoints, and edge cases.
 
-**WIP tests:** Some server tests are intentionally commented out with `// WIP` markers. Do not remove these comments or try to fix them — they represent known incomplete features.
+**WIP tests:** Some server tests are marked with `runner.skip(name, reason, fn)` instead of a full implementation. Do not convert them to active tests or remove them — they represent known incomplete features. They are type-checked but not executed, and shown as "skipped" in the test output.
 
 ### Convenience Scripts
 
@@ -127,7 +144,7 @@ Servers must be running first (`./scripts/dev.sh`). Screenshots are saved to `cl
 curl http://localhost:4000/health    # must return { "debug": true }
 ```
 
-See the Visual Debugging decision table above (under Workflow Rules) for when to use 1 vs 2 phones.
+**When to use 1p vs 2p:** Use `screenshot` (1 phone) when the feature looks the same for all players. Use `screenshot:2p` when players have distinct experiences (e.g. king vs non-king, different roles, team colors). After fastforward, `screenshot:2p` reads `GET /api/debug/state` to label each phone with the player's actual server-side state (`isKing`, `role`, `teamId`).
 
 ### Worktree Port Isolation
 
