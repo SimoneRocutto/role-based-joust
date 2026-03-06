@@ -2,23 +2,24 @@ import { useEffect, useState, useCallback } from "react";
 import { socketService } from "@/services/socket";
 import { useGameStore } from "@/store/gameStore";
 import { TEAM_COLORS } from "@/utils/teamColors";
-import type { BaseRegisteredPayload, BaseCapturedPayload } from "@/types/socket.types";
+import type { BaseRegisteredPayload, BaseCapturedPayload, BaseStatusPayload } from "@/types/socket.types";
 
 /**
  * BaseView — Full-screen UI for a base phone in Domination mode.
  *
- * On mount, registers with the server via `base:register`.
- * Shows team color when captured, "TAP TO CAPTURE" when neutral.
- * Taps emit `base:tap` events.
+ * Shows N colored sections (one per team). Tapping a section directly
+ * claims that base for the corresponding team.
  */
 export default function BaseView() {
   const [baseId, setBaseId] = useState<string | null>(null);
   const [baseNumber, setBaseNumber] = useState<number>(0);
   const [ownerTeamId, setOwnerTeamId] = useState<number | null>(null);
-  const [flashActive, setFlashActive] = useState(false);
+  const [teamCount, setTeamCount] = useState<number>(2);
+  const [flashTeamId, setFlashTeamId] = useState<number | null>(null);
   const [kicked, setKicked] = useState(false);
   const gameState = useGameStore((s) => s.gameState);
   const isConnected = useGameStore((s) => s.isConnected);
+
   // Register as a base on mount, reusing a stored baseId if available so
   // the server can reconnect to the same slot (preserves number + ownership).
   useEffect(() => {
@@ -26,9 +27,11 @@ export default function BaseView() {
       setBaseId(data.baseId);
       setBaseNumber(data.baseNumber);
       localStorage.setItem("baseId", data.baseId);
-      // Restore ownership and game state on reconnect
       if (data.ownerTeamId !== undefined) {
-        setOwnerTeamId(data.ownerTeamId);
+        setOwnerTeamId(data.ownerTeamId ?? null);
+      }
+      if (data.teamCount !== undefined && data.teamCount > 0) {
+        setTeamCount(data.teamCount);
       }
       if (data.gameState) {
         useGameStore.getState().setGameState(data.gameState as any);
@@ -51,23 +54,33 @@ export default function BaseView() {
     };
   }, []);
 
-  // Listen for capture events on this base
+  // Listen for capture and status events
   useEffect(() => {
     if (!baseId) return;
 
     const handleCaptured = (data: BaseCapturedPayload) => {
       if (data.baseId !== baseId) return;
       setOwnerTeamId(data.teamId);
+      setFlashTeamId(data.teamId);
+      setTimeout(() => setFlashTeamId(null), 300);
+    };
 
-      // Flash animation on capture
-      setFlashActive(true);
-      setTimeout(() => setFlashActive(false), 300);
+    const handleStatus = (data: BaseStatusPayload) => {
+      if (data.teamCount !== undefined && data.teamCount > 0) {
+        setTeamCount(data.teamCount);
+      }
+      const thisBase = data.bases.find((b) => b.baseId === baseId);
+      if (thisBase) {
+        setOwnerTeamId(thisBase.ownerTeamId);
+      }
     };
 
     socketService.onBaseCaptured(handleCaptured);
+    socketService.onBaseStatus(handleStatus);
 
     return () => {
       socketService.off("base:captured");
+      socketService.off("base:status");
     };
   }, [baseId]);
 
@@ -78,10 +91,10 @@ export default function BaseView() {
     }
   }, [gameState]);
 
-  const handleTap = useCallback(() => {
+  const handleSectionTap = useCallback((teamId: number) => {
     if (!baseId) return;
     if (gameState !== "active") return;
-    socketService.tapBase(baseId);
+    socketService.tapBase(baseId, teamId);
   }, [baseId, gameState]);
 
   if (kicked) {
@@ -93,105 +106,76 @@ export default function BaseView() {
     );
   }
 
-  const isNeutral = ownerTeamId === null;
-  const teamColor = !isNeutral && ownerTeamId != null ? TEAM_COLORS[ownerTeamId] : null;
   const isActive = gameState === "active";
-
-  // Background color
-  const bgColor = isNeutral ? "#111827" : teamColor?.primary ?? "#111827";
-
-  // Border pulse for controlled state
-  const borderStyle = !isNeutral && teamColor
-    ? { borderColor: teamColor.border, borderWidth: "4px" }
-    : {};
+  const teamIds = Array.from({ length: teamCount }, (_, i) => i);
 
   return (
-    <div
-      className="fixed inset-0 flex flex-col items-center justify-center select-none touch-none"
-      style={{
-        backgroundColor: bgColor,
-        transition: "background-color 0.3s ease",
-        ...borderStyle,
-      }}
-      onClick={handleTap}
-    >
-      {/* Flash overlay on capture */}
-      {flashActive && (
-        <div
-          className="absolute inset-0 bg-white pointer-events-none"
-          style={{ opacity: 0.4, transition: "opacity 0.3s" }}
-        />
-      )}
-
+    <div className="fixed inset-0 flex flex-col select-none touch-none bg-gray-950">
       {/* Connection indicator */}
       {!isConnected && (
-        <div className="absolute top-4 left-4 text-red-400 text-sm font-bold">
+        <div className="absolute top-4 left-4 z-10 text-red-400 text-sm font-bold">
           DISCONNECTED
         </div>
       )}
 
-      {/* Base number with gold styling */}
-      <div className="flex flex-col items-center gap-2">
-        <span
-          className="text-lg font-bold tracking-widest uppercase"
-          style={{ color: "#F59E0B" }}
-        >
+      {/* Base number header */}
+      <div className="flex justify-center items-center py-3 z-10 bg-gray-950/80">
+        <span className="text-sm font-bold tracking-widest uppercase mr-2" style={{ color: "#F59E0B" }}>
           BASE
         </span>
-        <div
-          className="relative flex items-center justify-center"
-          style={{ width: 120, height: 120 }}
-        >
-          {/* Hexagonal outline */}
-          <svg
-            viewBox="0 0 120 120"
-            className="absolute inset-0"
-            style={{ width: 120, height: 120 }}
-          >
-            <polygon
-              points="60,5 110,30 110,90 60,115 10,90 10,30"
-              fill="none"
-              stroke="#F59E0B"
-              strokeWidth="3"
-            />
-          </svg>
-          <span
-            className="text-6xl font-black"
-            style={{ color: "#F59E0B", zIndex: 1 }}
-          >
-            {baseNumber}
+        <span className="text-3xl font-black" style={{ color: "#F59E0B" }}>
+          {baseNumber}
+        </span>
+        {!isActive && (
+          <span className="ml-4 text-gray-500 text-sm font-semibold uppercase tracking-wide">
+            WAITING FOR GAME
           </span>
-        </div>
-      </div>
-
-      {/* Status text */}
-      <div className="mt-8 text-center">
-        {isNeutral ? (
-          <p className="text-gray-400 text-xl font-medium">
-            {isActive ? "TAP TO CAPTURE" : "WAITING FOR GAME"}
-          </p>
-        ) : (
-          <p className="text-white text-xl font-bold">
-            {teamColor?.name ?? `Team ${ownerTeamId}`}
-          </p>
         )}
       </div>
 
-      {/* Pulsing border animation for controlled bases */}
-      {!isNeutral && (
-        <style>{`
-          @keyframes pulse-border {
-            0%, 100% { box-shadow: inset 0 0 20px ${teamColor?.border ?? "transparent"}; }
-            50% { box-shadow: inset 0 0 40px ${teamColor?.border ?? "transparent"}; }
-          }
-        `}</style>
-      )}
-      {!isNeutral && (
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ animation: "pulse-border 2s ease-in-out infinite" }}
-        />
-      )}
+      {/* Team sections — one per team, filling the remaining screen */}
+      <div className="flex flex-1">
+        {teamIds.map((teamId) => {
+          const teamColor = TEAM_COLORS[teamId];
+          const isOwner = ownerTeamId === teamId;
+          const isFlashing = flashTeamId === teamId;
+          const primary = teamColor?.primary ?? "#888888";
+
+          return (
+            <div
+              key={teamId}
+              className="flex-1 flex flex-col items-center justify-center relative"
+              style={{
+                backgroundColor: isOwner ? primary : primary + "33",
+                transition: "background-color 0.25s ease",
+                borderRight: teamId < teamCount - 1 ? "2px solid rgba(255,255,255,0.1)" : undefined,
+              }}
+              onClick={() => isActive && handleSectionTap(teamId)}
+            >
+              {/* Flash overlay on capture */}
+              {isFlashing && (
+                <div className="absolute inset-0 bg-white opacity-40 pointer-events-none" />
+              )}
+
+              {/* Team name */}
+              <span
+                className="text-3xl font-black drop-shadow"
+                style={{ color: isOwner ? "#ffffff" : primary }}
+              >
+                {teamColor?.name ?? `Team ${teamId}`}
+              </span>
+
+              {/* Status */}
+              <span
+                className="text-sm font-semibold mt-2 uppercase tracking-wide"
+                style={{ color: isOwner ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.25)" }}
+              >
+                {isOwner ? "CAPTURED ✓" : (isActive ? "TAP TO CLAIM" : "–")}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -18,6 +18,7 @@ function Scoreboard() {
   const { setGameState, setScores, updatePlayers, teamScores, players } = useGameStore()
   const mode = useGameStore((state) => state.mode)
   const isDeathCountMode = mode === 'death-count'
+  const isDominationMode = mode === 'domination'
 
   const [isResetting, setIsResetting] = useState(false)
   const [isStartingRound, setIsStartingRound] = useState(false)
@@ -100,6 +101,7 @@ function Scoreboard() {
           teamScores={teamScores!}
           isRoundEnded={isRoundEnded}
           isDeathCountMode={isDeathCountMode}
+          isDominationMode={isDominationMode}
           deathCountMap={deathCountMap}
         />
       ) : (
@@ -258,11 +260,13 @@ function TeamLeaderboard({
   teamScores,
   isRoundEnded,
   isDeathCountMode,
+  isDominationMode,
   deathCountMap,
 }: {
   teamScores: TeamScore[]
   isRoundEnded: boolean
   isDeathCountMode: boolean
+  isDominationMode: boolean
   deathCountMap: Map<string, number>
 }) {
   const sortedTeams = [...teamScores].sort((a, b) => a.rank - b.rank)
@@ -315,55 +319,57 @@ function TeamLeaderboard({
                   <div className="text-5xl font-black text-white">
                     {team.score} pts
                   </div>
-                  {isRoundEnded && (
+                  {isRoundEnded && team.roundPoints > 0 && (
                     <div className="text-xl text-white/60">+{team.roundPoints} this round</div>
                   )}
                 </div>
               )}
             </div>
 
-            {/* Individual player rows */}
-            <div
-              className="divide-y divide-white/10"
-              style={{ backgroundColor: teamColor.tint }}
-            >
-              {(team.players || [])
-                .sort((a, b) => {
-                  if (isDeathCountMode) {
-                    return (a.deathCount ?? deathCountMap.get(a.playerId) ?? 0) -
-                           (b.deathCount ?? deathCountMap.get(b.playerId) ?? 0)
-                  }
-                  return b.score - a.score
-                })
-                .map((player) => {
-                  const deaths = player.deathCount ?? deathCountMap.get(player.playerId) ?? 0
-                  return (
-                    <div
-                      key={player.playerId}
-                      className="flex items-center justify-between px-10 py-4"
-                    >
-                      <div className="flex items-center gap-4">
-                        <span className="text-3xl font-black text-white">
-                          #{player.playerNumber}
-                        </span>
-                        <span className="text-2xl text-white/80">{player.playerName}</span>
+            {/* Individual player rows — hidden in domination (team scores are all that matter) */}
+            {!isDominationMode && (
+              <div
+                className="divide-y divide-white/10"
+                style={{ backgroundColor: teamColor.tint }}
+              >
+                {(team.players || [])
+                  .sort((a, b) => {
+                    if (isDeathCountMode) {
+                      return (a.deathCount ?? deathCountMap.get(a.playerId) ?? 0) -
+                             (b.deathCount ?? deathCountMap.get(b.playerId) ?? 0)
+                    }
+                    return b.score - a.score
+                  })
+                  .map((player) => {
+                    const deaths = player.deathCount ?? deathCountMap.get(player.playerId) ?? 0
+                    return (
+                      <div
+                        key={player.playerId}
+                        className="flex items-center justify-between px-10 py-4"
+                      >
+                        <div className="flex items-center gap-4">
+                          <span className="text-3xl font-black text-white">
+                            #{player.playerNumber}
+                          </span>
+                          <span className="text-2xl text-white/80">{player.playerName}</span>
+                        </div>
+                        {isDeathCountMode ? (
+                          <span className={`text-2xl font-bold ${deaths === 0 ? 'text-white/40' : 'text-red-300'}`}>
+                            💀 {deaths}
+                          </span>
+                        ) : (
+                          <span className="text-2xl font-bold text-white/80">
+                            {player.score} pts
+                            {isRoundEnded && player.roundPoints > 0 && (
+                              <span className="ml-2 text-lg text-white/40">+{player.roundPoints}</span>
+                            )}
+                          </span>
+                        )}
                       </div>
-                      {isDeathCountMode ? (
-                        <span className={`text-2xl font-bold ${deaths === 0 ? 'text-white/40' : 'text-red-300'}`}>
-                          💀 {deaths}
-                        </span>
-                      ) : (
-                        <span className="text-2xl font-bold text-white/80">
-                          {player.score} pts
-                          {isRoundEnded && player.roundPoints > 0 && (
-                            <span className="ml-2 text-lg text-white/40">+{player.roundPoints}</span>
-                          )}
-                        </span>
-                      )}
-                    </div>
-                  )
-                })}
-            </div>
+                    )
+                  })}
+              </div>
+            )}
           </div>
         )
       })}

@@ -50,6 +50,7 @@ function PlayerView() {
     myIsReady,
     setMyReady,
     modeRecap,
+    mode,
     setMyPlayer,
     clearIdentity,
   } = useGameStore();
@@ -66,6 +67,7 @@ function PlayerView() {
 
   const isDeathCountMode =
     modeRecap?.modeName?.includes("Death Count") ?? false;
+  const isDominationMode = mode === "domination";
 
   // Compute this player's rank and medal in death count mode.
   // In team mode (teamId present in tick): rank is based on the team's total deaths
@@ -342,6 +344,7 @@ function PlayerView() {
           playerNumber={myPlayerNumber!}
           playerName={playerName}
           totalPoints={myPlayer?.totalPoints || myPlayer?.points || 0}
+          isDominationMode={isDominationMode}
           {...shakeProps}
         />
       )}

@@ -115,6 +115,7 @@ export interface BaseStatusEvent {
     controlProgress: number;
     isConnected: boolean;
   }>;
+  teamCount?: number;
 }
 
 export interface DominationWinEvent {

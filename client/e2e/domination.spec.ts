@@ -172,7 +172,7 @@ test.describe('Domination Mode', () => {
       await expect(basePage.locator('text=WAITING FOR GAME')).toBeVisible({ timeout: 5000 });
     });
 
-    test('base view shows TAP TO CAPTURE when game is active', async ({ context }) => {
+    test('base view shows TAP TO CLAIM when game is active', async ({ context }) => {
       const dashboard = await openDashboard(context);
       const player1 = await openPlayerJoin(context);
       await joinAsPlayer(player1, 'DomP1');
@@ -189,8 +189,8 @@ test.describe('Domination Mode', () => {
       // Launch game
       await launchDominationGame({ pointTarget: 100 });
 
-      // Base should now show TAP TO CAPTURE (neutral state)
-      await expect(basePage.locator('text=TAP TO CAPTURE')).toBeVisible({ timeout: 5000 });
+      // Base should now show TAP TO CLAIM (neutral state, new multi-section design)
+      await expect(basePage.locator('text=TAP TO CLAIM').first()).toBeVisible({ timeout: 5000 });
     });
   });
 });

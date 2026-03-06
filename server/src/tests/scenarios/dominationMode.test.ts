@@ -117,6 +117,40 @@ runner.test("Base capture cycles ownership: neutral → team 0 → team 1 → te
   resetMovementConfig();
 });
 
+runner.test("Direct team capture: requestedTeamId claims base for that team", (engine) => {
+  resetMovementConfig();
+  const baseManager = BaseManager.getInstance();
+  baseManager.reset();
+  const teamManager = TeamManager.getInstance();
+  teamManager.configure(true, 2);
+  teamManager.assignSequential(["p1", "p2", "p3", "p4"]);
+
+  const mode = createDominationMode({ pointTarget: 100 });
+  engine.setGameMode(mode);
+  engine.startGame(defaultPlayers);
+
+  const { baseId } = baseManager.registerBase("base-socket-1");
+
+  // Direct capture for team 1 (skipping team 0)
+  mode.onBaseTap(baseId, engine, 1);
+  let base = baseManager.getBase(baseId)!;
+  assertEqual(base.ownerTeamId, 1, "requestedTeamId=1 should capture for team 1");
+
+  // Tapping the same team again is a no-op
+  mode.onBaseTap(baseId, engine, 1);
+  base = baseManager.getBase(baseId)!;
+  assertEqual(base.ownerTeamId, 1, "Tapping same owning team is no-op");
+
+  // Direct capture for team 0
+  mode.onBaseTap(baseId, engine, 0);
+  base = baseManager.getBase(baseId)!;
+  assertEqual(base.ownerTeamId, 0, "requestedTeamId=0 should capture for team 0");
+
+  mode.onGameEnd(engine);
+  baseManager.reset();
+  resetMovementConfig();
+});
+
 runner.test("Base capture emits base:captured event", (engine) => {
   resetMovementConfig();
   const gameEvents = GameEvents.getInstance();

@@ -10,6 +10,7 @@ interface GameFinishedScreenProps {
   shakeProgress: number;
   onReadyClick: () => void;
   isDevMode: boolean;
+  isDominationMode?: boolean;
 }
 
 export default function GameFinishedScreen({
@@ -21,6 +22,7 @@ export default function GameFinishedScreen({
   shakeProgress,
   onReadyClick,
   isDevMode,
+  isDominationMode = false,
 }: GameFinishedScreenProps) {
   return (
     <div className="fullscreen bg-gray-900 flex flex-col items-center justify-center gap-8 p-8">
@@ -31,9 +33,11 @@ export default function GameFinishedScreen({
           #{playerNumber}
         </div>
         <div className="text-3xl text-gray-300 mb-2">{playerName}</div>
-        <div className="text-2xl text-gray-400 mb-4">
-          Final Score: {totalPoints} pts
-        </div>
+        {!isDominationMode && (
+          <div className="text-2xl text-gray-400 mb-4">
+            Final Score: {totalPoints} pts
+          </div>
+        )}
 
         <ShakeToReady
           isReady={isReady}

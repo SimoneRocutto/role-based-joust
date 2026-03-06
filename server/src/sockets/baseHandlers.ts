@@ -1,6 +1,7 @@
 import { Server as SocketIOServer, Socket } from "socket.io";
 import { GameEngine } from "@/managers/GameEngine";
 import { BaseManager } from "@/managers/BaseManager";
+import { TeamManager } from "@/managers/TeamManager";
 import { GameEvents } from "@/utils/GameEvents";
 import { Logger } from "@/utils/Logger";
 
@@ -51,11 +52,13 @@ export function registerBaseHandlers(
       }
 
       const ownerTeamId = baseManager.getBase(resultBaseId)?.ownerTeamId ?? null;
+      const teamCount = TeamManager.getInstance().getTeamCount();
       socket.emit("base:registered", {
         baseId: resultBaseId,
         baseNumber: resultBaseNumber,
         ownerTeamId,
         gameState: gameEngine.gameState,
+        teamCount,
       });
 
       // Broadcast updated base status to all clients
@@ -65,14 +68,17 @@ export function registerBaseHandlers(
     /**
      * Base tap event — sent when someone taps the base phone.
      */
-    socket.on("base:tap", (data: { baseId: string }) => {
+    socket.on("base:tap", (data: { baseId: string; teamId?: number }) => {
       if (gameEngine.gameState !== "active") return;
 
       const base = baseManager.getBase(data.baseId);
       if (!base || !base.isConnected) return;
 
+      // Sanitize teamId — socket.io doesn't enforce types
+      const teamId = typeof data.teamId === "number" ? data.teamId : undefined;
+
       // Delegate to the current game mode
-      gameEngine.currentMode?.onBaseTap(data.baseId, gameEngine);
+      gameEngine.currentMode?.onBaseTap(data.baseId, gameEngine, teamId);
     });
 
     /**
@@ -109,5 +115,6 @@ function broadcastBaseStatus(io: SocketIOServer, gameEngine: GameEngine): void {
     isConnected: base.isConnected,
   }));
 
-  io.emit("base:status", { bases });
+  const teamCount = TeamManager.getInstance().getTeamCount();
+  io.emit("base:status", { bases, teamCount });
 }

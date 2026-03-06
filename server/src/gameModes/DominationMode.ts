@@ -144,14 +144,31 @@ export class DominationMode extends GameMode {
     logger.info("MODE", `${victim.name} will respawn at ${engine.gameTime + this.respawnManager.getDelay()}ms`);
   }
 
-  override onBaseTap(baseId: string, engine: GameEngine): void {
+  override onBaseTap(baseId: string, engine: GameEngine, requestedTeamId?: number): void {
     if (engine.gameState !== "active") return;
 
     const teamManager = TeamManager.getInstance();
     const teamCount = teamManager.getTeamCount();
 
-    // Cycle ownership
-    const newTeamId = this.baseManager.cycleOwner(baseId, teamCount, engine.gameTime);
+    let newTeamId: number;
+    const currentOwner = this.baseManager.getBase(baseId)?.ownerTeamId ?? null;
+
+    if (
+      requestedTeamId !== undefined &&
+      requestedTeamId >= 0 &&
+      requestedTeamId < teamCount &&
+      requestedTeamId !== currentOwner
+    ) {
+      // Direct team capture: tap on the target team's section
+      this.baseManager.setOwner(baseId, requestedTeamId, engine.gameTime);
+      newTeamId = requestedTeamId;
+    } else if (requestedTeamId === currentOwner) {
+      // Already owned by this team — no-op
+      return;
+    } else {
+      // Fall back to cycle behavior
+      newTeamId = this.baseManager.cycleOwner(baseId, teamCount, engine.gameTime);
+    }
 
     const teamDef = TEAM_DEFINITIONS[newTeamId];
 
@@ -246,6 +263,7 @@ export class DominationMode extends GameMode {
   }
 
   private broadcastBaseStatus(gameTime: number): void {
+    const teamCount = TeamManager.getInstance().getTeamCount();
     const bases = this.baseManager.getAllBases().map((base) => {
       let controlProgress = 0;
       if (base.ownerTeamId !== null && base.isConnected) {
@@ -261,6 +279,6 @@ export class DominationMode extends GameMode {
       };
     });
 
-    gameEvents.emitBaseStatus({ bases });
+    gameEvents.emitBaseStatus({ bases, teamCount });
   }
 }

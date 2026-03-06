@@ -182,6 +182,7 @@ export interface BaseRegisteredPayload {
   baseNumber: number;
   ownerTeamId?: number | null;
   gameState?: string;
+  teamCount?: number;
 }
 
 export interface BaseCapturedPayload {
@@ -201,6 +202,7 @@ export interface BasePointPayload {
 
 export interface BaseStatusPayload {
   bases: BaseState[];
+  teamCount?: number;
 }
 
 export interface DominationWinPayload {

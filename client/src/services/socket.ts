@@ -190,8 +190,8 @@ class SocketService {
     this.socket?.emit("base:register", baseId ? { baseId } : {});
   }
 
-  tapBase(baseId: string) {
-    this.socket?.emit("base:tap", { baseId });
+  tapBase(baseId: string, teamId?: number) {
+    this.socket?.emit("base:tap", { baseId, ...(teamId !== undefined ? { teamId } : {}) });
   }
 
   onTeamSelection(callback: (data: { active: boolean }) => void) {
