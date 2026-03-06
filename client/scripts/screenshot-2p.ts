@@ -95,6 +95,9 @@ async function checkServer() {
     await api("/debug/reset", "POST");
     await sleep(400);
 
+    // Sync persisted settings so dashboard lobby shows the correct mode badge
+    await api("/game/settings", "POST", { gameMode: MODE });
+
     const dash = await browser.newPage();
     dash.setViewportSize({ width: 1280, height: 800 });
 

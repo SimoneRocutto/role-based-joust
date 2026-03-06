@@ -9,7 +9,7 @@ Use this file to know how to screenshot and what to look for in each game mode.
 | `classic` | Classic | 1p | None — all players identical | Stable |
 | `classic-teams` | Classic (Teams) | click-through 2p | team:0 vs team:1 (no roles) | Stable |
 | `role-based` | Role Based | 2p | Different roles (Vampire, Angel, Beast, etc.) | Stable |
-| `long-live-the-king` | Long live the king | 2p | KING vs non-king | Active dev |
+| `long-live-the-king` | Long live the king | click-through 2p | KING vs non-king, team-based, cascade death | Stable |
 | `death-count` | Death Count | 2p | No teams, individual respawn scoring | Stable |
 | `death-count-teams` | Death Count (Teams) | click-through 2p | team:0 vs team:1 + respawns | Stable |
 | `domination` | Domination | 2p | team:0 vs team:1, base capture UI | Active dev |
@@ -23,7 +23,7 @@ cd client && npm run screenshot
 # Specific mode, 2 phones
 cd client && MODE=classic npm run screenshot
 cd client && MODE=role-based npm run screenshot:2p
-cd client && MODE=long-live-the-king npm run screenshot:2p
+cd client && npx tsx e2e/_audit_king_mode.ts
 cd client && MODE=death-count npm run screenshot:2p
 cd client && MODE=domination npm run screenshot:2p
 ```
@@ -49,9 +49,12 @@ Screenshots are saved to `client/e2e/screenshots/<mode>/`.
 - Round-end: role-based scoring (last alive = 5pts)
 
 ### long-live-the-king
-- One player is the king. Crown badge must be visually dominant on dashboard.
+- Team-based mode. One player per team is randomly crowned king each round.
+- When a king dies, all their teammates die instantly (cascade death).
+- Uses click-through approach (`e2e/_audit_king_mode.ts`) to ensure real team assignments + king selection.
+- Crown badge must be visually dominant on dashboard.
 - Phone: king player sees different objective text than non-king players.
-- Watch for: crown icon too small to see from 3m, non-king players not knowing their objective, unclear who the king is when king dies
+- Watch for: crown icon too small to see from 3m, non-king players not knowing their objective, unclear who the king is when king dies, cascade death not explained to players, team identity missing from phone
 
 ### death-count
 - Players respawn. Scoring = number of deaths (lower is better, or configured otherwise).

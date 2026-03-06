@@ -75,6 +75,11 @@ async function checkServer() {
     await api("/debug/reset", "POST");
     await sleep(400);
 
+    // Sync persisted settings so dashboard lobby shows the correct mode badge
+    if (MODE) {
+      await api("/game/settings", "POST", { gameMode: MODE });
+    }
+
     const dash = await browser.newPage();
     dash.setViewportSize({ width: 1280, height: 800 });
     const phone = await browser.newPage();
@@ -99,6 +104,7 @@ async function checkServer() {
     const createRes = await api("/debug/test/create", "POST", {
       botCount: 3,
       botBehavior: "still",
+      ...(MODE ? { mode: MODE } : {}),
       includeConnected: true,
     });
     const allPlayers: { id: string; isBot: boolean }[] =
