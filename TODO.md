@@ -3,8 +3,6 @@
 Here are all the things this game is missing to be complete. PRIORITIES shows next todo points in priority order from top (highest priority) to bottom (lowest). Feel free to remove them once one of them is done. Below are the future tasks divided by their subject.
 
 - PRIORITIES:
-    - domination: team mode should not sum players scores. Actually, there shouldn't be individual scores
-    - domination: allow changing base team by clicking the right color. We should have it be divided into n parts, where n is the number of teams. each of them is colored. When the red one gets pressed, red players take the base. The issue here is understanding how to still make it clear which team is currently controlling the base
 
 - SHORT TERM PRIORITIES:
     - classic at the end of the round shows skull on every player that is not the first one with most total points. Trophy should be shown on round winner
