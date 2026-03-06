@@ -107,18 +107,27 @@ E2e tests auto-start both the server (port 4000) and client (port 5173) before r
 
 **WIP tests:** Some server tests are intentionally commented out with `// WIP` markers. Do not remove these comments or try to fix them — they represent known incomplete features.
 
+### Convenience Scripts
+
+```bash
+./scripts/dev.sh      # Start server + client with correct env vars (reads .env.local)
+./scripts/verify.sh   # Run server tests + client tests + TypeScript check in one shot
+```
+
 ### Visual Debugging
 
-To inspect the UI without a phone, use the `/screenshot` skill or do it manually:
+```bash
+cd client && npm run screenshot      # 1 phone + dashboard, all game states
+cd client && npm run screenshot:2p   # 2 phones + dashboard (for per-player state differences)
+```
 
-1. Start the dev servers (`cd server && npm run dev`, `cd client && npm run dev`)
-2. Hit `POST /api/debug/test/create` to launch a bot game instantly
-3. Write a short Playwright script in `client/e2e/` that navigates to `/dashboard` or `/player` and calls `page.screenshot()`
-4. Read the resulting PNG with the Read tool to view it
+Servers must be running first (`./scripts/dev.sh`). Screenshots are saved to `client/e2e/screenshots/` with a `manifest.json` describing each file. Quick health check before running:
 
-Use `POST /api/debug/fastforward` to skip the countdown, and `POST /api/debug/bot/:id/command` with `{ "command": "die" }` to reach specific game states (round-ended, finished, etc.).
+```bash
+curl http://localhost:4000/health    # must return { "debug": true }
+```
 
-**Shortcut:** run `/screenshot` to do all of the above automatically.
+See the Visual Debugging decision table above (under Workflow Rules) for when to use 1 vs 2 phones.
 
 ### Worktree Port Isolation
 
