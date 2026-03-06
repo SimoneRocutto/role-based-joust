@@ -5,11 +5,16 @@ import PlayerCard from "./PlayerCard";
 import CompactPlayerCard from "./CompactPlayerCard";
 import { TEAM_COLORS, getTeamName } from "@/utils/teamColors";
 import { computeDeathCountRanks } from "@/utils/ranking";
+import type { GameStateType } from "@shared/types";
+
+/** Phases where the game is "in play" and full player cards should be shown in team panels. */
+const ACTIVE_PHASES: GameStateType[] = ["active", "round-ended", "finished", "countdown"];
 
 function PlayerGrid() {
   const { sortedPlayers, players } = useGameState();
   const { teamsEnabled, teams } = useGameStore();
   const mode = useGameStore((state) => state.mode);
+  const gameState = useGameStore((state) => state.gameState);
   const modeRecap = useGameStore((state) => state.modeRecap);
   const isDeathCountMode = modeRecap?.modeName?.includes("Death Count") ?? false;
   const isKingMode = mode === "long-live-the-king";
@@ -38,7 +43,7 @@ function PlayerGrid() {
 
   // Team lobby layout when teams are enabled and players have team assignments
   if (teamsEnabled && players.some((p) => p.teamId != null)) {
-    return <TeamLobbyGrid teams={teams} players={players} isKingMode={isKingMode} />;
+    return <TeamLobbyGrid teams={teams} players={players} isKingMode={isKingMode} gameState={gameState} />;
   }
 
   // Determine grid layout based on player count
@@ -74,11 +79,14 @@ function TeamLobbyGrid({
   teams,
   players,
   isKingMode,
+  gameState,
 }: {
   teams: Record<number, string[]>;
   players: ReturnType<typeof useGameState>["players"];
   isKingMode?: boolean;
+  gameState: GameStateType;
 }) {
+  const useFullCards = ACTIVE_PHASES.includes(gameState);
   // Group players by team
   const teamGroups = new Map<number, typeof players>();
 
@@ -136,20 +144,12 @@ function TeamLobbyGrid({
               {teamName} ({teamPlayers.length})
             </h3>
 
-            {/* Compact player cards */}
-            <div className="flex flex-wrap gap-2">
-              {teamPlayers
-                .sort((a, b) => a.number - b.number)
-                .map((player) => (
-                  <CompactPlayerCard
-                    key={player.id}
-                    player={player}
-                    teamColor={teamColor.primary}
-                    showKick
-                    isKingMode={isKingMode}
-                  />
-                ))}
-            </div>
+            <TeamPlayerList
+              players={teamPlayers}
+              useFullCards={useFullCards}
+              teamColor={teamColor.primary}
+              isKingMode={isKingMode}
+            />
           </div>
         );
       })}
@@ -160,21 +160,53 @@ function TeamLobbyGrid({
           <h3 className="text-lg font-bold mb-3 text-center text-gray-400">
             Unassigned ({unassigned.length})
           </h3>
-          <div className="flex flex-wrap gap-2">
-            {unassigned
-              .sort((a, b) => a.number - b.number)
-              .map((player) => (
-                <CompactPlayerCard
-                  key={player.id}
-                  player={player}
-                  teamColor="#6b7280"
-                  showKick
-                  isKingMode={isKingMode}
-                />
-              ))}
-          </div>
+          <TeamPlayerList
+            players={unassigned}
+            useFullCards={useFullCards}
+            teamColor="#6b7280"
+            isKingMode={isKingMode}
+          />
         </div>
       )}
+    </div>
+  );
+}
+
+/** Renders a list of players as full cards (active play) or compact chips (lobby/selection). */
+function TeamPlayerList({
+  players,
+  useFullCards,
+  teamColor,
+  isKingMode,
+}: {
+  players: ReturnType<typeof useGameState>["players"];
+  useFullCards: boolean;
+  teamColor: string;
+  isKingMode?: boolean;
+}) {
+  const sorted = [...players].sort((a, b) => a.number - b.number);
+
+  if (useFullCards) {
+    return (
+      <div className="grid grid-cols-2 gap-2">
+        {sorted.map((player) => (
+          <PlayerCard key={player.id} player={player} />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {sorted.map((player) => (
+        <CompactPlayerCard
+          key={player.id}
+          player={player}
+          teamColor={teamColor}
+          showKick
+          isKingMode={isKingMode}
+        />
+      ))}
     </div>
   );
 }

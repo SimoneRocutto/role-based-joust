@@ -4,6 +4,7 @@ import { act } from '@testing-library/react'
 import PlayerGrid from '@/components/dashboard/PlayerGrid'
 import { useGameStore } from '@/store/gameStore'
 import type { PlayerState } from '@/types/player.types'
+import type { GameStateType } from '@shared/types'
 
 function createMockPlayer(overrides: Partial<PlayerState> = {}): PlayerState {
   return {
@@ -243,6 +244,90 @@ describe('PlayerGrid', () => {
       for (let i = 1; i <= 20; i++) {
         expect(screen.getByText(`#${i}`)).toBeInTheDocument()
       }
+    })
+  })
+
+  describe('team mode phase switching', () => {
+    function setupTeamState(gameState: GameStateType) {
+      const players = [
+        createMockPlayer({ id: 'p1', name: 'Alice', number: 1, teamId: 0, accumulatedDamage: 50 }),
+        createMockPlayer({ id: 'p2', name: 'Bob', number: 2, teamId: 0 }),
+        createMockPlayer({ id: 'p3', name: 'Charlie', number: 3, teamId: 1 }),
+        createMockPlayer({ id: 'p4', name: 'Diana', number: 4, teamId: 1, isAlive: false }),
+      ]
+      act(() => {
+        const store = useGameStore.getState()
+        store.updatePlayers(players)
+        store.setTeamsEnabled(true)
+        store.setTeams({ 0: ['p1', 'p2'], 1: ['p3', 'p4'] })
+        store.setGameState(gameState)
+      })
+    }
+
+    it('renders CompactPlayerCard chips during waiting', () => {
+      setupTeamState('waiting')
+      const { container } = render(<PlayerGrid />)
+
+      // Compact cards have the kick button (X)
+      const kickButtons = container.querySelectorAll('button')
+      expect(kickButtons.length).toBeGreaterThan(0)
+
+      // Should NOT have the large number style from PlayerCard (text-5xl)
+      const largeNumbers = container.querySelectorAll('.text-5xl')
+      expect(largeNumbers.length).toBe(0)
+    })
+
+    it('renders CompactPlayerCard chips during pre-game', () => {
+      setupTeamState('pre-game')
+      const { container } = render(<PlayerGrid />)
+
+      const kickButtons = container.querySelectorAll('button')
+      expect(kickButtons.length).toBeGreaterThan(0)
+    })
+
+    it('renders full PlayerCard during active phase', () => {
+      setupTeamState('active')
+      const { container } = render(<PlayerGrid />)
+
+      // Full PlayerCard uses text-5xl for the number
+      const largeNumbers = container.querySelectorAll('.text-5xl')
+      expect(largeNumbers.length).toBeGreaterThan(0)
+
+      // No kick buttons in active phase
+      const kickButtons = container.querySelectorAll('button')
+      expect(kickButtons.length).toBe(0)
+    })
+
+    it('renders full PlayerCard during round-ended phase', () => {
+      setupTeamState('round-ended')
+      const { container } = render(<PlayerGrid />)
+
+      const largeNumbers = container.querySelectorAll('.text-5xl')
+      expect(largeNumbers.length).toBeGreaterThan(0)
+    })
+
+    it('renders full PlayerCard during countdown phase', () => {
+      setupTeamState('countdown')
+      const { container } = render(<PlayerGrid />)
+
+      const largeNumbers = container.querySelectorAll('.text-5xl')
+      expect(largeNumbers.length).toBeGreaterThan(0)
+    })
+
+    it('renders full PlayerCard during finished phase', () => {
+      setupTeamState('finished')
+      const { container } = render(<PlayerGrid />)
+
+      const largeNumbers = container.querySelectorAll('.text-5xl')
+      expect(largeNumbers.length).toBeGreaterThan(0)
+    })
+
+    it('shows dead player skull on full cards during active phase', () => {
+      setupTeamState('active')
+      render(<PlayerGrid />)
+
+      // Diana (p4) is dead — should show skull emoji on full card
+      expect(screen.getByText('💀')).toBeInTheDocument()
     })
   })
 
