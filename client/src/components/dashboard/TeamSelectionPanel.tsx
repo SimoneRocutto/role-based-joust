@@ -1,3 +1,9 @@
+/**
+ * UNUSED — This component was built for a separate team selection phase
+ * that was never wired into DashboardView. Team management currently
+ * happens within PreGameControls (SHUFFLE TEAMS button) during pre-game.
+ * Kept for potential future use.
+ */
 interface TeamSelectionPanelProps {
   teamCount: number;
   loading: boolean;

@@ -61,6 +61,18 @@ async function getPhase(): Promise<string> {
   return res?.state?.state ?? res?.phase ?? "unknown";
 }
 
+/** Wait until game reaches a target phase (with timeout). */
+async function waitForPhase(target: string | string[], timeoutMs = 15000): Promise<string> {
+  const targets = Array.isArray(target) ? target : [target];
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const phase = await getPhase();
+    if (targets.includes(phase)) return phase;
+    await sleep(500);
+  }
+  return await getPhase();
+}
+
 async function checkServer() {
   try {
     const health = await fetch(`${BACKEND}/health`).then((r) => r.json());
@@ -155,16 +167,6 @@ function isTeamMode(mode: string | undefined): boolean {
     // ── SET COUNTDOWN to 1s (avoid long wait in screenshot scripts) ─────────
     await api("/debug/set-countdown", "POST", { seconds: 1 });
 
-    // ── TEAM SELECTION (team modes only) ─────────────────────────────────────
-    // Team selection is entered via API (no UI button for it), then
-    // the same lobby "Start Game" button launches the game.
-    if (isTeamMode(MODE)) {
-      await api("/game/team-selection", "POST");
-      await sleep(800);
-      await shot(dash, "03b_dash_team_selection.png", "Team selection — dashboard", "dashboard 1280x800");
-      await shot(phone, "03c_phone_team_selection.png", "Team selection — phone", "phone 390x844");
-    }
-
     // ── START GAME via dashboard button (real UI click) ──────────────────────
     // The lobby button contains the player count, e.g. "Start Game (4 players)"
     const lobbyBtn = dash.getByRole("button", { name: /Start Game \(/ });
@@ -172,18 +174,16 @@ function isTeamMode(mode: string | undefined): boolean {
     console.log("  [flow] Clicked lobby Start Game");
 
     // ── PRE-GAME (shake to ready / force start) ─────────────────────────────
-    // Poll server until we're in pre-game (lobby → pre-game transition)
-    for (let i = 0; i < 10; i++) {
-      const phase = await getPhase();
-      if (phase !== "waiting") break;
-      await sleep(300);
-    }
+    // /api/game/launch goes straight to pre-game for all modes (including team modes).
+    // For team modes, pre-game shows SHUFFLE TEAMS alongside START GAME.
+    // There is no separate "team selection" UI phase.
+    await waitForPhase("pre-game");
     await sleep(300);
     const preGamePhase = await getPhase();
     console.log(`  [flow] Phase after start: ${preGamePhase}`);
     if (preGamePhase === "pre-game") {
-      await shot(dash, "03d_dash_pregame.png", "Pre-game — dashboard", "dashboard 1280x800");
-      await shot(phone, "03e_phone_pregame.png", "Pre-game — phone", "phone 390x844");
+      await shot(dash, "03b_dash_pregame.png", "Pre-game — dashboard", "dashboard 1280x800");
+      await shot(phone, "03c_phone_pregame.png", "Pre-game — phone", "phone 390x844");
 
       // Force start via dashboard button (real UI click)
       const forceBtn = dash.getByRole("button", { name: "START GAME", exact: true });
@@ -194,11 +194,7 @@ function isTeamMode(mode: string | undefined): boolean {
 
     // ── COUNTDOWN → ACTIVE ───────────────────────────────────────────────────
     // Countdown is set to 1s, just wait for it to finish
-    for (let i = 0; i < 10; i++) {
-      const phase = await getPhase();
-      if (phase === "active") break;
-      await sleep(500);
-    }
+    await waitForPhase("active");
     await sleep(500);
 
     // ── ACTIVE GAME (full HP) ────────────────────────────────────────────────

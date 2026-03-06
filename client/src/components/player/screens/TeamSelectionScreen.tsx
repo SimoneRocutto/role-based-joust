@@ -1,3 +1,8 @@
+/**
+ * UNUSED — This component was built for a separate team selection phase
+ * that was never wired into PlayerView. During pre-game, team switching
+ * is handled within PreGameScreen (tap to switch). Kept for potential future use.
+ */
 import ConnectionStatus from "@/components/player/ConnectionStatus";
 import type { TeamColorScheme } from "@/utils/teamColors";
 

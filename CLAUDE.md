@@ -70,7 +70,7 @@ The game adds role-based mechanics on top of this core loop. Each player is secr
 ### Game Flow
 
 1. **Lobby**: Admin opens dashboard at `/dashboard`. Players join at `/join`, enter a name, and land on `/player`. The dashboard shows who's connected. Players wait for the admin to start.
-2. **Pre-Game**: Admin clicks "Start Game" on the dashboard. The game enters the `pre-game` state. Players see a mode recap (mode name, round count, sensitivity) and shake their device to ready up (or click in dev mode). The game auto-starts when all players are ready, or the admin can force-start at any time via the dashboard.
+2. **Pre-Game**: Admin clicks "Start Game" on the dashboard. The game enters the `pre-game` state. Players see a mode recap (mode name, round count, sensitivity) and shake their device to ready up (or click in dev mode). For team modes, pre-game also shows SHUFFLE TEAMS and lets players tap to switch teams. The game auto-starts when all players are ready, or the admin can force-start at any time via the dashboard.
 3. **Countdown + Role Assignment**: A countdown plays, during which each player is secretly assigned a role.
 4. **Active Round**: Players try to stay still. Moving too much deals damage. Roles grant special abilities. The round ends when only one player is alive.
 5. **Round End**: The last player alive earns 5 points. Points accumulate across rounds. Players shake to ready up for the next round. Once all ready, the next round starts automatically (no admin action needed between rounds).
@@ -187,7 +187,7 @@ curl http://localhost:4000/health    # must return { "debug": true }
 **The dashboard is the all-players view.** It shows every player card simultaneously — HP, alive/dead, team color, role, crown. For "which player is king?", one dashboard screenshot already answers that for all N players. Phone screenshots are only needed for state visible only on the player's own screen.
 
 **Two capture strategies:**
-- **Real socket (preferred):** The phone player joins the lobby before the bot game. `POST /api/debug/test/create` with `includeConnected: true` includes them in the game. All state arrives via real socket events, identical to a physical device.
+- **Real socket (preferred):** The phone player joins the lobby, then `POST /api/debug/spawn-bots` with `{ count: N, behavior: "still" }` adds bots to the lobby. Clicking "Start Game" on the dashboard includes everyone. Alternatively, `POST /api/debug/test/create` with `includeConnected: true` creates a game directly via API. All state arrives via real socket events, identical to a physical device.
 - **Store injection (supplement):** `window.__gameStore.getState().setIsKing(true)` etc. for states hard to reach naturally. Only inject the specific field you need; let the rest of the state be socket-driven.
 
 **Store injection caveat:** It tests "given store state X, does the UI render correctly?" but does NOT verify that the real game flow produces state X. For data pipeline correctness, rely on unit/e2e tests.
@@ -240,7 +240,11 @@ Game modes define rule sets. Currently implemented: **ClassicMode** (pure surviv
 
 ### Teams System
 
-Teams are supported in certain game modes (DeathCountMode). The admin enables teams in settings, enters a team selection phase, and players can switch teams by tapping. Teams are managed by `TeamManager` on the server. Team scores are aggregated from individual player scores and shown on the round-end/game-end leaderboard.
+Teams are supported in certain game modes (DeathCountMode, Domination, Long Live the King). The admin selects a team-based mode from the dropdown (e.g. "Death Count Team", "Domination"). Clicking "Start Game" goes straight to pre-game, where teams are already assigned. The pre-game phase shows a SHUFFLE TEAMS button alongside START GAME and STOP GAME. Players can switch teams by tapping their phone during pre-game. There is **no separate team selection UI phase** — team management happens within pre-game.
+
+**Note**: A `/api/game/team-selection` endpoint and `TeamSelectionPanel`/`TeamSelectionScreen` components exist in the codebase but are **not wired up** to the current UI flow. The `teamSelectionActive` store field is set by socket events but not consumed by any component. These are remnants of a planned separate phase that was never fully integrated.
+
+Teams are managed by `TeamManager` on the server. Team scores are aggregated from individual player scores and shown on the round-end/game-end leaderboard.
 
 ### Game Events System
 
@@ -286,7 +290,8 @@ Full API reference: see `docs/communication.md`.
 
 ```
 GET  /api/debug/state             # Full game snapshot with debug metadata
-POST /api/debug/test/create       # Create test game with bots
+POST /api/debug/test/create       # Create test game with bots (bypasses UI)
+POST /api/debug/spawn-bots        # Register bots in lobby (for UI-driven game start)
 POST /api/debug/bot/:id/command   # Control bot (shake, still, die, damage)
 POST /api/debug/fastforward       # Fast-forward game time
 POST /api/debug/reset             # Reset all state (used by e2e tests)

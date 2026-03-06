@@ -188,33 +188,22 @@ async function waitForPhase(target: string | string[], timeoutMs = 15000): Promi
     // ── SET COUNTDOWN to 1s (avoid long wait in screenshot scripts) ─────────
     await api("/debug/set-countdown", "POST", { seconds: 1 });
 
-    // ── TEAM SELECTION (team modes only) ─────────────────────────────────────
-    // Team selection is entered via API (no UI button for it), then
-    // the same lobby "Start Game" button launches the game.
-    if (isTeamMode(MODE)) {
-      await api("/game/team-selection", "POST");
-      await sleep(800);
-      await shot(dash, "04b_dash_team_selection.png", "Team selection — dashboard", "dashboard 1280x800");
-      await shot(phones[0].page, "04c_phoneA_team_selection.png", "Team selection — PlayerA", "phone 390x844");
-      await shot(phones[1].page, "04d_phoneB_team_selection.png", "Team selection — PlayerB", "phone 390x844");
-    }
-
     // ── START GAME via dashboard button (real UI click) ──────────────────────
     await dash.getByRole("button", { name: /Start Game \(/ }).click();
     console.log("  [flow] Clicked lobby Start Game");
 
     // ── PRE-GAME (shake to ready / force start) ─────────────────────────────
-    for (let i = 0; i < 10; i++) {
-      const phase = await getPhase();
-      if (phase !== "waiting") break;
-      await sleep(300);
-    }
+    // /api/game/launch goes straight to pre-game for all modes (including team modes).
+    // For team modes, pre-game shows SHUFFLE TEAMS alongside START GAME.
+    // There is no separate "team selection" UI phase.
+    await waitForPhase("pre-game");
     await sleep(300);
     const preGamePhase = await getPhase();
     console.log(`  [flow] Phase after start: ${preGamePhase}`);
     if (preGamePhase === "pre-game") {
-      await shot(dash, "04e_dash_pregame.png", "Pre-game — dashboard", "dashboard 1280x800");
-      await shot(phones[0].page, "04f_phoneA_pregame.png", "Pre-game — PlayerA", "phone 390x844");
+      await shot(dash, "04b_dash_pregame.png", "Pre-game — dashboard", "dashboard 1280x800");
+      await shot(phones[0].page, "04c_phoneA_pregame.png", "Pre-game — PlayerA", "phone 390x844");
+      await shot(phones[1].page, "04d_phoneB_pregame.png", "Pre-game — PlayerB", "phone 390x844");
 
       const forceBtn = dash.getByRole("button", { name: "START GAME", exact: true });
       await forceBtn.waitFor({ timeout: 3000 });
