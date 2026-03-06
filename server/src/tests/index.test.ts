@@ -30,24 +30,24 @@ async function runAllTests() {
   console.log("\n");
 
   const results = {
-    core: { passed: 0, failed: 0, total: 0 },
-    roles: { passed: 0, failed: 0, total: 0 },
-    statusEffects: { passed: 0, failed: 0, total: 0 },
-    readyState: { passed: 0, failed: 0, total: 0 },
-    settings: { passed: 0, failed: 0, total: 0 },
-    classicMode: { passed: 0, failed: 0, total: 0 },
-    deathCountMode: { passed: 0, failed: 0, total: 0 },
-    gameEvents: { passed: 0, failed: 0, total: 0 },
-    persistence: { passed: 0, failed: 0, total: 0 },
-    ability: { passed: 0, failed: 0, total: 0 },
-    teamManager: { passed: 0, failed: 0, total: 0 },
-    roundSetup: { passed: 0, failed: 0, total: 0 },
-    readyStateManager: { passed: 0, failed: 0, total: 0 },
-    preGame: { passed: 0, failed: 0, total: 0 },
-    respawnManager: { passed: 0, failed: 0, total: 0 },
-    dominationMode: { passed: 0, failed: 0, total: 0 },
-    targetScore: { passed: 0, failed: 0, total: 0 },
-    kingMode: { passed: 0, failed: 0, total: 0 },
+    core: { passed: 0, failed: 0, skipped: 0, total: 0 },
+    roles: { passed: 0, failed: 0, skipped: 0, total: 0 },
+    statusEffects: { passed: 0, failed: 0, skipped: 0, total: 0 },
+    readyState: { passed: 0, failed: 0, skipped: 0, total: 0 },
+    settings: { passed: 0, failed: 0, skipped: 0, total: 0 },
+    classicMode: { passed: 0, failed: 0, skipped: 0, total: 0 },
+    deathCountMode: { passed: 0, failed: 0, skipped: 0, total: 0 },
+    gameEvents: { passed: 0, failed: 0, skipped: 0, total: 0 },
+    persistence: { passed: 0, failed: 0, skipped: 0, total: 0 },
+    ability: { passed: 0, failed: 0, skipped: 0, total: 0 },
+    teamManager: { passed: 0, failed: 0, skipped: 0, total: 0 },
+    roundSetup: { passed: 0, failed: 0, skipped: 0, total: 0 },
+    readyStateManager: { passed: 0, failed: 0, skipped: 0, total: 0 },
+    preGame: { passed: 0, failed: 0, skipped: 0, total: 0 },
+    respawnManager: { passed: 0, failed: 0, skipped: 0, total: 0 },
+    dominationMode: { passed: 0, failed: 0, skipped: 0, total: 0 },
+    targetScore: { passed: 0, failed: 0, skipped: 0, total: 0 },
+    kingMode: { passed: 0, failed: 0, skipped: 0, total: 0 },
   };
 
   // Run core tests
@@ -132,6 +132,7 @@ async function runAllTests() {
   const allResults = Object.values(results);
   const totalPassed = allResults.reduce((sum, r) => sum + r.passed, 0);
   const totalFailed = allResults.reduce((sum, r) => sum + r.failed, 0);
+  const totalSkipped = allResults.reduce((sum, r) => sum + r.skipped, 0);
   const totalTests = allResults.reduce((sum, r) => sum + r.total, 0);
 
   console.log(`Core Tests:          ${results.core.passed}/${results.core.total} passed`);
@@ -156,9 +157,13 @@ async function runAllTests() {
   console.log(`King Mode Tests:     ${results.kingMode.passed}/${results.kingMode.total} passed`);
   console.log("\n" + "─".repeat(65) + "\n");
   console.log(`TOTAL:               ${totalPassed}/${totalTests} passed`);
+  if (totalSkipped > 0) {
+    console.log(`SKIPPED:             ${totalSkipped} (WIP — known incomplete features)`);
+  }
 
   if (totalFailed === 0) {
-    console.log("\n🎉 ALL TESTS PASSED! 🎉\n");
+    const skipNote = totalSkipped > 0 ? ` (${totalSkipped} skipped)` : "";
+    console.log(`\n🎉 ALL TESTS PASSED!${skipNote} 🎉\n`);
   } else {
     console.log(`\n⚠️  ${totalFailed} TEST(S) FAILED ⚠️\n`);
   }
