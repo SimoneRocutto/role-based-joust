@@ -478,6 +478,46 @@ router.post(
 );
 
 /**
+ * POST /api/debug/spawn-bots
+ * Register bot players in the lobby without starting a game.
+ * Bots appear in the dashboard lobby and are included when the game is
+ * launched via the normal "Start Game" button (POST /api/game/launch).
+ * After game start, they are marked as bots with auto-play enabled.
+ *
+ * Body: { count?: number, behavior?: string }
+ * - count: number of bots to spawn (default 3, max 20)
+ * - behavior: "still" | "random" | "shake" (default "still")
+ */
+router.post(
+  "/spawn-bots",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { count: rawCount = 3, behavior = "still" } = req.body;
+    const count = Math.min(Math.max(1, rawCount), 20);
+    const connectionManager = ConnectionManager.getInstance();
+    const io: SocketIOServer = req.app.locals.io;
+
+    const spawned: { id: string; name: string }[] = [];
+    for (let i = 0; i < count; i++) {
+      const id = `bot-${i}`;
+      const socketId = `socket-bot-${i}`;
+      const name = `Bot ${i + 1}`;
+      connectionManager.registerConnection(id, socketId, name, false);
+      connectionManager.registerBot(id, behavior);
+      spawned.push({ id, name });
+    }
+
+    broadcastLobbyUpdate(io);
+
+    logger.info("DEBUG", `Spawned ${spawned.length} bot(s) in lobby`, {
+      spawned,
+      behavior,
+    });
+
+    res.json({ success: true, spawned, behavior });
+  })
+);
+
+/**
  * POST /api/debug/spawn-bases
  * Register simulated bases for domination mode testing.
  * Each base is assigned to a team in round-robin order.

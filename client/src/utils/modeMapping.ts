@@ -18,6 +18,7 @@ export const COMBINED_MODES: CombinedMode[] = [
   { key: "death-count-team", label: "Death Count Team", serverMode: "death-count", teams: true },
   { key: "role-based-team", label: "Roles Team", serverMode: "role-based", teams: true },
   { key: "domination", label: "Domination", serverMode: "domination", teams: true },
+  { key: "long-live-the-king", label: "Long Live the King", serverMode: "long-live-the-king", teams: true },
 ];
 
 /**

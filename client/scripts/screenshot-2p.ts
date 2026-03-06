@@ -9,7 +9,11 @@
  *
  * Usage: npm run screenshot:2p
  *
- * To capture a specific mode: MODE=king npm run screenshot:2p
+ * To capture a specific mode: MODE=long-live-the-king npm run screenshot:2p
+ *
+ * Principle: use real UI clicks for everything the admin/player would do.
+ * Use debug APIs only for things with no UI equivalent (spawning bots,
+ * dealing damage, killing players, reading server state).
  */
 import { chromium, type Page } from "@playwright/test";
 import fs from "fs";
@@ -26,6 +30,18 @@ const MODE = process.env.MODE || "classic";
 // Use a mode-specific subdirectory so multi-mode runs don't overwrite each other
 const OUT = path.resolve(__dirname, `../e2e/screenshots/${MODE}`);
 
+// Map MODE env values to combined dropdown keys
+const MODE_TO_COMBINED_KEY: Record<string, string> = {
+  classic: "classic",
+  "death-count": "death-count",
+  "role-based": "role-based",
+  "classic-team": "classic-team",
+  "death-count-team": "death-count-team",
+  "role-based-team": "role-based-team",
+  domination: "domination",
+  "long-live-the-king": "long-live-the-king",
+};
+
 async function api(p: string, method = "GET", body?: object) {
   const res = await fetch(`${BACKEND}/api${p}`, {
     method,
@@ -35,8 +51,14 @@ async function api(p: string, method = "GET", body?: object) {
   return res.json().catch(() => ({}));
 }
 
-async function sleep(ms: number) {
+function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+/** Get current game phase from server. */
+async function getPhase(): Promise<string> {
+  const res = await api("/game/state");
+  return res?.state?.state ?? res?.phase ?? "unknown";
 }
 
 async function getPlayerId(page: Page): Promise<string | null> {
@@ -72,6 +94,29 @@ async function checkServer() {
   }
 }
 
+/** Check if the current mode uses teams. */
+function isTeamMode(mode: string): boolean {
+  return [
+    "classic-team",
+    "death-count-team",
+    "role-based-team",
+    "domination",
+    "long-live-the-king",
+  ].includes(mode);
+}
+
+/** Wait until game reaches a target phase (with timeout). */
+async function waitForPhase(target: string | string[], timeoutMs = 15000): Promise<string> {
+  const targets = Array.isArray(target) ? target : [target];
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const phase = await getPhase();
+    if (targets.includes(phase)) return phase;
+    await sleep(500);
+  }
+  return await getPhase();
+}
+
 (async () => {
   await checkServer();
   fs.mkdirSync(OUT, { recursive: true });
@@ -92,11 +137,9 @@ async function checkServer() {
   };
 
   try {
+    // ── RESET ────────────────────────────────────────────────────────────────
     await api("/debug/reset", "POST");
     await sleep(400);
-
-    // Sync persisted settings so dashboard lobby shows the correct mode badge
-    await api("/game/settings", "POST", { gameMode: MODE });
 
     const dash = await browser.newPage();
     dash.setViewportSize({ width: 1280, height: 800 });
@@ -107,12 +150,12 @@ async function checkServer() {
     ];
     for (const { page } of phones) page.setViewportSize({ width: 390, height: 844 });
 
-    // ── JOIN FORM (first phone only) ──────────────────────────────────────────
+    // ── JOIN FORM (first phone only) ─────────────────────────────────────────
     await phones[0].page.goto(`${CLIENT}/player?dev=true`);
     await sleep(1500);
     await shot(phones[0].page, "01_phone_join.png", "Join form", "phone 390x844");
 
-    // ── JOIN BOTH PLAYERS ────────────────────────────────────────────────────
+    // ── JOIN BOTH PLAYERS (real UI clicks) ───────────────────────────────────
     for (const { page, name } of phones) {
       if (page !== phones[0].page) {
         await page.goto(`${CLIENT}/player?dev=true`);
@@ -126,26 +169,65 @@ async function checkServer() {
     await shot(phones[0].page, "02_phoneA_lobby.png", "Lobby — PlayerA", "phone 390x844");
     await shot(phones[1].page, "03_phoneB_lobby.png", "Lobby — PlayerB", "phone 390x844");
 
+    // ── SPAWN BOTS into lobby (API — no UI equivalent) ───────────────────────
+    await api("/debug/spawn-bots", "POST", { count: 2, behavior: "still" });
+    await sleep(400);
+
+    // ── DASHBOARD — open and select mode via real UI ─────────────────────────
     await dash.goto(`${CLIENT}/dashboard`);
     await sleep(800);
-    await shot(dash, "04_dash_lobby.png", "Lobby — 2 real players", "dashboard 1280x800");
 
-    // ── BOT GAME — both real players included ─────────────────────────────────
-    const createRes = await api("/debug/test/create", "POST", {
-      botCount: 2,
-      botBehavior: "still",
-      mode: MODE,
-      includeConnected: true,
-    });
-    const allPlayers: { id: string; isBot: boolean }[] =
-      createRes.snapshot?.players ?? [];
-    const botIds = allPlayers.filter((p) => p.isBot).map((p) => p.id);
+    const combinedKey = MODE_TO_COMBINED_KEY[MODE];
+    if (combinedKey) {
+      await dash.selectOption("select", combinedKey);
+      await sleep(400);
+    }
 
-    // Test mode skips countdown — game is already active after test/create.
-    // Wait for socket events to propagate to the browser.
-    await sleep(1000);
+    await shot(dash, "04_dash_lobby.png", "Lobby — 2 real players + 2 bots", "dashboard 1280x800");
 
-    // ── READ SERVER STATE to identify which player has which experience ────────
+    // ── SET COUNTDOWN to 1s (avoid long wait in screenshot scripts) ─────────
+    await api("/debug/set-countdown", "POST", { seconds: 1 });
+
+    // ── TEAM SELECTION (team modes only) ─────────────────────────────────────
+    // Team selection is entered via API (no UI button for it), then
+    // the same lobby "Start Game" button launches the game.
+    if (isTeamMode(MODE)) {
+      await api("/game/team-selection", "POST");
+      await sleep(800);
+      await shot(dash, "04b_dash_team_selection.png", "Team selection — dashboard", "dashboard 1280x800");
+      await shot(phones[0].page, "04c_phoneA_team_selection.png", "Team selection — PlayerA", "phone 390x844");
+      await shot(phones[1].page, "04d_phoneB_team_selection.png", "Team selection — PlayerB", "phone 390x844");
+    }
+
+    // ── START GAME via dashboard button (real UI click) ──────────────────────
+    await dash.getByRole("button", { name: /Start Game \(/ }).click();
+    console.log("  [flow] Clicked lobby Start Game");
+
+    // ── PRE-GAME (shake to ready / force start) ─────────────────────────────
+    for (let i = 0; i < 10; i++) {
+      const phase = await getPhase();
+      if (phase !== "waiting") break;
+      await sleep(300);
+    }
+    await sleep(300);
+    const preGamePhase = await getPhase();
+    console.log(`  [flow] Phase after start: ${preGamePhase}`);
+    if (preGamePhase === "pre-game") {
+      await shot(dash, "04e_dash_pregame.png", "Pre-game — dashboard", "dashboard 1280x800");
+      await shot(phones[0].page, "04f_phoneA_pregame.png", "Pre-game — PlayerA", "phone 390x844");
+
+      const forceBtn = dash.getByRole("button", { name: "START GAME", exact: true });
+      await forceBtn.waitFor({ timeout: 3000 });
+      await forceBtn.click();
+      console.log("  [flow] Clicked pre-game START GAME");
+    }
+
+    // ── COUNTDOWN → ACTIVE ───────────────────────────────────────────────────
+    // Countdown is set to 1s, just wait for it to finish
+    await waitForPhase("active");
+    await sleep(500);
+
+    // ── READ SERVER STATE to identify which player has which experience ───────
     const debugState = await api("/debug/state");
     const serverPlayers: { id: string; isKing?: boolean; role?: string; teamId?: number | null; name?: string }[] =
       debugState.snapshot?.players ?? [];
@@ -159,16 +241,15 @@ async function checkServer() {
 
     console.log(`\n  Player labels: PlayerA=${labelA}, PlayerB=${labelB}\n`);
 
-    // ── ACTIVE GAME (full HP) ──────────────────────────────────────────────────
+    // ── ACTIVE GAME (full HP) ────────────────────────────────────────────────
     await shot(dash, "05_dash_active.png", "Active game — dashboard (full HP)", "dashboard 1280x800");
     await shot(phones[0].page, "06_phoneA_active.png", "Active — PlayerA (full HP)", "phone 390x844", labelA);
     await shot(phones[1].page, "07_phoneB_active.png", "Active — PlayerB (full HP)", "phone 390x844", labelB);
 
-    // ── ACTIVE GAME (damaged) — shows HP gradient on phone + dashboard cards ─
-    // Damage PlayerA to ~50%, PlayerB to ~25%, and a bot to ~75% to show HP color range
+    // ── ACTIVE GAME (damaged) — HP gradient on phone + dashboard cards ───────
     if (idA) await api(`/debug/player/${idA}/damage`, "POST", { amount: 50 });
     if (idB) await api(`/debug/player/${idB}/damage`, "POST", { amount: 75 });
-    if (botIds[0]) await api(`/debug/bot/${botIds[0]}/command`, "POST", { action: "damage", args: [25] });
+    await api("/debug/bot/bot-0/command", "POST", { action: "damage", args: [25] });
     await sleep(600);
     await shot(dash, "05b_dash_active_damaged.png", "Active game — dashboard (damaged)", "dashboard 1280x800");
     await shot(phones[0].page, "06b_phoneA_active_damaged.png", "Active — PlayerA (~50% HP)", "phone 390x844", labelA);
@@ -180,9 +261,9 @@ async function checkServer() {
     if (idB) { await api(`/debug/player/${idB}/kill`, "POST"); await sleep(500); }
     await shot(phones[1].page, "09_phoneB_dead.png", "Dead — PlayerB", "phone 390x844", labelB);
 
-    // ── ROUND END ─────────────────────────────────────────────────────────────
-    for (const id of botIds) {
-      await api(`/debug/bot/${id}/command`, "POST", { command: "die" });
+    // ── ROUND END ────────────────────────────────────────────────────────────
+    for (let i = 0; i < 2; i++) {
+      await api(`/debug/bot/bot-${i}/command`, "POST", { command: "die" });
       await sleep(150);
     }
     await sleep(1000);
@@ -190,9 +271,9 @@ async function checkServer() {
     await shot(phones[0].page, "11_phoneA_round_end.png", "Round ended — PlayerA", "phone 390x844");
     await shot(phones[1].page, "12_phoneB_round_end.png", "Round ended — PlayerB", "phone 390x844");
 
-    // ── GAME OVER ─────────────────────────────────────────────────────────────
-    const gameState = await api("/game/state");
-    if (gameState.phase === "finished") {
+    // ── GAME OVER ────────────────────────────────────────────────────────────
+    const finalPhase = await getPhase();
+    if (finalPhase === "finished") {
       await shot(dash, "13_dash_game_over.png", "Game over — dashboard", "dashboard 1280x800");
       await shot(phones[0].page, "14_phoneA_game_over.png", "Game over — PlayerA", "phone 390x844");
       await shot(phones[1].page, "15_phoneB_game_over.png", "Game over — PlayerB", "phone 390x844");

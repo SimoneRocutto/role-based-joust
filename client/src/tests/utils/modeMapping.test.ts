@@ -9,8 +9,8 @@ import {
 
 describe("modeMapping", () => {
   describe("COMBINED_MODES", () => {
-    it("has 7 entries (3 solo + 3 team + domination)", () => {
-      expect(COMBINED_MODES).toHaveLength(7);
+    it("has 8 entries (3 solo + 3 team + domination + king)", () => {
+      expect(COMBINED_MODES).toHaveLength(8);
     });
 
     it("has unique keys", () => {
@@ -30,6 +30,7 @@ describe("modeMapping", () => {
       expect(getCombinedModeKey("classic", true)).toBe("classic-team");
       expect(getCombinedModeKey("death-count", true)).toBe("death-count-team");
       expect(getCombinedModeKey("role-based", true)).toBe("role-based-team");
+      expect(getCombinedModeKey("long-live-the-king", true)).toBe("long-live-the-king");
     });
 
     it("falls back to serverMode for unknown modes", () => {
@@ -46,6 +47,7 @@ describe("modeMapping", () => {
     it("parses team mode keys", () => {
       expect(parseCombinedMode("classic-team")).toEqual({ serverMode: "classic", teams: true });
       expect(parseCombinedMode("role-based-team")).toEqual({ serverMode: "role-based", teams: true });
+      expect(parseCombinedMode("long-live-the-king")).toEqual({ serverMode: "long-live-the-king", teams: true });
     });
 
     it("falls back for unknown keys", () => {
@@ -63,6 +65,7 @@ describe("modeMapping", () => {
     it("returns correct display names for team modes", () => {
       expect(getModeDisplayName("classic", true)).toBe("Classic Team");
       expect(getModeDisplayName("role-based", true)).toBe("Roles Team");
+      expect(getModeDisplayName("long-live-the-king", true)).toBe("Long Live the King");
     });
   });
 

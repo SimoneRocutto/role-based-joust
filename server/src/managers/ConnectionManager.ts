@@ -43,6 +43,9 @@ export class ConnectionManager {
     { disconnectedAt: number; removalTimeout: ReturnType<typeof setTimeout> }
   > = new Map();
 
+  // Map: playerId -> bot metadata (debug only — bots spawned into the lobby)
+  private botMetadata: Map<string, { behavior: string }> = new Map();
+
   // Configuration
   private readonly SESSION_TIMEOUT = 300000; // 5 minutes
   private readonly HEARTBEAT_INTERVAL = 30000; // 30 seconds
@@ -544,6 +547,20 @@ export class ConnectionManager {
   /**
    * Clear all connections (for testing/reset)
    */
+  /**
+   * Mark a lobby player as a bot (debug only).
+   */
+  registerBot(playerId: string, behavior: string): void {
+    this.botMetadata.set(playerId, { behavior });
+  }
+
+  /**
+   * Get bot metadata for a player, or undefined if not a bot.
+   */
+  getBotMetadata(playerId: string): { behavior: string } | undefined {
+    return this.botMetadata.get(playerId);
+  }
+
   clearAll(): void {
     this.playerSockets.clear();
     this.socketPlayers.clear();
@@ -552,6 +569,7 @@ export class ConnectionManager {
     this.playerNumbers.clear();
     this.playerNames.clear();
     this.playerReadyState.clear();
+    this.botMetadata.clear();
 
     // Clear all lobby disconnect timeouts
     for (const info of this.disconnectedLobbyPlayers.values()) {

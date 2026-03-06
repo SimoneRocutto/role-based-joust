@@ -294,12 +294,16 @@ router.post(
     // Clear lobby ready states so they don't carry into finished state
     connectionManager.resetAllReadyState();
 
-    // Convert lobby players to PlayerData format
-    const playerData = lobbyPlayers.map((p) => ({
-      id: p.id,
-      name: p.name,
-      socketId: connectionManager.getSocketId(p.id) || "",
-    }));
+    // Convert lobby players to PlayerData format (include bot metadata if present)
+    const playerData = lobbyPlayers.map((p) => {
+      const botMeta = connectionManager.getBotMetadata(p.id);
+      return {
+        id: p.id,
+        name: p.name,
+        socketId: connectionManager.getSocketId(p.id) || "",
+        ...(botMeta ? { isBot: true, behavior: botMeta.behavior } : {}),
+      };
+    });
 
     // Broadcast team info before starting so clients get initial assignments
     if (teamManager.isEnabled()) {
