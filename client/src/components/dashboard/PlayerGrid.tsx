@@ -9,8 +9,10 @@ import { computeDeathCountRanks } from "@/utils/ranking";
 function PlayerGrid() {
   const { sortedPlayers, players } = useGameState();
   const { teamsEnabled, teams } = useGameStore();
+  const mode = useGameStore((state) => state.mode);
   const modeRecap = useGameStore((state) => state.modeRecap);
   const isDeathCountMode = modeRecap?.modeName?.includes("Death Count") ?? false;
+  const isKingMode = mode === "long-live-the-king";
 
   const deathCountRanks = useMemo(
     () => (isDeathCountMode ? computeDeathCountRanks(players) : new Map<string, number>()),
@@ -36,7 +38,7 @@ function PlayerGrid() {
 
   // Team lobby layout when teams are enabled and players have team assignments
   if (teamsEnabled && players.some((p) => p.teamId != null)) {
-    return <TeamLobbyGrid teams={teams} players={players} />;
+    return <TeamLobbyGrid teams={teams} players={players} isKingMode={isKingMode} />;
   }
 
   // Determine grid layout based on player count
@@ -71,9 +73,11 @@ function PlayerGrid() {
 function TeamLobbyGrid({
   teams,
   players,
+  isKingMode,
 }: {
   teams: Record<number, string[]>;
   players: ReturnType<typeof useGameState>["players"];
+  isKingMode?: boolean;
 }) {
   // Group players by team
   const teamGroups = new Map<number, typeof players>();
@@ -142,6 +146,7 @@ function TeamLobbyGrid({
                     player={player}
                     teamColor={teamColor.primary}
                     showKick
+                    isKingMode={isKingMode}
                   />
                 ))}
             </div>
@@ -164,6 +169,7 @@ function TeamLobbyGrid({
                   player={player}
                   teamColor="#6b7280"
                   showKick
+                  isKingMode={isKingMode}
                 />
               ))}
           </div>

@@ -72,6 +72,7 @@ function PlayerCard({ player, rank }: PlayerCardProps) {
   const debugRole = isDebugMode ? (roles[player.id] ?? null) : null;
 
   const gameState = useGameStore((state) => state.gameState);
+  const mode = useGameStore((state) => state.mode);
   const modeRecap = useGameStore((state) => state.modeRecap);
   const isDeathCountMode = modeRecap?.modeName?.includes("Death Count") ?? false;
   const showReadyBadge = player.isReady && (gameState === 'waiting' || gameState === 'pre-game' || gameState === 'round-ended');
@@ -160,7 +161,7 @@ function PlayerCard({ player, rank }: PlayerCardProps) {
       <div className="flex items-baseline gap-2 mb-1">
         <span className="text-5xl font-bold text-white">#{player.number}</span>
         <span className="text-3xl text-gray-200 truncate">{player.name}</span>
-        {player.isKing && <span className="text-3xl leading-none">&#128081;</span>}
+        {mode === "long-live-the-king" && player.isKing && <span className="text-3xl leading-none">&#128081;</span>}
       </div>
 
       {/* Debug overlay: role, toughness, status effects, grace timer */}

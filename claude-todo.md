@@ -44,7 +44,7 @@ Lightweight task management for Claude instances. Each task has a unique ID, pri
 | ID | Title | Priority | Status | Tags | Detail |
 |----|-------|----------|--------|------|--------|
 | UX-010 | King mode: cascade death visual feedback | P1 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-010.md) |
-| UX-011 | King mode: crown/king indicator on dashboard | P1 | TODO | | [detail](claude-tasks/UX-011.md) |
+| ~~UX-011~~ | ~~King mode: crown/king indicator on dashboard~~ | P1 | DONE | | [detail](claude-tasks/UX-011.md) |
 | UX-012 | Role-based: role visibility on dashboard (NOT phone) | P2 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-012.md) |
 | UX-013 | Role-based: ability feedback design (hidden from opponents) | P2 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-013.md) |
 | ~~UX-014~~ | ~~Role-based: show roles on dashboard player cards~~ | N/A | MERGED | | Merged into UX-012 |

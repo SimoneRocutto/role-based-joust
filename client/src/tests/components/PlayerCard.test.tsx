@@ -363,6 +363,49 @@ describe('PlayerCard', () => {
     })
   })
 
+  describe('king crown indicator', () => {
+    it('shows crown for king player in long-live-the-king mode', () => {
+      act(() => {
+        useGameStore.getState().setMode('long-live-the-king')
+      })
+
+      const player = createMockPlayer({ isKing: true })
+      render(<PlayerCard player={player} />)
+
+      // Crown emoji (👑 = &#128081;)
+      expect(screen.getByText('👑')).toBeInTheDocument()
+    })
+
+    it('does not show crown for non-king player in long-live-the-king mode', () => {
+      act(() => {
+        useGameStore.getState().setMode('long-live-the-king')
+      })
+
+      const player = createMockPlayer({ isKing: false })
+      render(<PlayerCard player={player} />)
+
+      expect(screen.queryByText('👑')).not.toBeInTheDocument()
+    })
+
+    it('does not show crown for king player in other modes', () => {
+      act(() => {
+        useGameStore.getState().setMode('role-based')
+      })
+
+      const player = createMockPlayer({ isKing: true })
+      render(<PlayerCard player={player} />)
+
+      expect(screen.queryByText('👑')).not.toBeInTheDocument()
+    })
+
+    it('does not show crown when mode is null', () => {
+      const player = createMockPlayer({ isKing: true })
+      render(<PlayerCard player={player} />)
+
+      expect(screen.queryByText('👑')).not.toBeInTheDocument()
+    })
+  })
+
   describe('health-based styling', () => {
     it('applies green styling for high health', () => {
       const player = createMockPlayer({ accumulatedDamage: 10 }) // 90% health

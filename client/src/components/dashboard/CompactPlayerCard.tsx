@@ -1,16 +1,18 @@
 import { apiService } from '@/services/api'
 
 interface CompactPlayerCardProps {
-  player: { id: string; name: string; number: number; isReady?: boolean; isConnected?: boolean }
+  player: { id: string; name: string; number: number; isReady?: boolean; isConnected?: boolean; isKing?: boolean }
   teamColor: string
   showKick?: boolean
+  /** Whether the current mode is long-live-the-king (enables crown display). */
+  isKingMode?: boolean
 }
 
 /**
  * Compact player card: just number + name + ready badge + optional kick button.
  * Used in team lobby grid and lobby action bar.
  */
-function CompactPlayerCard({ player, teamColor, showKick }: CompactPlayerCardProps) {
+function CompactPlayerCard({ player, teamColor, showKick, isKingMode }: CompactPlayerCardProps) {
   const isDisconnected = player.isConnected === false
 
   return (
@@ -22,6 +24,9 @@ function CompactPlayerCard({ player, teamColor, showKick }: CompactPlayerCardPro
     >
       <span className="font-bold text-white">#{player.number}</span>
       <span className="text-gray-300 truncate max-w-[80px]">{player.name}</span>
+      {isKingMode && player.isKing && (
+        <span className="text-base leading-none" title="King">&#128081;</span>
+      )}
       {isDisconnected ? (
         <span className="text-gray-500 text-xs font-bold">OFFLINE</span>
       ) : player.isReady ? (
