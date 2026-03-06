@@ -5,7 +5,6 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
 - PRIORITIES:
     - domination: team mode should not sum players scores. Actually, there shouldn't be individual scores
     - domination: allow changing base team by clicking the right color. We should have it be divided into n parts, where n is the number of teams. each of them is colored. When the red one gets pressed, red players take the base. The issue here is understanding how to still make it clear which team is currently controlling the base
-    - implement king mode: it's team based, and inside each team a player at random will be picked as the king. The game rules are this: it's like classic mode but the team loses when its king dies. This mode will be labeled as "Long live the king". The king player should be easily distinguished from the rest thanks to a big crown on his phone screen right under his player number
 
 - SHORT TERM PRIORITIES:
     - classic at the end of the round shows skull on every player that is not the first one with most total points. Trophy should be shown on round winner
@@ -19,7 +18,6 @@ Here are all the things this game is missing to be complete. PRIORITIES shows ne
     - death count team mode active game UI should be make it easy to know which team is winning. Right now there's no info aside from team composition
     - maybe allow multiple audio tracks for background music
     - maybe implement timeshift role and the bomb/bomb faker
-    - maybe implement king game mode
     - preloading every sfx became slow: load them on the fly => by testing it looks like it's not the thing that makes it slow
 
 - IMPROVEMENTS:

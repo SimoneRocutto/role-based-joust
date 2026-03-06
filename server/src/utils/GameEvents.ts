@@ -150,6 +150,10 @@ export class GameEvents extends EventEmitter {
     this.emit("player:damage", payload);
   }
 
+  emitKingCrowned(payload: { playerId: string; socketId: string }): void {
+    this.emit("king:crowned", payload);
+  }
+
   // ========== TYPED EVENT LISTENERS ==========
 
   onGameTick(listener: (payload: GameTickEvent) => void): void {
@@ -254,6 +258,10 @@ export class GameEvents extends EventEmitter {
 
   onPlayerDamageEvent(listener: (payload: PlayerDamageEvent) => void): void {
     this.on("player:damage", listener);
+  }
+
+  onKingCrowned(listener: (payload: { playerId: string; socketId: string }) => void): void {
+    this.on("king:crowned", listener);
   }
 
   // ========== UTILITY METHODS ==========

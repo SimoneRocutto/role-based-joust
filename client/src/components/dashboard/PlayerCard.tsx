@@ -160,6 +160,7 @@ function PlayerCard({ player, rank }: PlayerCardProps) {
       <div className="flex items-baseline gap-2 mb-1">
         <span className="text-5xl font-bold text-white">#{player.number}</span>
         <span className="text-3xl text-gray-200 truncate">{player.name}</span>
+        {player.isKing && <span className="text-3xl leading-none">&#128081;</span>}
       </div>
 
       {/* Debug overlay: role, toughness, status effects, grace timer */}

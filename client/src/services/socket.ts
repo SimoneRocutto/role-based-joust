@@ -165,6 +165,10 @@ class SocketService {
     this.on("role:assigned", callback);
   }
 
+  onKingCrowned(callback: () => void) {
+    this.on("king:crowned", callback);
+  }
+
   onRoleUpdated(callback: (data: RoleUpdatedPayload) => void) {
     this.on("role:updated", callback);
   }

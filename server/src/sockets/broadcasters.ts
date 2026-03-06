@@ -310,6 +310,15 @@ export function registerGameEventBroadcasters(
     }
   );
 
+  // Send king:crowned to the crowned player only
+  gameEvents.onKingCrowned((payload) => {
+    const socket = io.sockets.sockets.get(payload.socketId);
+    if (socket) {
+      socket.emit("king:crowned", {});
+      logger.debug("SOCKET", `King crowned: ${payload.playerId}`);
+    }
+  });
+
   // Send role updates to individual players (mid-game changes, e.g. Executioner new target)
   gameEvents.onRoleUpdated((payload) => {
     const socket = io.sockets.sockets.get(payload.socketId);

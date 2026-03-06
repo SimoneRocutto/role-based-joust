@@ -122,6 +122,7 @@ export function useSocket() {
               statusEffects: tp.statusEffects,
               // Preserve team assignment (set from tick if available, else from existing)
               teamId: (tp as any).teamId ?? existing?.teamId ?? null,
+              isKing: tp.isKing ?? false,
             };
           });
           updatePlayers(mergedPlayers);
@@ -174,7 +175,13 @@ export function useSocket() {
     socketService.onRoundStart(({ roundNumber, totalRounds, gameEvents }) => {
       setRound(roundNumber, totalRounds ?? null);
       useGameStore.getState().setActiveGameEvents(gameEvents ?? []);
+      useGameStore.getState().setIsKing(false);
       setGameState("active");
+    });
+
+    // King crowned (sent only to the crowned player)
+    socketService.onKingCrowned(() => {
+      useGameStore.getState().setIsKing(true);
     });
 
     // Round end
@@ -481,6 +488,7 @@ export function useSocket() {
       socketService.off("vampire:bloodlust");
       socketService.off("role:assigned");
       socketService.off("role:updated");
+      socketService.off("king:crowned");
       socketService.off("lobby:update");
       socketService.off("team:update");
       socketService.off("team:selection");

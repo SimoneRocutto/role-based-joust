@@ -15,6 +15,7 @@ interface GameStore {
   myPlayer: PlayerState | null;
   myRole: RoleInfo | null;
   myTarget: { number: number; name: string } | null;
+  isKing: boolean;
 
   // Game state
   gameState: GameStateType;
@@ -79,6 +80,7 @@ interface GameStore {
   setMyPlayer: (playerId: string, playerNumber: number) => void;
   setMyRole: (role: RoleInfo) => void;
   setMyTarget: (target: { number: number; name: string } | null) => void;
+  setIsKing: (isKing: boolean) => void;
   updatePlayer: (player: PlayerState) => void;
   updatePlayers: (players: PlayerState[]) => void;
   setGameState: (state: GameStateType) => void;
@@ -126,6 +128,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   myPlayer: null,
   myRole: null,
   myTarget: null,
+  isKing: false,
 
   gameState: "waiting",
   gameTime: 0,
@@ -179,6 +182,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setMyRole: (role) => set({ myRole: role }),
 
   setMyTarget: (target) => set({ myTarget: target }),
+
+  setIsKing: (isKing) => set({ isKing }),
 
   updatePlayer: (player) => {
     // Ensure statusEffects is always an array (reconnect payloads may omit it)
@@ -309,6 +314,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       myPlayer: null,
       myRole: null,
       myTarget: null,
+      isKing: false,
     }),
 
   reset: () =>
@@ -318,6 +324,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       myPlayer: null,
       myRole: null,
       myTarget: null,
+      isKing: false,
       gameState: "waiting",
       gameTime: 0,
       currentRound: 0,

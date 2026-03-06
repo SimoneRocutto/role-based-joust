@@ -60,6 +60,8 @@ vi.mock("@/services/socket", () => ({
       socketEventHandlers.set("base:status", cb),
     onDominationWin: (cb: Function) =>
       socketEventHandlers.set("domination:win", cb),
+    onKingCrowned: (cb: Function) =>
+      socketEventHandlers.set("king:crowned", cb),
     onError: (cb: Function) => socketEventHandlers.set("error", cb),
     sendMovement: vi.fn(),
     joinGame: vi.fn(),

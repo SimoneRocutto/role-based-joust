@@ -328,6 +328,7 @@ describe("ActiveGameScreen", () => {
     isDevMode: false,
     isDeathCountMode: false,
     medal: null as string | null,
+    isKing: false,
   };
 
   it("renders health background and player number", () => {
@@ -406,6 +407,7 @@ describe("DeadScreen", () => {
         deathCount={0}
         points={5}
         medal={null}
+        isKing={false}
       />
     );
 
@@ -421,6 +423,7 @@ describe("DeadScreen", () => {
         deathCount={1}
         points={0}
         medal={null}
+        isKing={false}
       />
     );
 
@@ -437,6 +440,7 @@ describe("DeadScreen", () => {
         deathCount={0}
         points={0}
         medal={null}
+        isKing={false}
       />
     );
 
@@ -451,6 +455,7 @@ describe("DeadScreen", () => {
         deathCount={2}
         points={0}
         medal="🥈"
+        isKing={false}
       />
     );
 

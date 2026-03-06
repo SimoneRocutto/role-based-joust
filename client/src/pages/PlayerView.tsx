@@ -52,6 +52,7 @@ function PlayerView() {
     modeRecap,
     setMyPlayer,
     clearIdentity,
+    isKing,
   } = useGameStore();
 
   const { isReconnecting, isGivenUp, isRejected, retryOnce, resetReconnect } =
@@ -313,6 +314,7 @@ function PlayerView() {
             isDevMode={isDevMode}
             isDeathCountMode={isDeathCountMode}
             medal={medal}
+            isKing={isKing}
           />
         )}
 
@@ -327,6 +329,7 @@ function PlayerView() {
             deathCount={myPlayer?.deathCount ?? 0}
             points={myPlayer?.points || 0}
             medal={medal}
+            isKing={isKing}
           />
         )}
 
