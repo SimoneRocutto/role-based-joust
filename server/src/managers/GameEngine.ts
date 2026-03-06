@@ -716,32 +716,52 @@ export class GameEngine {
   /**
    * Create a test game with bots
    * @param roleNames - Specific roles to assign to each bot
+   * @param options.behavior - Bot movement behavior ("random" | "still"). Default: "random".
+   *   Use "still" to prevent bots from accumulating damage in the first tick — avoids
+   *   the parallel-still trick in screenshot/test scripts.
+   * @param options.realPlayerIds - Real connected player IDs to include alongside bots.
+   *   Players must already be registered in ConnectionManager (i.e. have joined the lobby).
    */
-  createTestGame(roleNames: string[]): void {
+  createTestGame(
+    roleNames: string[],
+    options: { behavior?: string; realPlayerIds?: string[] } = {}
+  ): void {
     this.testMode = true;
 
-    const botData: PlayerData[] = roleNames.map((role, i) => ({
+    const { behavior = "random", realPlayerIds = [] } = options;
+    const connectionManager = ConnectionManager.getInstance();
+
+    // Include real connected players first (they're already in ConnectionManager)
+    const realPlayerData: PlayerData[] = realPlayerIds.map((id) => ({
+      id,
+      name: connectionManager.getPlayerName(id) ?? id,
+      socketId: connectionManager.getSocketId(id) ?? id,
+      isBot: false,
+    }));
+
+    const botData: PlayerData[] = roleNames.map((_role, i) => ({
       id: `bot-${i}`,
       name: `Bot ${i + 1}`,
       socketId: `socket-bot-${i}`,
       isBot: true,
-      behavior: "random",
+      behavior,
     }));
 
     logger.info("ENGINE", "Creating test game with bots", {
       botCount: botData.length,
+      realPlayers: realPlayerData.length,
+      behavior,
       roles: roleNames,
     });
 
     // Register bots in ConnectionManager so they get sequential player numbers
     // (displayed as #1, #2, etc. in the leaderboard and player cards)
-    const connectionManager = ConnectionManager.getInstance();
     botData.forEach((bot) => {
       connectionManager.registerConnection(bot.id, bot.socketId!, bot.name, false);
     });
 
     // Pass roleNames as the role pool override to ensure exact role assignment
-    this.startGame(botData, roleNames);
+    this.startGame([...realPlayerData, ...botData], roleNames);
   }
 
   /**
