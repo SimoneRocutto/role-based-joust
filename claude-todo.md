@@ -34,7 +34,7 @@ Lightweight task management for Claude instances. Each task has a unique ID, pri
 | UX-003 | Dashboard team-mode: add HP info to player chips | P1 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-003.md) |
 | UX-004 | Dashboard team-mode: differentiate active-round from pre-game | P1 | TODO | | [detail](claude-tasks/UX-004.md) |
 | UX-005 | Dashboard: round-end summary overlay | P1 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-005.md) |
-| UX-006 | Phone dead/round-end: fix "Final Score" label + add context | P1 | TODO | | [detail](claude-tasks/UX-006.md) |
+| ~~UX-006~~ | ~~Phone dead/round-end: fix "Final Score" label + add context~~ | P1 | DONE | | [detail](claude-tasks/UX-006.md) |
 | UX-007 | Phone team modes: show team name + team result | P1 | TODO | | [detail](claude-tasks/UX-007.md) |
 | UX-008 | Phone pre-game: add "shake to ready" instruction | P2 | TODO | | [detail](claude-tasks/UX-008.md) |
 | UX-009 | Death-count modes: "pts" -> "deaths" label | P2 | TODO | | [detail](claude-tasks/UX-009.md) |

@@ -80,8 +80,9 @@ export default function DeadScreen({
       <div className="text-9xl">&#128128;</div>
       {isKing && <div className="text-8xl leading-none">&#128081;</div>}
       <div className="text-5xl font-bold text-gray-500">ELIMINATED</div>
-      <div className="text-xl text-gray-600">
-        Final Score: {points} pts
+      <div className="text-xl text-gray-600">Score: {points} pts</div>
+      <div className="text-lg text-gray-600 italic">
+        Round still in progress
       </div>
     </div>
   );

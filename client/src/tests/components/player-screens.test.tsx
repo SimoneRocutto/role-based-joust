@@ -422,7 +422,8 @@ describe("DeadScreen", () => {
     );
 
     expect(screen.getByText("ELIMINATED")).toBeInTheDocument();
-    expect(screen.getByText("Final Score: 5 pts")).toBeInTheDocument();
+    expect(screen.getByText("Score: 5 pts")).toBeInTheDocument();
+    expect(screen.getByText("Round still in progress")).toBeInTheDocument();
   });
 
   it("shows RESPAWNING... with countdown and death count", () => {
