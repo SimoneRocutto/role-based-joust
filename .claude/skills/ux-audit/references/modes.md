@@ -7,9 +7,11 @@ Use this file to know how to screenshot and what to look for in each game mode.
 | Mode key | Display name | Screenshot template | Distinct per-player states | Status |
 |----------|--------------|--------------------|-----------------------------|--------|
 | `classic` | Classic | 1p | None — all players identical | Stable |
+| `classic-teams` | Classic (Teams) | click-through 2p | team:0 vs team:1 (no roles) | Stable |
 | `role-based` | Role Based | 2p | Different roles (Vampire, Angel, Beast, etc.) | Stable |
 | `long-live-the-king` | Long live the king | 2p | KING vs non-king | Active dev |
-| `death-count` | Death Count | 2p | Can be team mode (team:0 vs team:1) | Stable |
+| `death-count` | Death Count | 2p | No teams, individual respawn scoring | Stable |
+| `death-count-teams` | Death Count (Teams) | click-through 2p | team:0 vs team:1 + respawns | Stable |
 | `domination` | Domination | 2p | team:0 vs team:1, base capture UI | Active dev |
 
 ## Mode-Specific Screenshot Commands
@@ -35,6 +37,12 @@ Screenshots are saved to `client/e2e/screenshots/<mode>/`.
 - Watch for: phantom role badges, phantom team colors, misleading score counters
 - Round-end: should show who survived, not a leaderboard (single-round by default)
 
+### classic-teams
+- Classic mode with teams enabled. No roles. Pure survival + team scoring.
+- Uses click-through approach (not `test/create`) to ensure real team assignments.
+- Watch for: team identity missing from phone screens, individual rank shown instead of team rank, phantom role badges, mode name should say "Classic" not "Roles Team"
+- Round-end: team leaderboard should dominate (R-D10), phone should show team result (R-P06)
+
 ### role-based
 - Each player gets a secret role. Role reveal is a key moment.
 - Watch for: role name too small on phone, role description truncated, role badge on dashboard too subtle
@@ -47,8 +55,13 @@ Screenshots are saved to `client/e2e/screenshots/<mode>/`.
 
 ### death-count
 - Players respawn. Scoring = number of deaths (lower is better, or configured otherwise).
-- Teams optional.
+- No teams in this variant — individual scoring only.
 - Watch for: respawn countdown not visible on phone, score direction confusing ("0 deaths" is winning — is that obvious?), dead screen should say "respawning" not just "dead"
+
+### death-count-teams
+- Death count mode with teams enabled. Players respawn, team scores aggregated.
+- Uses click-through approach to ensure real team assignments.
+- Watch for: same as death-count plus team identity missing from phone, individual death count shown instead of team aggregate, phantom "Unassigned" group
 
 ### domination
 - Players capture bases. Team scoring, not individual.

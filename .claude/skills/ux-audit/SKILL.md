@@ -187,11 +187,17 @@ cd client && MODE=role-based npm run screenshot:2p
 cd client && MODE=long-live-the-king npm run screenshot:2p
 cd client && MODE=death-count npm run screenshot:2p
 cd client && MODE=domination npm run screenshot:2p
+
+# Click-through modes (require custom audit script)
+# classic-teams: uses _audit_classic_teams_v2.ts
+cd client && npx tsx e2e/_audit_classic_teams_v2.ts
 ```
 
 Each run saves to its own directory: `client/e2e/screenshots/<mode>/`.
 
 Wait for each command to complete before starting the next (they reset server state).
+
+**Note:** `classic` and `classic-teams` (classic with teams enabled) are treated as separate modes because teams fundamentally change the leaderboard, pre-game flow, and scoring UI.
 
 ### 3. Audit each mode
 
@@ -211,6 +217,7 @@ Generated: <timestamp>
 | Mode | CONCERN | MINOR | PASS | Report |
 |------|---------|-------|------|--------|
 | classic | N | N | N | [ux-report.md](classic/ux-report.md) |
+| classic-teams | N | N | N | [ux-report.md](classic-teams/ux-report.md) |
 | role-based | N | N | N | [ux-report.md](role-based/ux-report.md) |
 | long-live-the-king | N | N | N | [ux-report.md](long-live-the-king/ux-report.md) |
 | death-count | N | N | N | [ux-report.md](death-count/ux-report.md) |
