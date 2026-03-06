@@ -55,7 +55,7 @@ Lightweight task management for Claude instances. Each task has a unique ID, pri
 | UX-019 | Game-over champion text: use team name in team modes | P2 | TODO | | [detail](claude-tasks/UX-019.md) |
 | UX-020 | Hide "ready" button on game-over in single-round modes | P2 | TODO | | [detail](claude-tasks/UX-020.md) |
 | UX-021 | Phone pregame: add mode description for first-time players | P2 | TODO | | [detail](claude-tasks/UX-021.md) |
-| UX-022 | Dashboard team modes: HP not visible on player cards | P1 | TODO | | [detail](claude-tasks/UX-022.md) |
+| ~~UX-022~~ | ~~Dashboard team modes: HP not visible on player cards~~ | P1 | DONE | | [detail](claude-tasks/UX-022.md) |
 
 ### Gameplay / Logic (from TODO.md)
 
