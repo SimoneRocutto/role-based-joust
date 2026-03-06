@@ -31,6 +31,23 @@ Servers must be running first. See "Visual Debugging" below for when to use each
 6. **Prioritize code quality** Avoid repetitions and duplicated code. When you feel it is better to refactor an old part when introducing a new one, please consider doing so.
 7. **Track TODO.md.** After completing a task, check `TODO.md` to see if the work resolves any listed item. If it does, remove that line from the file. When a task is done and there are remaining items in `TODO.md`, suggest tackling the next one (top item = highest priority).
 8. **Verify UI changes visually.** Whenever you change anything UI-related that is not trivial (new screen, new component, changed layout, new game state rendering), run `/screenshot` to capture the result across dashboard and phone viewports. This is especially critical when designing UI from scratch — you must see what a real player or spectator would actually see during a game, not just trust that the code is correct. Do not consider a UI task done until you have looked at a screenshot.
+9. **Run a code review before closing any non-trivial task.** After implementing (tests passing, TypeScript clean), spawn a reviewer subagent using the Agent tool. Pass it the list of changed files and this prompt:
+
+   > You are a senior code reviewer. Review the following changed files for this codebase (Extended Joust — TypeScript, React, Express, Socket.IO).
+   > Focus on:
+   > - **Code duplication**: are there repeated patterns that should be extracted into a shared utility, hook, or base class? Check both within the changed files and against existing code in the repo.
+   > - **Over-engineering**: is there unnecessary abstraction, indirection, or complexity for what the code actually does?
+   > - **Under-engineering**: is there logic that should be abstracted but isn't (e.g. magic numbers, copy-pasted blocks, long functions doing multiple things)?
+   > - **Naming**: are names accurate, consistent with the codebase conventions, and self-documenting?
+   > - **Separation of concerns**: is game logic leaking into UI, or socket handling mixed with business logic?
+   > - **Missed reuse**: are there existing utilities, hooks, or base classes in the repo that should have been used but weren't?
+   >
+   > Do NOT report on: test coverage (handled separately), TypeScript errors (already checked), formatting/style.
+   >
+   > For each issue found, provide: file + line range, a one-line description, and a concrete fix suggestion.
+   > End your review with a verdict: **LGTM** (no issues worth fixing), **MINOR** (small improvements, optional), or **MUST FIX** (clear quality problems that should be addressed before closing).
+
+   After receiving the review: apply all MUST FIX items. Apply MINOR items if they clearly improve the code. Ignore suggestions that conflict with the existing codebase style or would add unnecessary complexity. Do not apply a suggestion just because the reviewer made it — use judgment.
 
 ## Project Overview
 
