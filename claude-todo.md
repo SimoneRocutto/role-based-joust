@@ -25,14 +25,14 @@ Lightweight task management for Claude instances. Each task has a unique ID, pri
 
 ## Task Index
 
-### Cross-Mode UX (from audit — 41 CONCERNs across 7 modes)
+### Cross-Mode UX (from audit)
 
 | ID | Title | Priority | Status | Tags | Detail |
 |----|-------|----------|--------|------|--------|
-| UX-001 | Phone active: consider reducing number size in non-role modes | P2 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-001.md) |
+| UX-001 | Phone active: consider reducing number size in non-role modes | P3 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-001.md) |
 | UX-002 | Phone active: HP display | N/A | DONE | | [detail](claude-tasks/UX-002.md) |
 | UX-003 | Dashboard team-mode: add HP info to player chips | P1 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-003.md) |
-| UX-004 | Dashboard: differentiate active-round from pre-game | P1 | TODO | | [detail](claude-tasks/UX-004.md) |
+| UX-004 | Dashboard team-mode: differentiate active-round from pre-game | P1 | TODO | | [detail](claude-tasks/UX-004.md) |
 | UX-005 | Dashboard: round-end summary overlay | P1 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-005.md) |
 | UX-006 | Phone dead/round-end: fix "Final Score" label + add context | P1 | TODO | | [detail](claude-tasks/UX-006.md) |
 | UX-007 | Phone team modes: show team name + team result | P1 | TODO | | [detail](claude-tasks/UX-007.md) |
@@ -45,11 +45,11 @@ Lightweight task management for Claude instances. Each task has a unique ID, pri
 |----|-------|----------|--------|------|--------|
 | UX-010 | King mode: cascade death visual feedback | P1 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-010.md) |
 | UX-011 | King mode: crown/king indicator on dashboard | P1 | TODO | | [detail](claude-tasks/UX-011.md) |
-| UX-012 | Role-based: role info on dashboard (NOT phone — phones face opponents) | P1 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-012.md) |
-| UX-013 | Role-based: ability indicator design (hidden from opponents) | P2 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-013.md) |
-| UX-014 | Role-based: show roles on dashboard player cards | P2 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-014.md) |
+| UX-012 | Role-based: role visibility on dashboard (NOT phone) | P2 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-012.md) |
+| UX-013 | Role-based: ability feedback design (hidden from opponents) | P2 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-013.md) |
+| ~~UX-014~~ | ~~Role-based: show roles on dashboard player cards~~ | N/A | MERGED | | Merged into UX-012 |
 | UX-015 | Domination: team scores as primary dashboard element | P1 | TODO | | [detail](claude-tasks/UX-015.md) |
-| UX-016 | Domination: rework active game UI (phone + dashboard) | P1 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-016.md) |
+| UX-016 | Domination: rework dashboard active game UI | P1 | TODO | | [detail](claude-tasks/UX-016.md) |
 | UX-017 | Death-count teams: team score visibility on dashboard | P1 | TODO | | [detail](claude-tasks/UX-017.md) |
 | UX-018 | Respawn screen: label countdown + death count | P2 | TODO | | [detail](claude-tasks/UX-018.md) |
 
@@ -71,12 +71,10 @@ Tasks requiring user decisions before work can begin. Claude: report these to th
 
 | ID | Open Question |
 |----|---------------|
-| UX-001 | In non-role modes (domination, death-count), should the big player number be smaller to free space for mode-specific info? Or keep consistent across all modes? |
+| UX-001 | (P3) In non-role modes, should the big player number be smaller? Or keep consistent across all modes? |
 | UX-003 | Team-mode dashboard: how to show HP on player chips? Color chip background, add thin HP bar, use mini-cards, or color the left-border? How to show dead state? |
 | UX-005 | Round-end overlay content: minimal banner ("ROUND OVER") or full summary (winner + scores + standings)? Use classic-teams round-end as template? |
 | UX-010 | Cascade death: what should the phone show? Skull + "YOUR KING DIED"? What should dashboard show? Team panel grays out? Overlay banner? |
-| UX-012 | Roles are SECRET — phone faces opponents, so role name CANNOT go on phone. Should roles appear on the dashboard instead? When? (always / on death / never / configurable) |
-| UX-013 | Ability indicators must be invisible to opponents (phone faces outward). How should abilities be communicated? Vibration? Audio-only? Subtle screen flash? |
-| UX-014 | Same as UX-012 — should roles be revealed to spectators on the dashboard? When? |
-| UX-016 | Domination phone: what game-specific info to show? Base status? Zone map? Team score? How much of the domination state fits on a phone screen? |
+| UX-012 | Roles are SECRET (phones face opponents). Should roles appear on the DASHBOARD? When? (always / on death / never / configurable). Includes old UX-014. |
+| UX-013 | Ability feedback must be invisible to opponents (phone faces outward). How? Vibration? Audio-only? Subtle screen flash? |
 | GM-005 | Score normalization: exclude worst player from larger team, or use per-capita scoring, or another method? |
