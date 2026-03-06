@@ -5,7 +5,7 @@ Lightweight task management for Claude instances. Each task has a unique ID, pri
 ## How to use this file
 
 - **Pick work**: Read this index, find the highest-priority `TODO` task, read its detail file in `claude-tasks/`, and execute.
-- **Update status**: When starting a task, set it to `IN-PROGRESS`. When done, set it to `DONE` and add the commit hash.
+- **Update status**: When starting a task, set it to `IN-PROGRESS`. When done, set it to `DONE`, add the commit hash, and **strike through the entire row** (~~like this~~) so completed work is visually obvious at a glance.
 - **NEEDS-INPUT**: Tasks tagged `NEEDS-INPUT` require a decision from the user before implementation can start. Do NOT begin these until the user has resolved the open questions listed in the detail file.
 - **Dependencies**: Some tasks depend on others (listed in detail files). Don't start a task whose dependencies aren't `DONE`.
 - **User priorities**: The user's `TODO.md` may reference task IDs from here. That file controls what gets worked on next.
@@ -30,7 +30,7 @@ Lightweight task management for Claude instances. Each task has a unique ID, pri
 | ID | Title | Priority | Status | Tags | Detail |
 |----|-------|----------|--------|------|--------|
 | UX-001 | Phone active: consider reducing number size in non-role modes | P3 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-001.md) |
-| UX-002 | Phone active: HP display | N/A | DONE | | [detail](claude-tasks/UX-002.md) |
+| ~~UX-002~~ | ~~Phone active: HP display~~ | N/A | DONE | | [detail](claude-tasks/UX-002.md) |
 | UX-003 | Dashboard team-mode: add HP info to player chips | P1 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-003.md) |
 | UX-004 | Dashboard team-mode: differentiate active-round from pre-game | P1 | TODO | | [detail](claude-tasks/UX-004.md) |
 | UX-005 | Dashboard: round-end summary overlay | P1 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-005.md) |
@@ -57,8 +57,8 @@ Lightweight task management for Claude instances. Each task has a unique ID, pri
 
 | ID | Title | Priority | Status | Tags | Detail |
 |----|-------|----------|--------|------|--------|
-| GM-001 | Domination: no individual scores, team-only scoring | P1 | DONE | | [detail](claude-tasks/GM-001.md) |
-| GM-002 | Domination: base capture by tapping team color section | P1 | DONE | | [detail](claude-tasks/GM-002.md) |
+| ~~GM-001~~ | ~~Domination: no individual scores, team-only scoring~~ | P1 | DONE | | [detail](claude-tasks/GM-001.md) |
+| ~~GM-002~~ | ~~Domination: base capture by tapping team color section~~ | P1 | DONE | | [detail](claude-tasks/GM-002.md) |
 | GM-003 | Classic: trophy on round winner, fix skull logic | P2 | TODO | | [detail](claude-tasks/GM-003.md) |
 | GM-004 | Team mode: round-end scoreboard ordering + team totals | P2 | TODO | | [detail](claude-tasks/GM-004.md) |
 | GM-005 | Team mode: score normalization for uneven teams | P2 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/GM-005.md) |
