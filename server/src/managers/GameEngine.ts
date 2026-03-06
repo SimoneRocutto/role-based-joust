@@ -716,9 +716,20 @@ export class GameEngine {
   /**
    * Create a test game with bots
    * @param roleNames - Specific roles to assign to each bot
+   * @param realPlayerIds - Optional real connected player IDs to include alongside bots
    */
-  createTestGame(roleNames: string[]): void {
+  createTestGame(roleNames: string[], realPlayerIds: string[] = []): void {
     this.testMode = true;
+
+    const connectionManager = ConnectionManager.getInstance();
+
+    // Build real player data from ConnectionManager
+    const realPlayerData: PlayerData[] = realPlayerIds.map((id) => ({
+      id,
+      name: connectionManager.getPlayerName(id) ?? id,
+      socketId: connectionManager.getSocketId(id) ?? id,
+      isBot: false,
+    }));
 
     const botData: PlayerData[] = roleNames.map((role, i) => ({
       id: `bot-${i}`,
@@ -730,18 +741,18 @@ export class GameEngine {
 
     logger.info("ENGINE", "Creating test game with bots", {
       botCount: botData.length,
+      realPlayers: realPlayerIds.length,
       roles: roleNames,
     });
 
     // Register bots in ConnectionManager so they get sequential player numbers
     // (displayed as #1, #2, etc. in the leaderboard and player cards)
-    const connectionManager = ConnectionManager.getInstance();
     botData.forEach((bot) => {
       connectionManager.registerConnection(bot.id, bot.socketId!, bot.name, false);
     });
 
     // Pass roleNames as the role pool override to ensure exact role assignment
-    this.startGame(botData, roleNames);
+    this.startGame([...realPlayerData, ...botData], roleNames);
   }
 
   /**

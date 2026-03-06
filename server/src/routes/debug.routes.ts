@@ -206,7 +206,7 @@ router.get(
 router.post(
   "/test/create",
   asyncHandler(async (req: Request, res: Response) => {
-    const { roles, mode, teams, teamCount, bases } = req.body;
+    const { roles, mode, teams, teamCount, bases, includeConnected } = req.body;
     const gameEngine: GameEngine = req.app.locals.gameEngine;
 
     if (!roles || !Array.isArray(roles)) {
@@ -233,7 +233,12 @@ router.post(
       teamManager.configure(false, 2);
     }
 
-    gameEngine.createTestGame(roles);
+    // Collect real connected player IDs to include alongside bots
+    const realPlayerIds: string[] = includeConnected
+      ? ConnectionManager.getInstance().getConnectedPlayers()
+      : [];
+
+    gameEngine.createTestGame(roles, realPlayerIds);
 
     // Assign bots to teams after game creation (bot IDs are bot-0, bot-1, ...)
     if (teams) {
@@ -258,6 +263,7 @@ router.post(
     logger.info("DEBUG", "Test game created", {
       roles,
       botCount: roles.length,
+      realPlayers: realPlayerIds.length,
       bases: baseCount,
     });
 
