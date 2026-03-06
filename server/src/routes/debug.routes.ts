@@ -551,4 +551,39 @@ router.post(
   })
 );
 
+/**
+ * POST /api/debug/base/:baseId/capture
+ * Capture a base for a team during active gameplay (domination mode).
+ * Body: { teamId: number }
+ */
+router.post(
+  "/base/:baseId/capture",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { baseId } = req.params;
+    const { teamId } = req.body;
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
+
+    if (!gameEngine.isActive()) {
+      res.status(400).json({ success: false, error: "Game is not active" });
+      return;
+    }
+
+    if (typeof teamId !== "number") {
+      res.status(400).json({ success: false, error: "teamId (number) required" });
+      return;
+    }
+
+    if (!gameEngine.currentMode) {
+      res.status(400).json({ success: false, error: "No game mode active" });
+      return;
+    }
+
+    gameEngine.currentMode.onBaseTap(baseId, gameEngine, teamId);
+
+    logger.info("DEBUG", `Captured base ${baseId} for team ${teamId}`);
+
+    res.json({ success: true, baseId, teamId });
+  })
+);
+
 export default router;

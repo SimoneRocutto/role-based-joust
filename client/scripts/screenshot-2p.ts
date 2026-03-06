@@ -218,6 +218,12 @@ async function waitForPhase(target: string | string[], timeoutMs = 15000): Promi
     await api("/debug/spawn-bots", "POST", { count: 2, behavior: "still" });
     await sleep(400);
 
+    // ── SPAWN BASES for domination mode ────────────────────────────────────
+    if (MODE === "domination") {
+      await api("/debug/spawn-bases", "POST", { count: 1, teamCount: 2 });
+      await sleep(300);
+    }
+
     // ── DASHBOARD — open and select mode via real UI ─────────────────────────
     await dash.goto(`${CLIENT}/dashboard`);
     await sleep(800);
@@ -232,8 +238,13 @@ async function waitForPhase(target: string | string[], timeoutMs = 15000): Promi
 
     // ── CONFIGURE for fast screenshots ──────────────────────────────────────
     await api("/debug/set-countdown", "POST", { seconds: 1 });
-    // 2 rounds so we see both "round-ended" (after round 1) and "finished" (after round 2).
-    await api("/game/settings", "POST", { roundCount: 2, targetScore: 10 });
+    if (MODE === "domination") {
+      // Domination is single-round; set a low point target so fast-forward finishes it
+      await api("/game/settings", "POST", { dominationPointTarget: 5, dominationControlInterval: 3 });
+    } else {
+      // 2 rounds so we see both "round-ended" (after round 1) and "finished" (after round 2).
+      await api("/game/settings", "POST", { roundCount: 2, targetScore: 10 });
+    }
     // Short round duration for timed modes (death-count)
     if (isTimedMode(MODE)) {
       await api("/game/settings", "POST", { roundDuration: 30 });
@@ -281,6 +292,13 @@ async function waitForPhase(target: string | string[], timeoutMs = 15000): Promi
 
     console.log(`\n  Player labels: PlayerA=${labelA}, PlayerB=${labelB}\n`);
 
+    // ── DOMINATION: capture a base so points start accumulating ───────────────
+    if (MODE === "domination") {
+      await api("/debug/base/base-1/capture", "POST", { teamId: 0 });
+      await sleep(300);
+      console.log("  [flow] Base captured by team 0 for domination scoring");
+    }
+
     // ── ACTIVE GAME (full HP) ────────────────────────────────────────────────
     await shot(dash, "05_dash_active.png", "Active game — dashboard (full HP)", "dashboard 1280x800");
     await shot(phones[0].page, "06_phoneA_active.png", "Active — PlayerA (full HP)", "phone 390x844", labelA);
@@ -301,32 +319,40 @@ async function waitForPhase(target: string | string[], timeoutMs = 15000): Promi
     if (idB) { await api(`/debug/player/${idB}/kill`, "POST"); await sleep(500); }
     await shot(phones[1].page, "09_phoneB_dead.png", "Dead — PlayerB", "phone 390x844", labelB);
 
-    // ── ROUND 1 END ──────────────────────────────────────────────────────────
+    // ── ROUND / GAME END ───────────────────────────────────────────────────
+    // Domination is single-round: game goes straight to "finished" when point target is reached.
+    // Other modes: round 1 → round-ended → round 2 → finished.
     await triggerRoundEnd(MODE, 2);
     await waitForPhase(["round-ended", "finished"]);
     await sleep(500);
     const r1Phase = await getPhase();
-    console.log(`  [flow] Phase after round 1 end: ${r1Phase}`);
-    await shot(dash, "10_dash_round_end.png", "Round ended — dashboard", "dashboard 1280x800");
-    await shot(phones[0].page, "11_phoneA_round_end.png", "Round ended — PlayerA", "phone 390x844");
-    await shot(phones[1].page, "12_phoneB_round_end.png", "Round ended — PlayerB", "phone 390x844");
+    console.log(`  [flow] Phase after trigger: ${r1Phase}`);
 
-    // ── GAME OVER (round 2) ────────────────────────────────────────────────
-    if (r1Phase !== "finished") {
+    if (r1Phase === "finished") {
+      // Single-round mode (domination): skip round-end, go straight to game over
+      await shot(dash, "10_dash_game_over.png", "Game over — dashboard", "dashboard 1280x800");
+      await shot(phones[0].page, "11_phoneA_game_over.png", "Game over — PlayerA", "phone 390x844");
+      await shot(phones[1].page, "12_phoneB_game_over.png", "Game over — PlayerB", "phone 390x844");
+    } else {
+      // Multi-round mode: capture round-ended then advance to game over
+      await shot(dash, "10_dash_round_end.png", "Round ended — dashboard", "dashboard 1280x800");
+      await shot(phones[0].page, "11_phoneA_round_end.png", "Round ended — PlayerA", "phone 390x844");
+      await shot(phones[1].page, "12_phoneB_round_end.png", "Round ended — PlayerB", "phone 390x844");
+
       await api("/game/next-round", "POST");
       await waitForPhase("active");
       await sleep(300);
       await triggerRoundEnd(MODE, 2);
       await waitForPhase("finished", 15000);
       await sleep(500);
-    }
-    const gamePhase = await getPhase();
-    if (gamePhase === "finished") {
-      await shot(dash, "13_dash_game_over.png", "Game over — dashboard", "dashboard 1280x800");
-      await shot(phones[0].page, "14_phoneA_game_over.png", "Game over — PlayerA", "phone 390x844");
-      await shot(phones[1].page, "15_phoneB_game_over.png", "Game over — PlayerB", "phone 390x844");
-    } else {
-      console.log(`  [warn] Expected 'finished' but got '${gamePhase}'. Skipping game-over screenshots.`);
+      const gamePhase = await getPhase();
+      if (gamePhase === "finished") {
+        await shot(dash, "13_dash_game_over.png", "Game over — dashboard", "dashboard 1280x800");
+        await shot(phones[0].page, "14_phoneA_game_over.png", "Game over — PlayerA", "phone 390x844");
+        await shot(phones[1].page, "15_phoneB_game_over.png", "Game over — PlayerB", "phone 390x844");
+      } else {
+        console.log(`  [warn] Expected 'finished' but got '${gamePhase}'. Skipping game-over screenshots.`);
+      }
     }
 
     fs.writeFileSync(
