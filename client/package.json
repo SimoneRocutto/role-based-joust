@@ -18,7 +18,9 @@
     "test:e2e:fast": "NODE_TLS_REJECT_UNAUTHORIZED=0 playwright test --grep-invert 'countdown goes from'",
     "test:e2e:ui": "NODE_TLS_REJECT_UNAUTHORIZED=0 playwright test --ui",
     "test:e2e:debug": "NODE_TLS_REJECT_UNAUTHORIZED=0 playwright test --debug",
-    "test:e2e:headed": "NODE_TLS_REJECT_UNAUTHORIZED=0 playwright test --headed"
+    "test:e2e:headed": "NODE_TLS_REJECT_UNAUTHORIZED=0 playwright test --headed",
+    "screenshot": "tsx scripts/screenshot-1p.ts",
+    "screenshot:2p": "tsx scripts/screenshot-2p.ts"
   },
   "dependencies": {
     "framer-motion": "^10.16.16",
@@ -51,6 +53,7 @@
     "happy-dom": "^20.3.9",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.3.3",
     "vite": "^5.0.8",
     "vitest": "^4.0.18"
