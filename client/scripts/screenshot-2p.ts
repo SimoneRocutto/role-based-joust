@@ -24,8 +24,20 @@ import dotenv from "dotenv";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "../.env.local") });
 
-const BACKEND = `http://localhost:${process.env.VITE_BACKEND_PORT || 4000}`;
-const CLIENT = `http://localhost:${process.env.VITE_PORT || 5173}`;
+// Detect HTTPS: check if SSL certs exist (same logic as vite.config.js)
+const certsDir = path.resolve(__dirname, "../../certs");
+const certsExist =
+  (fs.existsSync(path.join(certsDir, "server.crt")) &&
+    fs.existsSync(path.join(certsDir, "server.key"))) ||
+  (fs.existsSync(path.join(certsDir, "cert.pem")) &&
+    fs.existsSync(path.join(certsDir, "key.pem")));
+const protocol = certsExist ? "https" : "http";
+
+// Allow self-signed certs for fetch() calls
+if (certsExist) process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
+const BACKEND = `${protocol}://localhost:${process.env.VITE_BACKEND_PORT || 4000}`;
+const CLIENT = `${protocol}://localhost:${process.env.VITE_PORT || 5173}`;
 const MODE = process.env.MODE || "classic";
 // Use a mode-specific subdirectory so multi-mode runs don't overwrite each other
 const OUT = path.resolve(__dirname, `../e2e/screenshots/${MODE}`);
@@ -123,6 +135,7 @@ async function waitForPhase(target: string | string[], timeoutMs = 15000): Promi
 
   const log: { file: string; state: string; viewport: string; note?: string }[] = [];
   const browser = await chromium.launch();
+  const context = await browser.newContext({ ignoreHTTPSErrors: true });
 
   const shot = async (
     page: Page,
@@ -141,12 +154,16 @@ async function waitForPhase(target: string | string[], timeoutMs = 15000): Promi
     await api("/debug/reset", "POST");
     await sleep(400);
 
-    const dash = await browser.newPage();
+    const dash = await context.newPage();
     dash.setViewportSize({ width: 1280, height: 800 });
 
+    // Each phone needs its own context so they don't share localStorage
+    // (otherwise PlayerB would see PlayerA's session and skip the join form)
+    const phoneContextA = await browser.newContext({ ignoreHTTPSErrors: true });
+    const phoneContextB = await browser.newContext({ ignoreHTTPSErrors: true });
     const phones: { page: Page; name: string }[] = [
-      { page: await browser.newPage(), name: "PlayerA" },
-      { page: await browser.newPage(), name: "PlayerB" },
+      { page: await phoneContextA.newPage(), name: "PlayerA" },
+      { page: await phoneContextB.newPage(), name: "PlayerB" },
     ];
     for (const { page } of phones) page.setViewportSize({ width: 390, height: 844 });
 
@@ -159,11 +176,14 @@ async function waitForPhase(target: string | string[], timeoutMs = 15000): Promi
     for (const { page, name } of phones) {
       if (page !== phones[0].page) {
         await page.goto(`${CLIENT}/player?dev=true`);
-        await sleep(800);
+        await sleep(1500);
       }
+      // Wait for join form to be visible before filling
+      await page.waitForSelector('input[id="name"]', { timeout: 10000 });
       await page.fill('input[id="name"]', name);
       await page.click('button:has-text("JOIN GAME")');
       await sleep(600);
+      console.log(`  [flow] ${name} joined`);
     }
 
     await shot(phones[0].page, "02_phoneA_lobby.png", "Lobby — PlayerA", "phone 390x844");

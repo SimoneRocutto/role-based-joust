@@ -21,8 +21,20 @@ import dotenv from "dotenv";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "../.env.local") });
 
-const BACKEND = `http://localhost:${process.env.VITE_BACKEND_PORT || 4000}`;
-const CLIENT = `http://localhost:${process.env.VITE_PORT || 5173}`;
+// Detect HTTPS: check if SSL certs exist (same logic as vite.config.js)
+const certsDir = path.resolve(__dirname, "../../certs");
+const certsExist =
+  (fs.existsSync(path.join(certsDir, "server.crt")) &&
+    fs.existsSync(path.join(certsDir, "server.key"))) ||
+  (fs.existsSync(path.join(certsDir, "cert.pem")) &&
+    fs.existsSync(path.join(certsDir, "key.pem")));
+const protocol = certsExist ? "https" : "http";
+
+// Allow self-signed certs for fetch() calls
+if (certsExist) process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
+const BACKEND = `${protocol}://localhost:${process.env.VITE_BACKEND_PORT || 4000}`;
+const CLIENT = `${protocol}://localhost:${process.env.VITE_PORT || 5173}`;
 const MODE = process.env.MODE;
 // When MODE is set, save into a mode-specific subdirectory so multi-mode runs don't overwrite each other
 const OUT = MODE
@@ -110,6 +122,7 @@ function isTeamMode(mode: string | undefined): boolean {
 
   const log: { file: string; state: string; viewport: string }[] = [];
   const browser = await chromium.launch();
+  const context = await browser.newContext({ ignoreHTTPSErrors: true });
 
   const shot = async (page: Page, file: string, state: string, viewport: string) => {
     await page.screenshot({ path: path.join(OUT, file), fullPage: true });
@@ -122,9 +135,9 @@ function isTeamMode(mode: string | undefined): boolean {
     await api("/debug/reset", "POST");
     await sleep(400);
 
-    const dash = await browser.newPage();
+    const dash = await context.newPage();
     dash.setViewportSize({ width: 1280, height: 800 });
-    const phone = await browser.newPage();
+    const phone = await context.newPage();
     phone.setViewportSize({ width: 390, height: 844 });
 
     // ── JOIN FORM ────────────────────────────────────────────────────────────
@@ -133,6 +146,7 @@ function isTeamMode(mode: string | undefined): boolean {
     await shot(phone, "01_phone_join.png", "Join form", "phone 390x844");
 
     // ── LOBBY (player joins via real UI) ─────────────────────────────────────
+    await phone.waitForSelector('input[id="name"]', { timeout: 10000 });
     await phone.fill('input[id="name"]', "TestPlayer");
     await phone.click('button:has-text("JOIN GAME")');
     await sleep(800);
