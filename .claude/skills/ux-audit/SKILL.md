@@ -24,15 +24,30 @@ Read `references/modes.md` to understand per-mode screenshot strategies and know
 
 ## Steps
 
-### 1. Check screenshots exist
+### 1. Locate the screenshots
 
-Read `client/e2e/screenshots/manifest.json`. If missing, stop and tell the user to run screenshots first:
+The manifest can be in two places depending on whether MODE was set when screenshots were taken:
+- `client/e2e/screenshots/<mode>/manifest.json` — mode-specific run (preferred)
+- `client/e2e/screenshots/manifest.json` — legacy single-mode run
+
+Check both. If the user said "audit classic teams" or named a specific scenario, look in the matching subdirectory. If no manifest exists anywhere, stop and tell the user to run screenshots first:
 
 ```
 Screenshots not found. Run first:
-  ./scripts/dev.sh          # start servers (if not running)
-  cd client && npm run screenshot      # uniform UI
-  cd client && npm run screenshot:2p   # per-player differences (king/non-king, etc.)
+  ./scripts/dev.sh                              # start servers (if not running)
+  cd client && npm run screenshot               # uniform UI (saves to e2e/screenshots/)
+  cd client && MODE=<key> npm run screenshot    # named mode (saves to e2e/screenshots/<key>/)
+  cd client && MODE=<key> npm run screenshot:2p # 2-phone variant
+```
+
+For custom scenarios (e.g. classic+teams, death-count+3bots), write and run a bespoke Playwright script.
+Always use ABSOLUTE paths based on `__dirname` in any custom script — relative paths will break depending on cwd.
+Template for custom script OUT path:
+```typescript
+import path from "path";
+import { fileURLToPath } from "url";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const OUT = path.resolve(__dirname, "../e2e/screenshots/my-scenario");
 ```
 
 ### 2. Load the UX rules
