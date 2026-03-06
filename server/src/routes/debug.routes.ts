@@ -8,6 +8,8 @@ import { GameModeFactory } from "@/factories/GameModeFactory";
 import { TeamManager } from "@/managers/TeamManager";
 import { BaseManager } from "@/managers/BaseManager";
 import type { BotAction } from "@/types/bot.types";
+import { broadcastLobbyUpdate } from "@/sockets/helpers";
+import type { Server as SocketIOServer } from "socket.io";
 
 const router = Router();
 const logger = Logger.getInstance();
@@ -344,8 +346,9 @@ router.post(
     const gameEngine: GameEngine = req.app.locals.gameEngine;
     const connectionManager = ConnectionManager.getInstance();
 
-    // Stop any running or finished game (clears players and resets state)
-    if (gameEngine.isActive() || gameEngine.isFinished()) {
+    // Stop any in-progress game regardless of phase (active, round-ended, pre-game, countdown, finished)
+    const stoppableStates = ["active", "round-ended", "pre-game", "countdown", "finished"];
+    if (stoppableStates.includes(gameEngine.gameState)) {
       gameEngine.stopGame();
       logger.info("DEBUG", "Stopped game for reset");
     }
@@ -372,6 +375,66 @@ router.post(
       success: true,
       message: "Server state reset",
     });
+  })
+);
+
+/**
+ * POST /api/debug/set-countdown
+ * Set countdown duration in seconds (0 = skip countdown entirely).
+ * Useful in click-through audit scripts where the game is not in test mode
+ * and fastforward is unavailable.
+ *
+ * Body: { seconds: number }
+ */
+router.post(
+  "/set-countdown",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { seconds } = req.body;
+    const gameEngine: GameEngine = req.app.locals.gameEngine;
+
+    if (typeof seconds !== "number") {
+      res.status(400).json({ success: false, error: "seconds (number) required" });
+      return;
+    }
+
+    gameEngine.setCountdownDuration(seconds);
+    logger.info("DEBUG", `Countdown duration set to ${seconds}s`);
+
+    res.json({ success: true, seconds });
+  })
+);
+
+/**
+ * POST /api/debug/spawn-lobby-players
+ * Register fake players in the lobby (no real browser/socket needed).
+ * These players appear in the dashboard lobby list and are included when
+ * test/create runs with includeConnected:true. Cleaned up by debug/reset.
+ *
+ * Body: { count?: number, names?: string[] }
+ */
+router.post(
+  "/spawn-lobby-players",
+  asyncHandler(async (req: Request, res: Response) => {
+    const { count = 1, names } = req.body;
+    const connectionManager = ConnectionManager.getInstance();
+    const io: SocketIOServer = req.app.locals.io;
+
+    const spawned: { id: string; name: string }[] = [];
+    for (let i = 0; i < count; i++) {
+      const id = `lobby-player-${Date.now()}-${i}`;
+      const socketId = `fake-socket-${id}`;
+      const name =
+        names?.[i] ??
+        `Player ${connectionManager.getConnectionCount() + 1}`;
+      connectionManager.registerConnection(id, socketId, name, false);
+      spawned.push({ id, name });
+    }
+
+    broadcastLobbyUpdate(io);
+
+    logger.info("DEBUG", `Spawned ${spawned.length} lobby player(s)`, { spawned });
+
+    res.json({ success: true, spawned });
   })
 );
 

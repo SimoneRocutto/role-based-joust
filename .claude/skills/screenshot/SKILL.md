@@ -363,6 +363,52 @@ botCount: 3,
 ```
 The parallel-still trick (`Promise.all(botIds.map(...))`) in the templates above is the fallback if you can't update the body — but `botBehavior: "still"` is cleaner.
 
+### Click-through approach (preferred for auditing pre-game / team selection)
+
+When auditing UI flows that involve admin-driven transitions (lobby → team selection → pre-game → active), use the click-through approach instead of calling `test/create` directly. This captures screens that the direct API path skips entirely (e.g. team selection UI, pre-game shake screen).
+
+**Pattern:**
+
+1. Call `POST /api/debug/spawn-lobby-players` to register fake lobby players without browser tabs:
+   ```typescript
+   await api("/debug/spawn-lobby-players", "POST", { count: 2, names: ["Bot A", "Bot B"] });
+   ```
+   These players appear in the dashboard lobby list and are included in the game when "Start Game" is clicked. They are cleaned up by `debug/reset`.
+
+2. Open the dashboard tab and screenshot the lobby as normal.
+
+3. Click "Start Game" on the dashboard to trigger the real pre-game flow:
+   ```typescript
+   await dash.click('button:has-text("Start Game")');
+   await sleep(800);
+   // Screenshot pre-game dashboard + phone pre-game screen
+   ```
+
+4. If teams are enabled, screenshot team selection UI before players ready up:
+   ```typescript
+   // Team selection phase screenshot
+   await shot(dash, "team_selection_dash.png", "Team selection", "dashboard 1280x800");
+   await shot(phones[0].page, "team_selection_phone.png", "Team selection — PlayerA", "phone 390x844");
+   ```
+
+5. Click "CLICK TO READY" on each phone tab (pre-game ready state in dev mode):
+   ```typescript
+   for (const { page } of phones) {
+     await page.click('button:has-text("CLICK TO READY")');
+     await sleep(300);
+   }
+   ```
+
+6. Use `fastforward` only to skip the countdown timer itself:
+   ```typescript
+   await api("/debug/fastforward", "POST", { milliseconds: 11000 });
+   await sleep(500);
+   ```
+
+This gives you screenshots of: lobby → team selection → pre-game screen → countdown → active game — the full real player journey.
+
+**Note:** Spawned fake lobby players have no real socket, so emitting to them silently fails. They will appear in the dashboard lobby list but won't appear in phone screenshots. Use real phone tabs for the players you want to audit visually.
+
 ### Per-mode screenshot directories
 The `npm run screenshot` and `npm run screenshot:2p` scripts save to `client/e2e/screenshots/<mode>/` when `MODE` is set, or `client/e2e/screenshots/` otherwise. For all-modes audits, always use `MODE=<key>` so runs don't overwrite each other. Mode keys: `classic`, `role-based`, `long-live-the-king`, `death-count`, `domination`.
 

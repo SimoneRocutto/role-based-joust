@@ -55,6 +55,21 @@ Screenshots are saved to `client/e2e/screenshots/<mode>/`.
 - Watch for: individual scores shown alongside team scores (R-D06, R-D10), base capture feedback not visible, team assignment unclear, which base your team controls vs enemy's
 - This is the most complex mode visually — pay extra attention to score hierarchy
 
+## Team Mode Setup Warning
+
+**The `test/create` API only assigns bots to teams, not real players.**
+
+When testing any mode with `teams: true`, real players will have `teamId: null` unless you manually handle team assignment. This causes:
+- Real players invisible in the team leaderboard
+- Status bar "X is the champion!" contradicting the team winner shown in the main display
+- Phone game-over showing individual rank in a team context
+
+To test team modes properly with real players you have two options:
+1. **Click-through approach (preferred)**: Use `spawn-lobby-players` to register fake players in the lobby, then click "Start Game" on the dashboard to trigger the real game launch flow. The server's launch flow assigns teams via the settings and `TeamManager`, so players get proper `teamId` assignments. See the click-through section in the screenshot skill for the full pattern.
+2. **Bot-only test**: use `includeConnected: false` so all players are bots — all will be assigned to teams
+
+Always verify `playerLabels` in manifest.json shows `team:0` or `team:1`, not `no-team`, before trusting the team leaderboard screenshots.
+
 ## Per-Mode labelFor Extension
 
 When using Template B (2p screenshots), the `labelFor` function in the script reads:

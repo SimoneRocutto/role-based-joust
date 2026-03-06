@@ -145,6 +145,7 @@ Think like someone who has never played the game before. Could they understand w
 
 **What NOT to flag:**
 - Minor color choices or aesthetic preferences
+- Dev-mode-only UI elements that won't appear in production (e.g. "CLICK TO TAKE DAMAGE", "CLICK TO READY" buttons — these are debug helpers, not gameplay UI)
 - Placeholder text in dev-mode screenshots that wouldn't appear in production
 - TypeScript type issues (not your job here)
 - Test coverage gaps

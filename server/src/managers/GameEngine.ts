@@ -14,6 +14,7 @@ import {
 import { ReadyStateManager } from "@/managers/ReadyStateManager";
 import { RoundSetupManager } from "@/managers/RoundSetupManager";
 import { ConnectionManager } from "@/managers/ConnectionManager";
+import { TeamManager } from "@/managers/TeamManager";
 import { buildTickPlayerState } from "@/utils/tickPayload";
 
 const logger = Logger.getInstance();
@@ -806,6 +807,8 @@ export class GameEngine {
         accumulatedDamage: p.accumulatedDamage,
         points: p.points,
         totalPoints: p.totalPoints,
+        teamId: TeamManager.getInstance().getPlayerTeam(p.id),
+        isKing: (p as any).isKing ?? undefined,
       })),
     };
   }
