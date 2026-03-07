@@ -327,6 +327,7 @@ describe("ActiveGameScreen", () => {
     onTakeDamage: vi.fn(),
     isDevMode: false,
     isDeathCountMode: false,
+    isRoleBasedMode: false,
     medal: null as string | null,
     isKing: false,
   };
@@ -358,6 +359,18 @@ describe("ActiveGameScreen", () => {
     );
 
     expect(screen.getByText("2/3")).toBeInTheDocument();
+  });
+
+  it("hides charge info in role-based mode", () => {
+    render(
+      <ActiveGameScreen
+        {...baseProps}
+        isRoleBasedMode={true}
+        chargeInfo={{ current: 2, max: 3, cooldownRemaining: 0 }}
+      />
+    );
+
+    expect(screen.queryByText("2/3")).not.toBeInTheDocument();
   });
 
   it("calls onTap when clicked", () => {

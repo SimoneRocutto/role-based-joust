@@ -16,6 +16,7 @@ interface ActiveGameScreenProps {
   onTakeDamage: () => void;
   isDevMode: boolean;
   isDeathCountMode: boolean;
+  isRoleBasedMode: boolean;
   medal: string | null;
   isKing: boolean;
 }
@@ -29,6 +30,7 @@ export default function ActiveGameScreen({
   onTakeDamage,
   isDevMode,
   isDeathCountMode,
+  isRoleBasedMode,
   medal,
   isKing,
 }: ActiveGameScreenProps) {
@@ -38,7 +40,7 @@ export default function ActiveGameScreen({
       <div className="h-[5%] flex items-center justify-between px-4 bg-black/50">
         <ConnectionStatus />
         <div className="text-sm text-gray-400 flex items-center gap-2">
-          {chargeInfo && chargeInfo.max > 0 && (
+          {!isRoleBasedMode && chargeInfo && chargeInfo.max > 0 && (
             <span className="text-yellow-400">
               {chargeInfo.current}/{chargeInfo.max}
             </span>
@@ -91,7 +93,7 @@ export default function ActiveGameScreen({
 
       {/* Info Bar (25%) */}
       <div className="h-[25%] bg-gray-900 p-4 flex flex-col justify-between">
-        <StatusEffects effects={player.statusEffects} />
+        {!isRoleBasedMode && <StatusEffects effects={player.statusEffects} />}
       </div>
 
       {/* Damage flash overlay */}

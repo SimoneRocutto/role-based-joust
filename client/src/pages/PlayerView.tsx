@@ -68,6 +68,7 @@ function PlayerView() {
   const isDeathCountMode =
     modeRecap?.modeName?.includes("Death Count") ?? false;
   const isDominationMode = mode === "domination";
+  const isRoleBasedMode = mode === "role-based";
 
   // Compute this player's rank and medal in death count mode.
   // In team mode (teamId present in tick): rank is based on the team's total deaths
@@ -319,6 +320,7 @@ function PlayerView() {
             onTakeDamage={takeDamage}
             isDevMode={isDevMode}
             isDeathCountMode={isDeathCountMode}
+            isRoleBasedMode={isRoleBasedMode}
             medal={medal}
             isKing={isKing}
           />
