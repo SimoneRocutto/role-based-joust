@@ -199,13 +199,13 @@ function DashboardView() {
       } else {
         audioManager.playMusic("tension-medium", { loop: true, volume: 0.4 });
       }
+    } else if (isFinished) {
+      // Don't loop at game end - it's a final fanfare
+      audioManager.playMusic("victory", { loop: true, volume: 0.6 });
     } else if (isRoundEnded) {
       // Loop victory music between rounds so it doesn't stop
       // Todo add round victory music
       audioManager.playMusic("tension-medium", { loop: true, volume: 0.5 });
-    } else if (isFinished) {
-      // Don't loop at game end - it's a final fanfare
-      audioManager.playMusic("victory", { loop: false, volume: 0.6 });
     }
   }, [
     isWaiting,
