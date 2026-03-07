@@ -5,10 +5,12 @@ interface SettingsModalProps {
   dominationControlInterval: number;
   dominationRespawnTime: number;
   deathCountRespawnTime: number;
+  easterEgg: boolean;
   loading: boolean;
   handleThresholdChange: (value: number) => void;
   handleDominationSettingChange: (key: string, value: number) => void;
   handleDeathCountRespawnChange: (value: number) => void;
+  handleEasterEggChange: (enabled: boolean) => void;
 }
 
 function SettingsModal({
@@ -18,10 +20,12 @@ function SettingsModal({
   dominationControlInterval,
   dominationRespawnTime,
   deathCountRespawnTime,
+  easterEgg,
   loading,
   handleThresholdChange,
   handleDominationSettingChange,
   handleDeathCountRespawnChange,
+  handleEasterEggChange,
 }: SettingsModalProps) {
   if (!isOpen) return null;
 
@@ -125,7 +129,7 @@ function SettingsModal({
         </div>
 
         {/* Death Count section */}
-        <div>
+        <div className="mb-6">
           <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-3">
             Death Count
           </h4>
@@ -149,6 +153,28 @@ function SettingsModal({
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Easter Egg Toggle */}
+        <div>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <div
+              onClick={() => handleEasterEggChange(!easterEgg)}
+              className={`relative w-10 h-6 rounded-full transition-colors ${
+                easterEgg ? "bg-purple-600" : "bg-gray-600"
+              }`}
+            >
+              <span
+                className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                  easterEgg ? "translate-x-5" : "translate-x-1"
+                }`}
+              />
+            </div>
+            <span className="text-sm text-gray-300">Easter Egg</span>
+          </label>
+          <p className="text-xs text-gray-500 mt-1">
+            Alternate death sounds + intro jingle
+          </p>
         </div>
       </div>
     </div>

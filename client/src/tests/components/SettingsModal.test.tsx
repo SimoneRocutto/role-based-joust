@@ -9,10 +9,12 @@ const defaultProps = {
   dominationControlInterval: 5,
   dominationRespawnTime: 10,
   deathCountRespawnTime: 5,
+  easterEgg: false,
   loading: false,
   handleThresholdChange: vi.fn(),
   handleDominationSettingChange: vi.fn(),
   handleDeathCountRespawnChange: vi.fn(),
+  handleEasterEggChange: vi.fn(),
 }
 
 describe('SettingsModal', () => {
