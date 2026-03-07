@@ -46,8 +46,8 @@ Lightweight task management for Claude instances. Each task has a unique ID, pri
 | UX-010 | King mode: cascade death visual feedback | P1 | TODO | | [detail](claude-tasks/UX-010.md) |
 | UX-012 | Role-based: role visibility on dashboard (NOT phone) | P2 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-012.md) |
 | UX-013 | Role-based: ability feedback design (hidden from opponents) | P2 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-013.md) |
-| UX-015 | Domination: team scores as primary dashboard element | P1 | TODO | | [detail](claude-tasks/UX-015.md) |
-| UX-016 | Domination: rework dashboard active game UI | P1 | TODO | | [detail](claude-tasks/UX-016.md) |
+| ~~UX-015~~ | ~~Domination: team scores as primary dashboard element~~ | ~~P1~~ | ~~DONE~~ | | ~~[detail](claude-tasks/UX-015.md)~~ |
+| ~~UX-016~~ | ~~Domination: rework dashboard active game UI~~ | ~~P1~~ | ~~DONE~~ | | ~~[detail](claude-tasks/UX-016.md)~~ |
 | UX-017 | Death-count teams: team score visibility on dashboard | P1 | TODO | | [detail](claude-tasks/UX-017.md) |
 | UX-018 | Respawn screen: label countdown + death count | P2 | TODO | | [detail](claude-tasks/UX-018.md) |
 | UX-020 | Hide "ready" button on game-over in single-round modes | P2 | TODO | | [detail](claude-tasks/UX-020.md) |
