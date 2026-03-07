@@ -29,12 +29,15 @@ Lightweight task management for Claude instances. Each task has a unique ID, pri
 
 | ID | Title | Priority | Status | Tags | Detail |
 |----|-------|----------|--------|------|--------|
-| UX-001 | Phone active: consider reducing number size in non-role modes | P3 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-001.md) |
-| UX-004 | Dashboard team-mode: differentiate active-round from pre-game | P1 | TODO | | [detail](claude-tasks/UX-004.md) |
-| UX-005 | Dashboard: round-end summary overlay | P1 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-005.md) |
+| UX-023 | Dashboard: add HP bars/numbers to player cards | P1 | TODO | | [detail](claude-tasks/UX-023.md) |
 | UX-007 | Phone team modes: show team name + team result | P1 | TODO | | [detail](claude-tasks/UX-007.md) |
-| UX-008 | Phone pre-game: add "shake to ready" instruction | P2 | TODO | | [detail](claude-tasks/UX-008.md) |
+| UX-008 | Phone round-end: prominent "shake to ready" instruction | P1 | TODO | | [detail](claude-tasks/UX-008.md) |
+| UX-005 | Dashboard: round-end summary overlay | P1 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-005.md) |
+| UX-004 | Dashboard: differentiate pre-game from lobby | P1 | TODO | | [detail](claude-tasks/UX-004.md) |
 | UX-009 | Death-count modes: "pts" -> "deaths" label | P2 | TODO | | [detail](claude-tasks/UX-009.md) |
+| UX-024 | Phone game-over: show rank instead of slot number | P2 | TODO | | [detail](claude-tasks/UX-024.md) |
+| UX-025 | Team modes: champion status bar should show team name | P2 | TODO | | [detail](claude-tasks/UX-025.md) |
+| UX-001 | Phone active: consider reducing number size in non-role modes | P3 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/UX-001.md) |
 
 ### Mode-Specific UX
 
