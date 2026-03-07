@@ -292,8 +292,8 @@ router.post(
       gameEngine.setCountdownDuration(countdownDuration);
     }
 
-    // Easter egg: extend countdown by 7s for the intro jingle
-    if (userPreferences.easterEgg) {
+    // Easter egg: extend countdown by 7s for the intro jingle (role-based only)
+    if (userPreferences.easterEgg && effectiveMode === "role-based") {
       const current = gameEngine.getCountdownDuration();
       gameEngine.setCountdownDuration(current + 7);
     }
