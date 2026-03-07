@@ -5,34 +5,75 @@ import { apiService } from "@/services/api";
 function BaseStatusPanel() {
   const bases = useGameStore((state) => state.bases);
   const teamScores = useGameStore((state) => state.dominationTeamScores);
+  const targetScore = useGameStore((state) => state.targetScore);
   const gameState = useGameStore((state) => state.gameState);
+  const teams = useGameStore((state) => state.teams);
   const showKick = gameState === "waiting" || gameState === "pre-game";
+  const isActive = gameState === "active" || gameState === "countdown";
 
   if (bases.length === 0) return null;
+  const maxScore = targetScore ?? 10;
+
+  // Build team scores list: use dominationTeamScores if available,
+  // fall back to teams record so bars show even before first point
+  const teamIds = Object.keys(teamScores).length > 0
+    ? Object.keys(teamScores)
+    : Object.keys(teams);
+  const sortedTeams = teamIds
+    .map((id) => [id, teamScores[Number(id)] ?? 0] as [string, number])
+    .sort(([a], [b]) => Number(a) - Number(b));
 
   return (
-    <div className="mb-6 bg-gray-800/80 rounded-lg p-4 border border-gray-700">
-      {/* Team Scores */}
-      {Object.keys(teamScores).length > 0 && (
-        <div className="flex justify-center gap-8 mb-4">
-          {Object.entries(teamScores)
-            .sort(([a], [b]) => Number(a) - Number(b))
-            .map(([teamId, score]) => {
-              const color = TEAM_COLORS[Number(teamId)];
-              return (
-                <div key={teamId} className="text-center">
-                  <div
-                    className="text-3xl font-bold"
-                    style={{ color: color?.primary ?? "#fff" }}
-                  >
-                    {score}
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    {color?.name ?? `Team ${Number(teamId) + 1}`}
-                  </div>
-                </div>
-              );
-            })}
+    <div className="mb-4">
+      {/* Team Score Bars — only during active gameplay */}
+      {isActive && sortedTeams.length > 0 && (
+        <div className="flex flex-col gap-2 mb-3">
+          {sortedTeams.map(([teamId, score]) => {
+            const color = TEAM_COLORS[Number(teamId)];
+            const pct = Math.min((score / maxScore) * 100, 100);
+
+            return (
+              <div
+                key={teamId}
+                className="relative h-9 rounded-lg overflow-hidden"
+                style={{
+                  background: `${color?.primary ?? "#6b7280"}15`,
+                  border: `1px solid ${color?.primary ?? "#6b7280"}40`,
+                }}
+              >
+                {/* Fill bar */}
+                <div
+                  className="absolute inset-y-0 left-0 rounded-lg transition-[width] duration-500 ease-out"
+                  style={{
+                    width: `${pct}%`,
+                    background: `linear-gradient(90deg, ${color?.primary ?? "#6b7280"}66, ${color?.primary ?? "#6b7280"})`,
+                  }}
+                />
+
+                {/* Team name — left side, always visible */}
+                <span
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-extrabold text-white z-10"
+                  style={{ textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}
+                >
+                  {color?.name ?? `Team ${Number(teamId) + 1}`}
+                </span>
+
+                {/* Score — right side, always visible */}
+                <span
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-lg font-black z-10"
+                  style={{
+                    color: color?.primary ?? "#9ca3af",
+                    textShadow: "0 1px 4px rgba(0,0,0,0.6)",
+                  }}
+                >
+                  {score}
+                </span>
+              </div>
+            );
+          })}
+          <div className="text-center text-xs text-gray-500 font-semibold">
+            First to {maxScore} pts
+          </div>
         </div>
       )}
 
