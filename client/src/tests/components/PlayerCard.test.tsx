@@ -91,9 +91,10 @@ describe('PlayerCard', () => {
   })
 
   describe('round winner', () => {
-    it('shows trophy for alive player when round ended', () => {
+    it('shows trophy for round winner when round ended', () => {
       act(() => {
         useGameStore.getState().setGameState('round-ended')
+        useGameStore.getState().setRoundWinnerId('player-1')
       })
 
       const player = createMockPlayer({ isAlive: true })
@@ -102,9 +103,10 @@ describe('PlayerCard', () => {
       expect(screen.getByText('🏆')).toBeInTheDocument()
     })
 
-    it('applies winner styling when round ended and alive', () => {
+    it('applies winner styling when round ended and is winner', () => {
       act(() => {
         useGameStore.getState().setGameState('round-ended')
+        useGameStore.getState().setRoundWinnerId('player-1')
       })
 
       const player = createMockPlayer({ isAlive: true })
@@ -116,9 +118,22 @@ describe('PlayerCard', () => {
     it('does not show trophy for dead player when round ended', () => {
       act(() => {
         useGameStore.getState().setGameState('round-ended')
+        useGameStore.getState().setRoundWinnerId('player-1')
       })
 
-      const player = createMockPlayer({ isAlive: false })
+      const player = createMockPlayer({ id: 'player-2', isAlive: false })
+      render(<PlayerCard player={player} />)
+
+      expect(screen.queryByText('🏆')).not.toBeInTheDocument()
+    })
+
+    it('does not show trophy for alive non-winner when round ended', () => {
+      act(() => {
+        useGameStore.getState().setGameState('round-ended')
+        useGameStore.getState().setRoundWinnerId('player-other')
+      })
+
+      const player = createMockPlayer({ isAlive: true })
       render(<PlayerCard player={player} />)
 
       expect(screen.queryByText('🏆')).not.toBeInTheDocument()

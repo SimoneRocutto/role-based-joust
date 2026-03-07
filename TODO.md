@@ -3,8 +3,6 @@
 Here are all the things this game is missing to be complete. PRIORITIES shows next todo points in priority order from top (highest priority) to bottom (lowest). Feel free to remove them once one of them is done. Below are the future tasks divided by their subject.
 
 - PRIORITIES:
-    - domination has no way of showing points right now (GM-004/UX-015)
-    - classic at the end of the round shows skull on every player that is not the first one with most total points. Trophy should be shown on round winner
 
 - SHORT TERM PRIORITIES:
     - understand how to balance ninja

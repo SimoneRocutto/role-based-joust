@@ -57,7 +57,7 @@ Lightweight task management for Claude instances. Each task has a unique ID, pri
 
 | ID | Title | Priority | Status | Tags | Detail |
 |----|-------|----------|--------|------|--------|
-| GM-003 | Classic: trophy on round winner, fix skull logic | P2 | TODO | | [detail](claude-tasks/GM-003.md) |
+| ~~GM-003~~ | ~~Classic: trophy on round winner, fix skull logic~~ | ~~P2~~ | ~~DONE~~ | | ~~[detail](claude-tasks/GM-003.md)~~ |
 | GM-004 | Team mode: round-end scoreboard ordering + team totals | P2 | TODO | | [detail](claude-tasks/GM-004.md) |
 | GM-005 | Team mode: score normalization for uneven teams | P2 | TODO | `NEEDS-INPUT` | [detail](claude-tasks/GM-005.md) |
 

@@ -36,8 +36,9 @@ function PlayerCard({ player, rank }: PlayerCardProps) {
   const isPlayerDisconnected =
     player.isConnected === false || player.isDisconnected === true;
 
-  // Check if this player is the round winner (alive when round ended)
-  const isRoundWinner = isRoundEnded && player.isAlive;
+  const roundWinnerId = useGameStore((state) => state.roundWinnerId);
+  // Round winner = player identified by server as the winner (most points)
+  const isRoundWinner = isRoundEnded && player.id === roundWinnerId;
 
   // Get status icon (priority: invulnerable > bloodlust > other)
   const getStatusIcon = () => {
