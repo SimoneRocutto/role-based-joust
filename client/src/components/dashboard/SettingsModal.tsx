@@ -85,13 +85,18 @@ function SettingsModal({
           </h4>
 
           <div className="mb-4">
-            <label className="block text-sm text-gray-400 mb-2">Control Interval</label>
+            <label className="block text-sm text-gray-400 mb-2">
+              Control Interval
+            </label>
             <div className="flex gap-2">
               {[3, 5, 10].map((sec) => (
                 <button
                   key={sec}
                   onClick={() =>
-                    handleDominationSettingChange("dominationControlInterval", sec)
+                    handleDominationSettingChange(
+                      "dominationControlInterval",
+                      sec
+                    )
                   }
                   disabled={loading}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -110,7 +115,9 @@ function SettingsModal({
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm text-gray-400 mb-2">Respawn Time</label>
+            <label className="block text-sm text-gray-400 mb-2">
+              Respawn Time
+            </label>
             <div className="flex gap-2">
               {[5, 10, 15].map((sec) => (
                 <button
@@ -139,7 +146,9 @@ function SettingsModal({
           </h4>
 
           <div className="mb-4">
-            <label className="block text-sm text-gray-400 mb-2">Respawn Time</label>
+            <label className="block text-sm text-gray-400 mb-2">
+              Respawn Time
+            </label>
             <div className="flex gap-2">
               {[3, 5, 10, 15].map((sec) => (
                 <button
@@ -177,7 +186,8 @@ function SettingsModal({
             <span className="text-sm text-gray-300">Earbuds</span>
           </label>
           <p className="text-xs text-gray-500 mt-1">
-            Play kill sound on every phone when a player dies (auto-enabled for role-based)
+            Play kill sound on every phone when a player dies (auto-enabled for
+            role-based)
           </p>
         </div>
 
@@ -198,9 +208,6 @@ function SettingsModal({
             </div>
             <span className="text-sm text-gray-300">Easter Egg</span>
           </label>
-          <p className="text-xs text-gray-500 mt-1">
-            Alternate death sounds + intro jingle
-          </p>
         </div>
       </div>
     </div>
