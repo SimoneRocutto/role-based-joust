@@ -138,7 +138,7 @@ export function useSocket() {
 
       // If it's me, play death sound
       if (victimId === myPlayerId) {
-        audioManager.playSfx(easterEgg ? "death-easter-egg" : "death", { volume: 0.5 });
+        audioManager.playSfx("death", { volume: 0.5 });
       } else {
         // Another player died — play kill sound on this phone if withEarbud is on
         if (withEarbud) {
