@@ -9,11 +9,13 @@ const defaultProps = {
   dominationControlInterval: 5,
   dominationRespawnTime: 10,
   deathCountRespawnTime: 5,
+  withEarbud: false,
   easterEgg: false,
   loading: false,
   handleThresholdChange: vi.fn(),
   handleDominationSettingChange: vi.fn(),
   handleDeathCountRespawnChange: vi.fn(),
+  handleWithEarbudChange: vi.fn(),
   handleEasterEggChange: vi.fn(),
 }
 

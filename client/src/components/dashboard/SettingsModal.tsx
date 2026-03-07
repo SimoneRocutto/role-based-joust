@@ -5,11 +5,13 @@ interface SettingsModalProps {
   dominationControlInterval: number;
   dominationRespawnTime: number;
   deathCountRespawnTime: number;
+  withEarbud: boolean;
   easterEgg: boolean;
   loading: boolean;
   handleThresholdChange: (value: number) => void;
   handleDominationSettingChange: (key: string, value: number) => void;
   handleDeathCountRespawnChange: (value: number) => void;
+  handleWithEarbudChange: (enabled: boolean) => void;
   handleEasterEggChange: (enabled: boolean) => void;
 }
 
@@ -20,11 +22,13 @@ function SettingsModal({
   dominationControlInterval,
   dominationRespawnTime,
   deathCountRespawnTime,
+  withEarbud,
   easterEgg,
   loading,
   handleThresholdChange,
   handleDominationSettingChange,
   handleDeathCountRespawnChange,
+  handleWithEarbudChange,
   handleEasterEggChange,
 }: SettingsModalProps) {
   if (!isOpen) return null;
@@ -153,6 +157,28 @@ function SettingsModal({
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Earbud Toggle */}
+        <div className="mb-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <div
+              onClick={() => handleWithEarbudChange(!withEarbud)}
+              className={`relative w-10 h-6 rounded-full transition-colors ${
+                withEarbud ? "bg-blue-600" : "bg-gray-600"
+              }`}
+            >
+              <span
+                className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                  withEarbud ? "translate-x-5" : "translate-x-1"
+                }`}
+              />
+            </div>
+            <span className="text-sm text-gray-300">Earbuds</span>
+          </label>
+          <p className="text-xs text-gray-500 mt-1">
+            Play kill sound on every phone when a player dies (auto-enabled for role-based)
+          </p>
         </div>
 
         {/* Easter Egg Toggle */}

@@ -24,9 +24,7 @@ interface GameSettingsPanelProps {
   handleRoundCountChange: (count: number) => void;
   handleRoundDurationChange: (duration: number) => void;
   handleTeamCountChange: (count: number) => void;
-  withEarbud: boolean;
   handleDominationSettingChange: (key: string, value: number) => void;
-  handleWithEarbudChange: (enabled: boolean) => void;
   handleTargetScoreChange: (score: number) => void;
 }
 
@@ -50,9 +48,7 @@ function GameSettingsPanel({
   dominationPointTarget,
   dominationBaseCount,
   targetScore,
-  withEarbud,
   handleDominationSettingChange,
-  handleWithEarbudChange,
   handleTargetScoreChange,
 }: GameSettingsPanelProps) {
   const isDomination = selectedMode === "domination";
@@ -297,28 +293,6 @@ function GameSettingsPanel({
             sensitivityPresets.find((p) => p.key === selectedSensitivity)
               ?.description
           }
-        </p>
-      </div>
-
-      {/* Earbud Toggle */}
-      <div className="mb-4">
-        <label className="flex items-center gap-3 cursor-pointer">
-          <div
-            onClick={() => handleWithEarbudChange(!withEarbud)}
-            className={`relative w-10 h-6 rounded-full transition-colors ${
-              withEarbud ? "bg-blue-600" : "bg-gray-600"
-            }`}
-          >
-            <span
-              className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
-                withEarbud ? "translate-x-5" : "translate-x-1"
-              }`}
-            />
-          </div>
-          <span className="text-sm text-gray-300">Earbuds</span>
-        </label>
-        <p className="text-xs text-gray-500 mt-1">
-          Play kill sound on every phone when a player dies
         </p>
       </div>
 

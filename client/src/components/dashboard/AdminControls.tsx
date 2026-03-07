@@ -46,9 +46,7 @@ function AdminControls() {
         dominationPointTarget={settings.dominationPointTarget}
         dominationBaseCount={settings.dominationBaseCount}
         targetScore={settings.targetScore}
-        withEarbud={settings.withEarbud}
         handleDominationSettingChange={settings.handleDominationSettingChange}
-        handleWithEarbudChange={settings.handleWithEarbudChange}
         handleTargetScoreChange={settings.handleTargetScoreChange}
       />
 
@@ -72,11 +70,13 @@ function AdminControls() {
         dominationControlInterval={settings.dominationControlInterval}
         dominationRespawnTime={settings.dominationRespawnTime}
         deathCountRespawnTime={settings.deathCountRespawnTime}
+        withEarbud={settings.withEarbud}
         easterEgg={settings.easterEgg}
         loading={settings.loading}
         handleThresholdChange={settings.handleThresholdChange}
         handleDominationSettingChange={settings.handleDominationSettingChange}
         handleDeathCountRespawnChange={settings.handleDeathCountRespawnChange}
+        handleWithEarbudChange={settings.handleWithEarbudChange}
         handleEasterEggChange={settings.handleEasterEggChange}
       />
     </div>

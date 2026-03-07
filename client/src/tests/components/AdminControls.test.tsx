@@ -211,6 +211,7 @@ describe('AdminControls', () => {
         gameMode: 'classic',
         teamsEnabled: false,
         sensitivity: 'oneshot',
+        withEarbud: false,
       })
     })
   })
@@ -230,6 +231,7 @@ describe('AdminControls', () => {
         gameMode: 'classic',
         teamsEnabled: false,
         sensitivity: 'oneshot',
+        withEarbud: false,
       })
     })
 
@@ -244,6 +246,7 @@ describe('AdminControls', () => {
         gameMode: 'role-based',
         teamsEnabled: false,
         sensitivity: 'medium',
+        withEarbud: true,
       })
     })
   })

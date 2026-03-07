@@ -135,10 +135,16 @@ export function useAdminSettings() {
     if (sensitivityChanged) {
       setSelectedSensitivity(targetSensitivity);
     }
+    // Auto-toggle earbuds: on for role-based, off for others
+    const targetEarbud = mode === "role-based";
+    if (targetEarbud !== withEarbud) {
+      setWithEarbud(targetEarbud);
+    }
     try {
       await apiService.updateSettings({
         gameMode: mode,
         ...(sensitivityChanged ? { sensitivity: targetSensitivity } : {}),
+        withEarbud: targetEarbud,
       });
     } catch (err) {
       console.error("Failed to update mode:", err);
@@ -230,11 +236,18 @@ export function useAdminSettings() {
       setSelectedSensitivity(targetSensitivity);
     }
 
+    // Auto-toggle earbuds: on for role-based, off for others
+    const targetEarbud = serverMode === "role-based";
+    if (targetEarbud !== withEarbud) {
+      setWithEarbud(targetEarbud);
+    }
+
     try {
       await apiService.updateSettings({
         gameMode: serverMode,
         teamsEnabled: teams,
         ...(sensitivityChanged ? { sensitivity: targetSensitivity } : {}),
+        withEarbud: targetEarbud,
       });
     } catch (err) {
       console.error("Failed to update combined mode:", err);
