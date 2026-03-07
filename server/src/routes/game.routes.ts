@@ -23,6 +23,7 @@ import {
   setDominationBaseCountPreference,
   setDeathCountRespawnTimePreference,
   setWithEarbudPreference,
+  setEasterEggPreference,
   setTargetScorePreference,
   setLocalePreference,
   userPreferences,
@@ -447,6 +448,8 @@ router.get(
       deathCountRespawnTime: userPreferences.deathCountRespawnTime,
       // Earbud setting
       withEarbud: userPreferences.withEarbud,
+      // Easter egg mode
+      easterEgg: userPreferences.easterEgg,
       // Target score (classic/role-based)
       targetScore: userPreferences.targetScore,
       // Sound locale
@@ -497,6 +500,7 @@ router.post(
       dominationBaseCount,
       deathCountRespawnTime,
       withEarbud,
+      easterEgg,
       targetScore,
       locale,
     } = req.body;
@@ -732,6 +736,17 @@ router.post(
       updates.push(`withEarbud=${withEarbud}`);
     }
 
+    if (easterEgg !== undefined) {
+      if (typeof easterEgg !== "boolean") {
+        res
+          .status(400)
+          .json({ success: false, error: "easterEgg must be a boolean" });
+        return;
+      }
+      setEasterEggPreference(easterEgg);
+      updates.push(`easterEgg=${easterEgg}`);
+    }
+
     if (targetScore !== undefined) {
       if (
         typeof targetScore !== "number" ||
@@ -797,6 +812,7 @@ router.post(
       dominationBaseCount: userPreferences.dominationBaseCount,
       deathCountRespawnTime: userPreferences.deathCountRespawnTime,
       withEarbud: userPreferences.withEarbud,
+      easterEgg: userPreferences.easterEgg,
       targetScore: userPreferences.targetScore,
       movement: {
         dangerThreshold: gameConfig.movement.dangerThreshold,

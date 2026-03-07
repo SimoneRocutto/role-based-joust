@@ -57,6 +57,9 @@ interface GameStore {
   // Earbud setting (propagated from server on game:start)
   withEarbud: boolean;
 
+  // Easter egg mode (alternate death sounds)
+  easterEgg: boolean;
+
   // Sound locale (propagated from server on game:start)
   locale: string;
 
@@ -106,6 +109,7 @@ interface GameStore {
   setTeamSelectionActive: (active: boolean) => void;
   setTeamScores: (scores: TeamScore[] | null) => void;
   setWithEarbud: (enabled: boolean) => void;
+  setEasterEgg: (enabled: boolean) => void;
   setLocale: (locale: string) => void;
   setModeRecap: (
     recap: { modeName: string; roundCount: number | null; sensitivity: string; targetScore?: number | null } | null
@@ -161,6 +165,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   dominationTeamScores: {},
 
   withEarbud: false,
+  easterEgg: false,
   locale: "it",
 
   modeRecap: null,
@@ -284,6 +289,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setTeamScores: (scores) => set({ teamScores: scores }),
 
   setWithEarbud: (enabled) => set({ withEarbud: enabled }),
+
+  setEasterEgg: (enabled) => set({ easterEgg: enabled }),
 
   setLocale: (locale) => set({ locale }),
 

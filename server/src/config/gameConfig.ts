@@ -96,6 +96,7 @@ export interface UserPreferences {
   dominationBaseCount: number; // Expected number of bases (1-3)
   deathCountRespawnTime: number; // Seconds before respawn in death count mode (3-30)
   withEarbud: boolean; // Whether players use earbuds (enables kill sound on other phones)
+  easterEgg: boolean; // Easter egg mode (alternate death sounds)
   targetScore: number; // Points needed to win classic/role-based mode (5-50)
   locale: string; // Sound locale (e.g. "it", "en")
 }
@@ -164,6 +165,7 @@ const defaultPreferences: UserPreferences = {
   dominationBaseCount: 1,
   deathCountRespawnTime: 5,
   withEarbud: false,
+  easterEgg: false,
   targetScore: 20,
   locale: "it",
 };
@@ -253,6 +255,7 @@ function persistSettings(): void {
     dominationBaseCount: userPreferences.dominationBaseCount,
     deathCountRespawnTime: userPreferences.deathCountRespawnTime,
     withEarbud: userPreferences.withEarbud,
+    easterEgg: userPreferences.easterEgg,
     targetScore: userPreferences.targetScore,
     locale: userPreferences.locale,
   };
@@ -420,6 +423,11 @@ export function setWithEarbudPreference(enabled: boolean): void {
   persistSettings();
 }
 
+export function setEasterEggPreference(enabled: boolean): void {
+  userPreferences.easterEgg = enabled;
+  persistSettings();
+}
+
 /**
  * Update target score preference (for classic/role-based modes).
  */
@@ -487,6 +495,9 @@ export function initSettings(): void {
     }
     if (saved.withEarbud !== undefined) {
       userPreferences.withEarbud = saved.withEarbud;
+    }
+    if (saved.easterEgg !== undefined) {
+      userPreferences.easterEgg = saved.easterEgg;
     }
     if (saved.targetScore !== undefined) {
       userPreferences.targetScore = saved.targetScore;

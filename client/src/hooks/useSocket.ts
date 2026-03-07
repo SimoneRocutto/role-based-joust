@@ -134,23 +134,26 @@ export function useSocket() {
     socketService.onPlayerDeath(({ victimId, victimNumber, victimName }) => {
       setLatestEvent(`Player #${victimNumber} ${victimName} eliminated!`);
 
+      const { withEarbud, easterEgg } = useGameStore.getState();
+
       // If it's me, play death sound
       if (victimId === myPlayerId) {
-        audioManager.playSfx("death", { volume: 0.5 });
+        audioManager.playSfx(easterEgg ? "death-easter-egg" : "death", { volume: 0.5 });
       } else {
         // Another player died — play kill sound on this phone if withEarbud is on
-        const { withEarbud } = useGameStore.getState();
         if (withEarbud) {
-          audioManager.playSfx("kill", { volume: 0.5 });
+          audioManager.playSfx(easterEgg ? "kill-easter-egg" : "kill", { volume: 0.5 });
         }
       }
     });
 
     socketService.onGameStart(
-      ({ mode, totalRounds, targetScore, sensitivity, withEarbud, locale }) => {
+      ({ mode, totalRounds, targetScore, sensitivity, withEarbud, easterEgg, locale }) => {
         setMode(mode);
         // Store earbud setting for kill sound logic
         useGameStore.getState().setWithEarbud(withEarbud ?? false);
+        // Store easter egg setting for alternate death sounds
+        useGameStore.getState().setEasterEgg(easterEgg ?? false);
         // Store target score
         useGameStore.getState().setTargetScore(targetScore ?? null);
         // Store locale for localized sounds

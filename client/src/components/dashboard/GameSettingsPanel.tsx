@@ -25,8 +25,10 @@ interface GameSettingsPanelProps {
   handleRoundDurationChange: (duration: number) => void;
   handleTeamCountChange: (count: number) => void;
   withEarbud: boolean;
+  easterEgg: boolean;
   handleDominationSettingChange: (key: string, value: number) => void;
   handleWithEarbudChange: (enabled: boolean) => void;
+  handleEasterEggChange: (enabled: boolean) => void;
   handleTargetScoreChange: (score: number) => void;
 }
 
@@ -51,8 +53,10 @@ function GameSettingsPanel({
   dominationBaseCount,
   targetScore,
   withEarbud,
+  easterEgg,
   handleDominationSettingChange,
   handleWithEarbudChange,
+  handleEasterEggChange,
   handleTargetScoreChange,
 }: GameSettingsPanelProps) {
   const isDomination = selectedMode === "domination";
@@ -319,6 +323,28 @@ function GameSettingsPanel({
         </label>
         <p className="text-xs text-gray-500 mt-1">
           Play kill sound on every phone when a player dies
+        </p>
+      </div>
+
+      {/* Easter Egg Toggle */}
+      <div className="mb-4">
+        <label className="flex items-center gap-3 cursor-pointer">
+          <div
+            onClick={() => handleEasterEggChange(!easterEgg)}
+            className={`relative w-10 h-6 rounded-full transition-colors ${
+              easterEgg ? "bg-purple-600" : "bg-gray-600"
+            }`}
+          >
+            <span
+              className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                easterEgg ? "translate-x-5" : "translate-x-1"
+              }`}
+            />
+          </div>
+          <span className="text-sm text-gray-300">Easter Egg</span>
+        </label>
+        <p className="text-xs text-gray-500 mt-1">
+          Alternate death sounds
         </p>
       </div>
     </>

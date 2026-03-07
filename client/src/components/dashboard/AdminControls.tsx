@@ -47,8 +47,10 @@ function AdminControls() {
         dominationBaseCount={settings.dominationBaseCount}
         targetScore={settings.targetScore}
         withEarbud={settings.withEarbud}
+        easterEgg={settings.easterEgg}
         handleDominationSettingChange={settings.handleDominationSettingChange}
         handleWithEarbudChange={settings.handleWithEarbudChange}
+        handleEasterEggChange={settings.handleEasterEggChange}
         handleTargetScoreChange={settings.handleTargetScoreChange}
       />
 

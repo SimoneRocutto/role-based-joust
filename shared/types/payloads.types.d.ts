@@ -96,6 +96,7 @@ export interface GameStartPayload {
   targetScore?: number | null;
   sensitivity: string;
   withEarbud?: boolean;
+  easterEgg?: boolean;
   locale?: string;
 }
 

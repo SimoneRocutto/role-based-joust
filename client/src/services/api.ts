@@ -164,6 +164,7 @@ class ApiService {
     dominationBaseCount?: number;
     deathCountRespawnTime?: number;
     withEarbud?: boolean;
+    easterEgg?: boolean;
     targetScore?: number;
   }> {
     return this.request("/game/settings");
@@ -186,6 +187,7 @@ class ApiService {
     dominationBaseCount?: number;
     deathCountRespawnTime?: number;
     withEarbud?: boolean;
+    easterEgg?: boolean;
     targetScore?: number;
   }): Promise<{
     success: boolean;

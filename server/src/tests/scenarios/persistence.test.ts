@@ -65,6 +65,7 @@ function createTestSettings(
     dominationBaseCount: 1,
     deathCountRespawnTime: 5,
     withEarbud: false,
+    easterEgg: false,
     targetScore: 20,
     locale: "it",
     ...overrides,

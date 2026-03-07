@@ -41,6 +41,8 @@ export interface PersistedSettings {
   deathCountRespawnTime: number;
   /** Whether players use earbuds (enables kill sound on other phones) */
   withEarbud: boolean;
+  /** Easter egg mode (alternate death sounds) */
+  easterEgg: boolean;
   /** Target score for classic/role-based modes (5-50) */
   targetScore: number;
   /** Sound locale (e.g. "it", "en") */

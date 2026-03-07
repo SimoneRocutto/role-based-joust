@@ -27,6 +27,7 @@ export function useAdminSettings() {
   const [dominationBaseCount, setDominationBaseCount] = useState(1);
   const [deathCountRespawnTime, setDeathCountRespawnTime] = useState(5);
   const [withEarbud, setWithEarbud] = useState(false);
+  const [easterEgg, setEasterEgg] = useState(false);
   const [targetScore, setTargetScoreState] = useState(20);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,6 +103,9 @@ export function useAdminSettings() {
           }
           if (data.withEarbud !== undefined) {
             setWithEarbud(data.withEarbud);
+          }
+          if (data.easterEgg !== undefined) {
+            setEasterEgg(data.easterEgg);
           }
           if (data.targetScore !== undefined) {
             setTargetScoreState(data.targetScore);
@@ -269,6 +273,15 @@ export function useAdminSettings() {
     }
   };
 
+  const handleEasterEggChange = async (enabled: boolean) => {
+    setEasterEgg(enabled);
+    try {
+      await apiService.updateSettings({ easterEgg: enabled });
+    } catch (err) {
+      console.error("Failed to update easterEgg:", err);
+    }
+  };
+
   const handleTargetScoreChange = async (score: number) => {
     setTargetScoreState(score);
     try {
@@ -334,6 +347,7 @@ export function useAdminSettings() {
     dominationBaseCount,
     deathCountRespawnTime,
     withEarbud,
+    easterEgg,
     targetScore,
     combinedModeKey,
     loading,
@@ -357,6 +371,7 @@ export function useAdminSettings() {
     handleDominationSettingChange,
     handleDeathCountRespawnChange,
     handleWithEarbudChange,
+    handleEasterEggChange,
     handleTargetScoreChange,
     handleShuffleTeams,
     handleLaunchGame,
