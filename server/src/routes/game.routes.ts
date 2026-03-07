@@ -292,6 +292,12 @@ router.post(
       gameEngine.setCountdownDuration(countdownDuration);
     }
 
+    // Easter egg: extend countdown by 7s for the intro jingle
+    if (userPreferences.easterEgg) {
+      const current = gameEngine.getCountdownDuration();
+      gameEngine.setCountdownDuration(current + 7);
+    }
+
     // Clear lobby ready states so they don't carry into finished state
     connectionManager.resetAllReadyState();
 

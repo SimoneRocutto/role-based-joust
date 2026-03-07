@@ -286,11 +286,16 @@ export function useSocket() {
     socketService.onRoleAssigned((roleData) => {
       updateRoleState(roleData);
 
+      const { easterEgg } = useGameStore.getState();
+
       // Wait for intro to finish, then play description
       setTimeout(async () => {
+        // Easter egg: play intro jingle before role description
+        if (easterEgg) {
+          await audioManager.playSfx("game-start-easter-egg");
+        }
         let soundFileName = `roles/${roleData.name}/description`;
         await audioManager.playSfx(soundFileName);
-        // todo add number sfx if there is
         if (roleData.targetNumber) {
           audioManager.playSfx("numbers/" + roleData.targetNumber);
         }
